@@ -1,12 +1,15 @@
-// src/app/add/page.tsx
+// src/app/jr/add/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+// Evita que Next intente prerender estáticamente esta ruta durante el build
+export const dynamic = "force-dynamic";
 
 type BomberoLite = {
   dni: string;
@@ -21,7 +24,7 @@ type Municipio = { id: string; nombre: string; zona_id: string };
 type Unidad = { id: string; nombre: string; zona_id: string };
 type Caseta = { id: string; nombre: string; municipio_id: string };
 
-export default function AddRosterPage() {
+function AddRosterPageClient() {
   const router = useRouter();
   const params = useSearchParams();
 
@@ -36,18 +39,14 @@ export default function AddRosterPage() {
   const casetaNombre = params.get("caseta") || "";
 
   // --- IDs reales para poder consultar BD por unidad/caseta ---
-  
   const [, setProvinciaId] = useState<string | null>(null);
   const [, setZonaId] = useState<string | null>(null);
   const [, setMunicipioId] = useState<string | null>(null);
   const [unidadId, setUnidadId] = useState<string | null>(null);
   const [casetaId, setCasetaId] = useState<string | null>(null);
 
-
-
   // --- ROSTER (lista del día) con persistencia en localStorage ---
   const storageKey = useMemo(() => {
-    // Usamos un key estable basado en el destino: priorizamos IDs si los resolvemos.
     const part =
       tipo === "unidad"
         ? (unidadId || `U:${provinciaNombre}/${zonaNombre}/${unidadNombre}`)
@@ -77,9 +76,7 @@ export default function AddRosterPage() {
       setAuthed(true);
 
       // Resolver provincia -> zona -> (unidad|caseta)
-      const { data: pData } = await supabase
-        .from("provincias")
-        .select("id,nombre");
+      const { data: pData } = await supabase.from("provincias").select("id,nombre");
       const p = (pData || []).find((x: Provincia) => x.nombre === provinciaNombre) as
         | Provincia
         | undefined;
@@ -339,12 +336,11 @@ export default function AddRosterPage() {
               </div>
             </div>
 
-            {/* Acciones inferiores: aquí en el futuro podrás “crear anotaciones” o sincronizar a BD */}
+            {/* Acciones inferiores */}
             <div className="flex justify-end gap-2">
               <Button variant="secondary" onClick={() => router.push("/dashboard")}>
                 Atrás
               </Button>
-              {/* Hook futuro: enviar roster a un flujo de “anotaciones del día” */}
               <Button onClick={() => alert("Guardado localStore . Próximo paso: control_diario")}>
                 Aceptar
               </Button>
@@ -353,5 +349,14 @@ export default function AddRosterPage() {
         </Card>
       </div>
     </main>
+  );
+}
+
+// El componente de página que Next renderiza: aquí envolvemos en Suspense
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Cargando…</div>}>
+      <AddRosterPageClient />
+    </Suspense>
   );
 }
