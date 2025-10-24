@@ -15,7 +15,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className="min-h-screen bg-gradient-to-b from-yellow-100 via-yellow-300 to-green-200 text-slate-900 dark:text-slate-100">
+      <body className="min-h-screen 100">
         <NavBar />
         {/* Padding top para que el contenido no quede debajo del navbar fijo */}
         <div className="pt-20">

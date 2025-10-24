@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-
+import "./globals.css";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,7 +48,7 @@ export default function AuthPage() {
 
   async function resolveAndRouteByRole(authUserId: string): Promise<boolean> {
     const { data: rec, error: roleErr } = await supabase
-      .from("usuarios_app")
+      .from("users")
       .select("rol")
       .eq("auth_user_id", authUserId)
       .maybeSingle();
@@ -110,15 +110,16 @@ export default function AuthPage() {
           await supabase.auth.signOut();
         }
       }
-    } catch (err: any) {
-      setError(err?.message || "Error de autenticación.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg || "Error de autenticación.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gradient-to-b from-yellow-100 via-yellow-300 to-green-200">
+    <main className="min-h-screen flex items-center justify-center">
       <Card className="w-full max-w-sm shadow-xl">
         <CardHeader>
           <CardTitle className="text-center">

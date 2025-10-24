@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 
 const links = [
-  { href: "/", label: "Salir" },
   { href: "/bf/list", label: "Listar" }
  
 ];
@@ -14,7 +13,7 @@ export function SidebarBF({ className }: { className?: string }) {
   const pathname = usePathname();
   return (
     
-    <aside className={cn("w-64 shrink-0 border-r bg-gradient-to-b from-green-200 via-yellow-300 to-yellow-200", className)}>
+    <aside className={cn("hidden md:block w-64 shrink-0 bg-card border-r border-border sticky top-0 h-[calc(100vh-56px)]", className)}>
       <div className="p-4 font-bold tracking-tight text-xl">BOMBERO FORESTAL</div>
       <nav className="px-2 py-2 space-y-1">
         {links.map((l) => {

@@ -224,7 +224,7 @@ function AddRosterPageClient() {
       : `Caseta: ${casetaNombre} — Municipio: ${municipioNombre} (Zona: ${zonaNombre}, Prov.: ${provinciaNombre})`;
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-yellow-100 via-yellow-300 to-green-200">
+    <main className="min-h-screen">
       <div className="mx-auto max-w-5xl p-6 md:p-10 space-y-4">
         <div className="flex justify-between items-center">
           <h1 className="text-xl font-semibold">Lista de Bomberos del día</h1>
@@ -244,7 +244,7 @@ function AddRosterPageClient() {
           </div>
         </div>
 
-        <Card className="shadow-xl bg-yellow-100">
+        <Card className="shadow-xl ">
           <CardHeader>
             <CardTitle>{tituloDestino}</CardTitle>
           </CardHeader>
@@ -338,7 +338,7 @@ function AddRosterPageClient() {
 
             {/* Acciones inferiores */}
             <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => router.push("/dashboard")}>
+              <Button variant="secondary" onClick={() => router.push("/jr")}>
                 Atrás
               </Button>
               <Button onClick={() => alert("Guardado localStore . Próximo paso: control_diario")}>

@@ -138,15 +138,15 @@ export default function StartPage() {
     if (sel.tipo) params.set("tipo", sel.tipo);
     if (sel.unidadNombre) params.set("unidad", sel.unidadNombre || "");
     if (sel.casetaNombre) params.set("caseta", sel.casetaNombre || "");
-    router.push(`/add?${params.toString()}`);
+    router.push(`/jr/add?${params.toString()}`);
   }
 
   if (authed === null) return null;
 
   return (
-    <main className="min-h-screen  bg-gradient-to-b from-yellow-100 via-yellow-300 to-green-200 dark:from-slate-950 dark:to-slate-900">
+    <main className="min-h-screen  dark:from-slate-950 dark:to-slate-900">
       <div className="mx-auto max-w-4xl p-6 md:p-10">
-        <Card className="shadow-xl bg-yellow-100 border-slate-200 dark:border-slate-800">
+        <Card className="shadow-xl border-slate-200 dark:border-slate-800">
           <CardHeader className="space-y-2">
             <CardTitle className="text-2xl md:text-3xl tracking-tight">
               Selecciona tu destino

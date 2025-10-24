@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 
@@ -14,7 +14,7 @@ export default function NavBar() {
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState<string | null>(null);
   const [rol, setRol] = useState<Rol | null>(null);
-  const pathname = usePathname();
+  //const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
@@ -30,7 +30,7 @@ export default function NavBar() {
         setEmail(session.user.email ?? null);
         // leer rol desde usuarios_app
         const { data: rec } = await supabase
-          .from("usuarios_app")
+          .from("users")
           .select("rol")
           .eq("auth_user_id", session.user.id)
           .maybeSingle();
@@ -45,11 +45,11 @@ export default function NavBar() {
     init();
 
     // Suscribirse a cambios de sesión (login/logout) para refrescar navbar
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, _session) => {
-      init();
-    });
+        const {
+          data: { subscription },
+        } = supabase.auth.onAuthStateChange(() => {
+          init();
+        });
 
     return () => {
       mounted = false;
@@ -74,7 +74,7 @@ export default function NavBar() {
   return (
     <header className="fixed inset-x-0 top-0 z-40">
       <div className="mx-auto max-w-6xl px-4">
-        <nav className="mt-3 rounded-2xl border bg-white-70 backdrop-blur-md shadow-sm
+        <nav className="mt-3 rounded-2xl border  backdrop-blur-md shadow-sm
                         border-black-10 dark:border-white-10 dark:bg-black-30">
           <div className="h-14 flex items-center justify-between px-3">
             {/* Left: Logo + brand */}
@@ -87,7 +87,7 @@ export default function NavBar() {
                 className="rounded-lg object-cover"
                 priority
               />
-              <span className="text-sm md:text-base font-semibold tracking-wide">INFOEX</span>
+              <span className="text-sm md:text-base font-semibold tracking-wide"></span>
             </Link>
 
             {/* Right: Auth controls */}
