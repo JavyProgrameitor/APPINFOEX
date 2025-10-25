@@ -5,9 +5,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import "./globals.css";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import Footer from "@/components/ui/Footer";
 
 type Rol = "admin" | "jr" | "bf";
 
@@ -29,8 +30,8 @@ export default function AuthPage() {
   // Si ya hay sesión, resolvemos rol y redirigimos
   useEffect(() => {
     if (process.env.NODE_ENV === "development") {
-  supabase.auth.signOut();
-}
+      supabase.auth.signOut();
+    }
 
     (async () => {
       const { data } = await supabase.auth.getSession();
@@ -84,7 +85,6 @@ export default function AuthPage() {
         const { data, error } = await supabase.auth.signUp({ email, password: pass });
         if (error) throw error;
 
-        // Dependiendo de la política de Supabase, puede requerir verificación por email.
         if (data.session?.user?.id) {
           const ok = await resolveAndRouteByRole(data.session.user.id);
           if (!ok) await supabase.auth.signOut();
@@ -119,74 +119,46 @@ export default function AuthPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center">
-      <Card className="w-full max-w-sm shadow-xl">
-        <CardHeader>
-          <CardTitle className="text-center">
-            {mode === "signin" ? "Inicia sesión" : "Crea tu cuenta"}
-          </CardTitle>
-        </CardHeader>
+    <>
+      <main className="min-h-screen flex items-center justify-center">
+        <Card className="w-full max-w-sm shadow-xl">
+          <CardContent>
+            <form onSubmit={onSubmit} className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-xl font-black">Email</label>
+                <Input
+                  type="email"
+                  placeholder="tucorreo@infoex.es"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
 
-        <CardContent>
-          <form onSubmit={onSubmit} className="space-y-3">
-            <div className="space-y-1">
-              <label className="text-sm font-medium">Email</label>
-              <Input
-                type="email"
-                placeholder="tucorreo@infoex.es"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
+              <div className="space-y-1">
+                <label className="text-xl font-black">Contraseña</label>
+                <Input
+                  type="password"
+                  placeholder="........"
+                  value={pass}
+                  onChange={(e) => setPass(e.target.value)}
+                  required
+                />
+              </div>
 
-            <div className="space-y-1">
-              <label className="text-sm font-medium">Contraseña</label>
-              <Input
-                type="password"
-                placeholder="••••••••"
-                value={pass}
-                onChange={(e) => setPass(e.target.value)}
-                required
-              />
-            </div>
-
-            {error && (
-              <p className="text-sm text-red-600">{error}</p>
-            )}
-
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading
-                ? "Procesando..."
-                : mode === "signin"
-                ? "Entrar"
-                : "Crear cuenta"}
-            </Button>
-
-            <button
-              type="button"
-              onClick={() =>
-                setMode((m) => (m === "signin" ? "signup" : "signin"))
-              }
-              className="w-full text-xs text-muted-foreground mt-1 underline"
-            >
-              {mode === "signin"
-                ? "¿No tienes cuenta? Crear una"
-                : "¿Ya tienes cuenta? Inicia sesión"}
-            </button>
-          </form>
-
-          {/* Opcional: enlace recuperar contraseña si lo habilitas en Supabase */}
-          {/* <div className="mt-3 text-center">
-            <button
-              className="text-xs underline text-muted-foreground"
-              onClick={() => router.push("/recover")}
-            >
-              ¿Olvidaste tu contraseña?
-            </button>
-          </div> */}
-        </CardContent>
-      </Card>
-    </main>
+              {error && (
+                <p className="text-sm text-foreground">{error}</p>
+              )}
+              <Button type="submit" className="w-full" >
+                Entrar
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </main>
+      <div>
+        <Footer />
+      </div>
+    </>
   );
 }

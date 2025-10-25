@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 
 type Rol = "admin" | "jr" | "bf";
 
@@ -14,7 +14,6 @@ export default function NavBar() {
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState<string | null>(null);
   const [rol, setRol] = useState<Rol | null>(null);
-  //const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
@@ -28,7 +27,6 @@ export default function NavBar() {
 
       if (session?.user) {
         setEmail(session.user.email ?? null);
-        // leer rol desde usuarios_app
         const { data: rec } = await supabase
           .from("users")
           .select("rol")
@@ -44,12 +42,11 @@ export default function NavBar() {
 
     init();
 
-    // Suscribirse a cambios de sesión (login/logout) para refrescar navbar
-        const {
-          data: { subscription },
-        } = supabase.auth.onAuthStateChange(() => {
-          init();
-        });
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      init();
+    });
 
     return () => {
       mounted = false;
@@ -74,9 +71,12 @@ export default function NavBar() {
   return (
     <header className="fixed inset-x-0 top-0 z-40">
       <div className="mx-auto max-w-6xl px-4">
-        <nav className="mt-3 rounded-2xl border  backdrop-blur-md shadow-sm
-                        border-black-10 dark:border-white-10 dark:bg-black-30">
-          <div className="h-14 flex items-center justify-between px-3">
+        {/* SÓLIDO: borde blanco en 4 lados y fondo más claro */}
+        <nav
+          className="mt-3 rounded-2xl border-4 border-white/90 shadow-md
+                     backdrop-blur-md bg-[--card]/92 supports-[backdrop-filter]:bg-[--card]/85"
+        >
+          <div className="h-14 flex items-center justify-between px-4">
             {/* Left: Logo + brand */}
             <Link href="/" className="flex items-center gap-3">
               <Image
@@ -87,7 +87,7 @@ export default function NavBar() {
                 className="rounded-lg object-cover"
                 priority
               />
-              <span className="text-sm md:text-base font-semibold tracking-wide"></span>
+              <span className="text-sm md:text-base text-center font-black">APP INCIDENCIAS I.N.F.O.E.X</span>
             </Link>
 
             {/* Right: Auth controls */}
@@ -96,15 +96,15 @@ export default function NavBar() {
                 <span className="text-xs opacity-70">cargando…</span>
               ) : email ? (
                 <>
-                  <span className="hidden sm:flex text-xs sm:text-sm items-center gap-2 px-2 py-1 rounded-xl border bg-white/60 dark:bg-white/10">
+                  <span className="hidden sm:flex text-xs sm:text-sm items-center gap-2 px-3 py-1 rounded-xl border border-white/40 bg-white/10">
                     <span className="inline-flex items-center gap-1">
-                      <span className="rounded-full w-2 h-2 bg-green-500" />
+                      <span className="rounded-full w-2 h-2 bg-card" />
                       <span className="font-medium">{roleLabel(rol)}</span>
                     </span>
-                    <span className="opacity-70">·</span>
+                    <span className="text-primary opacity-70">✓</span>
                     <span className="opacity-80">{email}</span>
                   </span>
-                  <Button size="sm" variant="secondary" onClick={onLogout}>
+                  <Button size="sm" variant="destructive" onClick={onLogout}>
                     Cerrar sesión
                   </Button>
                 </>

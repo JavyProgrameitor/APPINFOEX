@@ -1,7 +1,7 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
-import NavBar from "@/components/ui/NavBar";
+import NavBar from "@/components/ui/Navbar";
 
 export const metadata: Metadata = {
   title: "INFOEX",
@@ -15,9 +15,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className="min-h-screen 100">
+      <body className="bg-[--background] text-[--foreground]" >
         <NavBar />
-        {/* Padding top para que el contenido no quede debajo del navbar fijo */}
         <div className="pt-20">
           {children}
         </div>

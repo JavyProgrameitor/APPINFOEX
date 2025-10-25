@@ -11,7 +11,7 @@
 
   /* Sidebar tokens */
   --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border); /* <- este ; era crítico */
+  --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-accent: var(--sidebar-accent);
   --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
@@ -51,97 +51,106 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* --- Paleta clara (tipo SaaS) --- */
+/* ===============================
+   INFOEX (Default): Negro + Blanco + Verde
+   =============================== */
 :root {
-  --radius: 0.625rem;
+  /* Botones tipo pill por defecto */
+  --radius: 9999px;
 
-  /* Base */
-  --background: #f2f2eefc;
-  --foreground: #0f172a;          /* slate-900 */
+  /* Base (negro tipo Saaspo) */
+  --background: #0b0f14;        /* negro profundo, sin ser puro */
+  --foreground: #f8fafc;        /* casi blanco */
 
-  /* Surface */
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --popover: #ffffff;
-  --popover-foreground: #0f172a;
+  /* Superficies */
+  --card: #0f1621;              /* un tono por encima del fondo */
+  --card-foreground: #f8fafc;
+  --popover: #0f1621;
+  --popover-foreground: #f8fafc;
 
-  /* Brand / Accents */
-  --primary: #4f46e5;             /* indigo-600 */
-  --primary-foreground: #ffffff;
-  --secondary: #0ea5e9;           /* sky-500 */
-  --secondary-foreground: #ffffff;
-  --accent: #22c55e;              /* green-500 */
+  /* Marca / Accentos */
+  --primary: #22c55e;           /* verde vivo para CTA */
+  --primary-foreground: #052e16;
+  --secondary: #0b0f14;         /* apoya el look dark */
+  --secondary-foreground: #f8fafc;
+
+  /* UI neutrales */
+  --muted: #22c55e;             /* gris/azulado muy oscuro para hovers */
+  --muted-foreground: #cbd5e1;  /* slate-300 */
+  --border: #17202c;            /* línea sutil */
+  --input: #17202c;
+  --ring: #22c55e;              /* foco en verde */
+
+  /* Detalles mínimos en rojo (errores/alertas) */
+  --destructive: #ef4444;
+  --accent: #22c55e;
   --accent-foreground: #052e16;
 
-  /* UI */
-  --muted: #f1f5f9;               /* slate-100 */
-  --muted-foreground: #475569;    /* slate-600 */
-  --border: #e2e8f0;              /* slate-200 */
-  --input: #e2e8f0;
-  --ring: #6366f1;                /* indigo-500 */
-
-  /* Charts (opcionales) */
-  --chart-1: #6366f1;
-  --chart-2: #22c55e;
-  --chart-3: #0ea5e9;
-  --chart-4: #f59e0b;
-  --chart-5: #ef4444;
+  /* Charts (opcionales, gama verde/neutral) */
+  --chart-1: #22c55e;
+  --chart-2: #16a34a;
+  --chart-3: #10b981;
+  --chart-4: #84cc16;
+  --chart-5: #e5e7eb;
 
   /* Sidebar */
-  --sidebar: #ffffff;
-  --sidebar-foreground: #0f172a;
-  --sidebar-primary: #4f46e5;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f1f5f9;
-  --sidebar-accent-foreground: #0f172a;
-  --sidebar-border: #e2e8f0;
-  --sidebar-ring: #6366f1;
+  --sidebar: #0b0f14;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #22c55e;
+  --sidebar-primary-foreground: #052e16;
+  --sidebar-accent: #0f1826;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: #1967ce;
+  --sidebar-ring: #22c55e;
 }
 
-/* --- Paleta oscura (si usas .dark en <html>) --- */
-.dark {
-  --background: #0b1220;          /* ~slate-950 */
-  --foreground: #e5e7eb;          /* gray-200 */
+/* ===============================
+   Variante clara opcional (añade .light en <html>)
+   =============================== 
+.light {
+  --background: #ffffff;
+  --foreground: #0b0f14;
 
-  --card: #0f172a;
-  --card-foreground: #e5e7eb;
-  --popover: #0f172a;
-  --popover-foreground: #e5e7eb;
+  --card: #ffffff;
+  --card-foreground: #0b0f14;
+  --popover: #ffffff;
+  --popover-foreground: #0b0f14;
 
-  --primary: #818cf8;             /* indigo-400 */
-  --primary-foreground: #0b1220;
-  --secondary: #38bdf8;           /* sky-400 */
-  --secondary-foreground: #0b1220;
-  --accent: #34d399;              /* emerald-400 */
+  --primary: #16a34a;          
+  --primary-foreground: #ffffff;
+  --secondary: #0b0f14;
+  --secondary-foreground: #ffffff;
+
+  --muted: #f3f4f6;
+  --muted-foreground: #4b5563;
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #16a34a;
+
+  --destructive: #ef4444;
+  --accent: #22c55e;
   --accent-foreground: #052e16;
 
-  --muted: #0b1220;
-  --muted-foreground: #94a3b8;    /* slate-400 */
-  --border: #1f2937;              /* gray-800 */
-  --input: #1f2937;
-  --ring: #818cf8;
+  --chart-1: #16a34a;
+  --chart-2: #22c55e;
+  --chart-3: #10b981;
+  --chart-4: #84cc16;
+  --chart-5: #111827;
 
-  --chart-1: #818cf8;
-  --chart-2: #34d399;
-  --chart-3: #38bdf8;
-  --chart-4: #fbbf24;
-  --chart-5: #f87171;
-
-  --sidebar: #0b1220;
-  --sidebar-foreground: #e5e7eb;
-  --sidebar-primary: #818cf8;
-  --sidebar-primary-foreground: #0b1220;
-  --sidebar-accent: #111827;      /* gray-900 */
-  --sidebar-accent-foreground: #e5e7eb;
-  --sidebar-border: #1f2937;
-  --sidebar-ring: #818cf8;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0b0f14;
+  --sidebar-primary: #16a34a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f3f4f6;
+  --sidebar-accent-foreground: #0b0f14;
+  --sidebar-border: #e5e7eb;
+  --sidebar-ring: #16a34a;
+  
 }
-
-/* --- Base layer útil para background/text global y bordes --- */
+*/
+/* --- Base layer: aplica fondo/texto global y suaviza render --- */
 @layer base {
-  * {
-    border-color: var(--border);
-  }
+  * { border-color: var(--border); }
   body {
     background-color: var(--background);
     color: var(--foreground);
@@ -152,6 +161,6 @@
   }
 }
 
-/* --- Utilidades extra que usamos en los componentes --- */
+/* --- Utilidades extra que usamos en componentes --- */
 @utility bg-card       { background-color: var(--card); }
 @utility border-border { border-color: var(--border); }

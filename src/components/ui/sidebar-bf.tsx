@@ -13,9 +13,22 @@ export function SidebarBF({ className }: { className?: string }) {
   const pathname = usePathname();
   return (
     
-    <aside className={cn("hidden md:block w-64 shrink-0 bg-card border-r border-border sticky top-0 h-[calc(100vh-56px)]", className)}>
-      <div className="p-4 font-bold tracking-tight text-xl">BOMBERO FORESTAL</div>
-      <nav className="px-2 py-2 space-y-1">
+ <aside
+      className={cn(
+        // Misma línea visual que el Navbar: fondo más claro, borde blanco grueso
+        "hidden md:block w-64 shrink-0 bg-[--card]/95 text-[--sidebar-foreground] " +
+          "border-r-6 border-white/90 shadow-md backdrop-blur-md " +
+          "sticky top-0 h-[calc(100vh-56px)]",
+        className
+      )}
+    >
+      {/* Cabecera del sidebar */}
+      <div className="p-4 font-bold tracking-tight text-xl border-b-2 border-white/60">
+        BOMBERO FORESTAL
+      </div>
+
+      {/* Navegación */}
+      <nav className="px-3 py-3 space-y-1">
         {links.map((l) => {
           const active = pathname === l.href;
           return (
@@ -23,8 +36,12 @@ export function SidebarBF({ className }: { className?: string }) {
               key={l.href}
               href={l.href}
               className={cn(
-                "block rounded-md px-3 py-2 text-sm hover:bg-muted",
-                active ? "bg-muted font-medium" : "text-foreground/80"
+                "block rounded-lg px-3 py-2 text-sm font-medium transition-colors " +
+                  "text-[--sidebar-foreground]/90 hover:bg-[--sidebar-accent]/80 hover:text-[--sidebar-accent-foreground] " +
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--sidebar-ring] focus-visible:ring-offset-2",
+                active
+                  ? "bg-[--sidebar-accent]/90 text-[--sidebar-accent-foreground] shadow-inner"
+                  : "text-[--sidebar-foreground]/80"
               )}
             >
               {l.label}

@@ -8,7 +8,7 @@ export default function DashboardPage() {
   return (
     <main className="p-6">
       <h1 className="text-xl font-semibold mb-4">PAGINA EJEMPLO FORMULARIOS PARA ADMINISTRADORES</h1>
-      <div className="overflow-x-auto rounded-md border">
+      <div className="overflow-x-auto border rounded">
         <table className="w-full text-sm">
           <thead className="bg-muted/50">
             <tr>

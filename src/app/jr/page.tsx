@@ -4,20 +4,18 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 
 type Tipo = "unidad" | "caseta";
 
-type Provincia = { id: string; nombre: string };
-type Zona = { id: string; nombre: string; provincia_id: string };
-type Municipio = { id: string; nombre: string; zona_id: string };
-type Unidad = { id: string; nombre: string; zona_id: string };
+type Zona = string;
+type Municipio = { id: string; nombre: string; zona: Zona };
+type Unidad = { id: string; nombre: string; zona: Zona };
 type Caseta = { id: string; nombre: string; municipio_id: string };
 
 type Selection = {
-  provinciaId?: string;
-  zonaId?: string;
+  zona?: Zona;
   municipioId?: string;
   tipo?: Tipo;
   unidadNombre?: string;
@@ -26,9 +24,9 @@ type Selection = {
 
 export default function StartPage() {
   const router = useRouter();
-    const [authed, setAuthed] = useState<boolean | null>(null);
+  const [authed, setAuthed] = useState<boolean | null>(null);
 
-    useEffect(() => {
+  useEffect(() => {
     (async () => {
       const { data } = await supabase.auth.getSession();
       if (!data.session) {
@@ -39,65 +37,45 @@ export default function StartPage() {
     })();
   }, [router]);
 
-
   const [sel, setSel] = useState<Selection>({});
 
-  const [provincias, setProvincias] = useState<Provincia[]>([]);
   const [zonas, setZonas] = useState<Zona[]>([]);
   const [municipios, setMunicipios] = useState<Municipio[]>([]);
   const [unidades, setUnidades] = useState<Unidad[]>([]);
   const [casetas, setCasetas] = useState<Caseta[]>([]);
 
-  // Cargar provincias al montar
+  // 👇 Helper para el borde de los selects
+  const selectBase =
+    "h-10 w-full rounded-xl border-2 bg-background px-3 text-sm outline-none ring-offset-background transition-colors " +
+    "focus-visible:ring-2 focus-visible:ring-ring-40 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer";
+  const selectClass = (isSelected: boolean) =>
+    `${selectBase} ${isSelected ? "border-white" : "border-green-600"}`;
+
+  // Cargar zonas
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase
-        .from("provincias")
-        .select("id,nombre")
-        .order("nombre", { ascending: true });
-      if (!error && data) setProvincias(data as Provincia[]);
+      const { data, error } = await supabase.rpc("get_zonas_enum");
+      if (!error && Array.isArray(data)) {
+        setZonas(data as Zona[]);
+      }
     })();
   }, []);
 
-  // Cuando cambia provincia, cargar zonas
-  useEffect(() => {
-    if (!sel.provinciaId) {
-      setZonas([]); setMunicipios([]); setUnidades([]); setCasetas([]);
-      return;
-    }
-    (async () => {
-      const { data, error } = await supabase
-        .from("zonas")
-        .select("id,nombre,provincia_id")
-        .eq("provincia_id", sel.provinciaId)
-        .order("nombre", { ascending: true });
-      if (!error && data) setZonas(data as Zona[]);
-    })();
-  }, [sel.provinciaId]);
-
   // Cuando cambia zona, cargar municipios y unidades
   useEffect(() => {
-    if (!sel.zonaId) {
+    if (!sel.zona) {
       setMunicipios([]); setUnidades([]); setCasetas([]);
       return;
     }
     (async () => {
       const [{ data: mData }, { data: uData }] = await Promise.all([
-        supabase
-          .from("municipios")
-          .select("id,nombre,zona_id")
-          .eq("zona_id", sel.zonaId)
-          .order("nombre", { ascending: true }),
-        supabase
-          .from("unidades")
-          .select("id,nombre,zona_id")
-          .eq("zona_id", sel.zonaId)
-          .order("nombre", { ascending: true }),
+        supabase.from("municipios").select("id,nombre,zona").eq("zona", sel.zona).order("nombre", { ascending: true }),
+        supabase.from("unidades").select("id,nombre,zona").eq("zona", sel.zona).order("nombre", { ascending: true }),
       ]);
       if (mData) setMunicipios(mData as Municipio[]);
       if (uData) setUnidades(uData as Unidad[]);
     })();
-  }, [sel.zonaId]);
+  }, [sel.zona]);
 
   // Cuando cambia municipio, cargar casetas
   useEffect(() => {
@@ -115,24 +93,19 @@ export default function StartPage() {
     })();
   }, [sel.municipioId]);
 
-  //  municipio seleccionado pero sin casetas
   const noCasetas = sel.tipo === "caseta" && !!sel.municipioId && casetas.length === 0;
 
   const ready =
-    !!sel.provinciaId &&
-    !!sel.zonaId &&
+    !!sel.zona &&
     !!sel.tipo &&
     ((sel.tipo === "unidad" && !!sel.unidadNombre) ||
       (sel.tipo === "caseta" && !!sel.municipioId && !!sel.casetaNombre));
 
   function goNext() {
-  
-    const provinciaNombre = provincias.find(p => p.id === sel.provinciaId)?.nombre;
-    const zonaNombre = zonas.find(z => z.id === sel.zonaId)?.nombre;
+    const zonaNombre = sel.zona;
     const municipioNombre = municipios.find(m => m.id === sel.municipioId)?.nombre;
 
     const params = new URLSearchParams();
-    if (provinciaNombre) params.set("provincia", provinciaNombre);
     if (zonaNombre) params.set("zona", zonaNombre);
     if (municipioNombre) params.set("municipio", municipioNombre || "");
     if (sel.tipo) params.set("tipo", sel.tipo);
@@ -146,7 +119,7 @@ export default function StartPage() {
   return (
     <main className="min-h-screen  dark:from-slate-950 dark:to-slate-900">
       <div className="mx-auto max-w-4xl p-6 md:p-10">
-        <Card className="shadow-xl border-slate-200 dark:border-slate-800">
+        <Card className="shadow-xl border-border dark:border-border">
           <CardHeader className="space-y-2">
             <CardTitle className="text-2xl md:text-3xl tracking-tight">
               Selecciona tu destino
@@ -154,81 +127,80 @@ export default function StartPage() {
           </CardHeader>
 
           <CardContent className="space-y-8">
-            {/* Provincia y Zona */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Provincia</label>
-                <select
-                  className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none ring-offset-background transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring-40 disabled:cursor-not-allowed disabled:opacity-50"
-                  value={sel.provinciaId ?? ""}
-                  onChange={(e) => {
-                    const value = e.target.value || undefined;
-                    setSel({ provinciaId: value });
-                  }}
-                >
-                  <option value="" disabled>Selecciona provincia…</option>
-                  {provincias.map((p) => (
-                    <option key={p.id} value={p.id}>{p.nombre}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Zona</label>
-                <select
-                  className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none ring-offset-background transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring-40 disabled:cursor-not-allowed disabled:opacity-50"
-                  value={sel.zonaId ?? ""}
-                  onChange={(e) => {
-                    const value = e.target.value || undefined;
-                    setSel((prev) => ({ ...prev, zonaId: value, tipo: undefined, municipioId: undefined, unidadNombre: undefined, casetaNombre: undefined }));
-                  }}
-                  disabled={!sel.provinciaId}
-                >
-                  <option value="" disabled>
-                    {sel.provinciaId ? "Selecciona zona…" : "Selecciona provincia primero"}
-                  </option>
-                  {zonas.map((z) => (
-                    <option key={z.id} value={z.id}>{z.nombre}</option>
-                  ))}
-                </select>
-              </div>
+            {/* Zona */}
+            <div className="space-y-2 md:max-w-lg">
+              <label htmlFor="zona-select" className="text-sm font-medium">Zona</label>
+              <select
+                id="zona-select"
+                className={selectClass(!!sel.zona)}
+                value={sel.zona ?? ""}
+                onChange={(e) => {
+                  const value = e.target.value || undefined;
+                  setSel({ zona: value, tipo: undefined, municipioId: undefined, unidadNombre: undefined, casetaNombre: undefined });
+                }}
+              >
+                <option value="" disabled>Selecciona zona…</option>
+                {zonas.map((z) => (
+                  <option key={z} value={z}>{z}</option>
+                ))}
+              </select>
             </div>
-
             {/* Tipo */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Tipo de puesto</label>
               <div className="grid grid-cols-2 gap-2 md:max-w-sm">
-                <button
+                <Button
                   type="button"
-                  className={`h-10 rounded-xl border px-3 text-sm transition-colors ${sel.tipo === "unidad" ? "border-ring ring-2 ring-ring-40" : "hover:bg-muted"}`}
-                  onClick={() => setSel((prev) => ({ ...prev, tipo: "unidad", municipioId: undefined, casetaNombre: undefined }))}
-                  disabled={!sel.zonaId}
+                  variant="outline"
+                  className={`h-10 rounded-xl px-3 text-sm transition-colors 
+                text-white cursor-pointer bg-green-600 hover:bg-green-800
+                disabled:cursor-not-allowed
+                ${sel.tipo === "unidad" ? "ring-2 ring-ring-40 bg-green-600" : ""}`}
+                  onClick={() =>
+                    setSel((prev) => ({
+                      ...prev,
+                      tipo: "unidad",
+                      municipioId: undefined,
+                      casetaNombre: undefined,
+                    }))
+                  }
+                  disabled={!sel.zona}
                 >
                   Unidad
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  className={`h-10 rounded-xl border px-3 text-sm transition-colors ${sel.tipo === "caseta" ? "border-ring ring-2 ring-ring-40" : "hover:bg-muted"}`}
-                  onClick={() => setSel((prev) => ({ ...prev, tipo: "caseta", unidadNombre: undefined }))}
-                  disabled={!sel.zonaId}
+                  variant="outline"
+                  className={`h-10 rounded-xl px-3 text-sm transition-colors 
+                text-white cursor-pointer bg-green-600 hover:bg-green-800
+                disabled:cursor-not-allowed
+                ${sel.tipo === "caseta" ? "ring-2 ring-ring-40 bg-green-600" : ""}`}
+                  onClick={() =>
+                    setSel((prev) => ({
+                      ...prev,
+                      tipo: "caseta",
+                      unidadNombre: undefined,
+                    }))
+                  }
+                  disabled={!sel.zona}
                 >
                   Caseta
-                </button>
+                </Button>
               </div>
             </div>
-
             {/* Según tipo */}
             {sel.tipo === "unidad" && (
               <div className="space-y-2 md:max-w-lg">
-                <label className="text-sm font-medium">Unidad</label>
+                <label htmlFor="unidad-select" className="text-sm font-medium">Unidad</label>
                 <select
-                  className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none ring-offset-background transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-50"
+                  id="unidad-select"
+                  className={selectClass(!!sel.unidadNombre)}
                   value={sel.unidadNombre ?? ""}
                   onChange={(e) => setSel((prev) => ({ ...prev, unidadNombre: e.target.value || undefined }))}
-                  disabled={!sel.zonaId}
+                  disabled={!sel.zona}
                 >
                   <option value="" disabled>
-                    {sel.zonaId ? "Selecciona unidad…" : "Selecciona zona primero"}
+                    {sel.zona ? "Selecciona unidad…" : "Selecciona zona primero"}
                   </option>
                   {unidades.map((u) => (
                     <option key={u.id} value={u.nombre}>{u.nombre}</option>
@@ -240,15 +212,16 @@ export default function StartPage() {
             {sel.tipo === "caseta" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:max-w-3xl">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Municipio</label>
+                  <label htmlFor="municipio-select" className="text-sm font-medium">Municipio</label>
                   <select
-                    className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none ring-offset-background transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring-40 disabled:cursor-not-allowed disabled:opacity-50"
+                    id="municipio-select"
+                    className={selectClass(!!sel.municipioId)}
                     value={sel.municipioId ?? ""}
                     onChange={(e) => setSel((prev) => ({ ...prev, municipioId: e.target.value || undefined, casetaNombre: undefined }))}
-                    disabled={!sel.zonaId}
+                    disabled={!sel.zona}
                   >
                     <option value="" disabled>
-                      {sel.zonaId ? "Selecciona municipio…" : "Selecciona zona primero"}
+                      {sel.zona ? "Selecciona municipio…" : "Selecciona zona primero"}
                     </option>
                     {municipios.map((m) => (
                       <option key={m.id} value={m.id}>{m.nombre}</option>
@@ -256,19 +229,19 @@ export default function StartPage() {
                   </select>
                 </div>
 
-                {/* Caseta: si no hay casetas en el municipio seleccionado, mostramos aviso y ocultamos el selector */}
                 {noCasetas ? (
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Caseta</label>
-                    <div className="text-sm font-black  text-red-500 foreground  px-3 py-2 bg-muted-50">
+                    <div className="text-sm font-black text-foreground px-3 py-2 bg-muted-50">
                       No hay caseta en este municipio.
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Caseta</label>
+                    <label htmlFor="caseta-select" className="text-sm font-medium">Caseta</label>
                     <select
-                      className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none ring-offset-background transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring-40 disabled:cursor-not-allowed disabled:opacity-50"
+                      id="caseta-select"
+                      className={selectClass(!!sel.casetaNombre)}
                       value={sel.casetaNombre ?? ""}
                       onChange={(e) => setSel((prev) => ({ ...prev, casetaNombre: e.target.value || undefined }))}
                       disabled={!sel.municipioId}
@@ -285,7 +258,7 @@ export default function StartPage() {
               </div>
             )}
 
-            <div className="h-px bg-border-70" />
+            <div className="h-px" />
 
             {/* Acciones */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -297,7 +270,10 @@ export default function StartPage() {
                 )}
               </div>
               <div className="flex gap-2">
-                <Button variant="secondary" onClick={() => { setSel({}); setZonas([]); setMunicipios([]); setUnidades([]); setCasetas([]); }}>
+                <Button
+                  variant="secondary"
+                  onClick={() => { setSel({}); setMunicipios([]); setUnidades([]); setCasetas([]); }}
+                >
                   Limpiar
                 </Button>
                 <Button onClick={goNext} disabled={!ready}>
@@ -307,10 +283,6 @@ export default function StartPage() {
             </div>
           </CardContent>
         </Card>
-
-        <div className="mt-6 text-xs text-muted-foreground text-center">
-          INFOEX –  Incendios Forestales Extremadura -2025
-        </div>
       </div>
     </main>
   );

@@ -1,8 +1,9 @@
-import { SidebarBF } from "../../components/ui/sidebar-bf";
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
+import { SidebarBF } from "../../components/ui/Sidebar-bf";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/Sheet";
+import { Button } from "@/components/ui/Button";
 import { Menu } from "lucide-react";
 import Link from "next/link";
+import Footer from "@/components/ui/Footer";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -12,11 +13,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" aria-label="Abrir menú">
-                <Menu className="size-5" />
+                <Menu className="size-4" />
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="p-0">
-              <SheetHeader className="px-4 py-3 border-b"><SheetTitle>Menú</SheetTitle></SheetHeader>
+              <SheetHeader className="px-4 py-3 border-b">
+                <SheetTitle className="font-semibold">Menú</SheetTitle>
+              </SheetHeader>
               <nav className="space-y-1 p-4">
                 <SheetClose asChild>
                   <Link href="/bf/list" className="block rounded-md px-3 py-2 text-sm hover:bg-muted">
@@ -32,6 +35,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex min-h-[calc(100vh-56px)]">
         <SidebarBF />
         <div className="flex-1">{children}</div>
+      </div>
+      <div>
+        <Footer />
       </div>
     </>
   );
