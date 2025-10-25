@@ -107,6 +107,7 @@
 /* ===============================
    Variante clara opcional (añade .light en <html>)
    =============================== 
+   */
 .light {
   --background: #ffffff;
   --foreground: #0b0f14;
@@ -147,7 +148,7 @@
   --sidebar-ring: #16a34a;
   
 }
-*/
+
 /* --- Base layer: aplica fondo/texto global y suaviza render --- */
 @layer base {
   * { border-color: var(--border); }

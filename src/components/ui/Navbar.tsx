@@ -7,6 +7,8 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/Button";
+import { Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
 
 type Rol = "admin" | "jr" | "bf";
 
@@ -15,6 +17,8 @@ export default function NavBar() {
   const [email, setEmail] = useState<string | null>(null);
   const [rol, setRol] = useState<Rol | null>(null);
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
+  const isLight = theme === "light";
 
   useEffect(() => {
     let mounted = true;
@@ -87,7 +91,9 @@ export default function NavBar() {
                 className="rounded-lg object-cover"
                 priority
               />
-              <span className="text-sm md:text-base text-center font-black">APP INCIDENCIAS I.N.F.O.E.X</span>
+              <span className="text-sm md:text-base text-center font-black">
+                APP INCIDENCIAS I.N.F.O.E.X
+              </span>
             </Link>
 
             {/* Right: Auth controls */}
@@ -113,6 +119,17 @@ export default function NavBar() {
                   <Button size="sm">Iniciar sesión</Button>
                 </Link>
               )}
+            </div>
+            <div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setTheme(isLight ? "dark" : "light")}
+                aria-label="Cambiar tema"
+              >
+                {isLight ? <Moon size={16} /> : <Sun size={16} />}
+                <span className="sr-only">Cambiar tema</span>
+              </Button>
             </div>
           </div>
         </nav>

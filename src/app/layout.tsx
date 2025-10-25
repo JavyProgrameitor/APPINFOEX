@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import NavBar from "@/components/ui/Navbar";
+import { ThemeProvider } from "@/components/Theme-provider";
 
 export const metadata: Metadata = {
   title: "INFOEX",
@@ -15,11 +16,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className="bg-[--background] text-[--foreground]" >
-        <NavBar />
-        <div className="pt-20">
-          {children}
-        </div>
+      <body className="bg-[--background] text-[--foreground]">
+        <ThemeProvider>
+          <NavBar />
+          <div className="pt-20">{children}</div>
+        </ThemeProvider>
       </body>
     </html>
   );
