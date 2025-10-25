@@ -8,7 +8,7 @@ import "./globals.css";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import Footer from "@/components/ui/footer";
+import Footer from "@/components/ui/Footer";
 
 type Rol = "admin" | "jr" | "bf";
 

@@ -3,7 +3,7 @@ import { SidebarAdmin } from "../../components/ui/sidebar-admin";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
-import Footer from "@/components/ui/footer";
+import Footer from "@/components/ui/Footer";
 
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

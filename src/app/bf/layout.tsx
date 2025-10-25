@@ -3,7 +3,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose 
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import Link from "next/link";
-import Footer from "@/components/ui/footer";
+import Footer from "@/components/ui/Footer";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
