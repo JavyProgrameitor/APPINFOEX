@@ -1,6 +1,6 @@
-import { SidebarJR } from "../../components/ui/sidebar-jr";
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
+import { SidebarJR } from "../../components/ui/Sidebar-jr";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/Sheet";
+import { Button } from "@/components/ui/Button";
 import { Menu } from "lucide-react";
 import Link from "next/link";
 import Footer from "@/components/ui/Footer";

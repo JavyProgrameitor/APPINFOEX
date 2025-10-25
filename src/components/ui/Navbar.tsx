@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 
 type Rol = "admin" | "jr" | "bf";
 
