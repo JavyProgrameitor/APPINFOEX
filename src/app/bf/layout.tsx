@@ -1,9 +1,9 @@
-import { SidebarBF } from "../../components/ui/Sidebar-bf";
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/Sheet";
-import { Button } from "@/components/ui/Button";
+import { SidebarBF } from "../../components/ui/sidebar-bf";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import Link from "next/link";
-import Footer from "@/components/ui/Footer";
+import Footer from "@/components/ui/footer";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
