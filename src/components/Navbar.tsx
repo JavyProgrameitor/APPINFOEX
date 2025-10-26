@@ -129,7 +129,7 @@ export default function NavBar() {
                     <span className="opacity-80">{email}</span>
                   </span>
                   <Button size="sm" variant="destructive" onClick={onLogout}>
-                    Cerrar sesión
+                    Salir
                   </Button>
                 </>
               )}
