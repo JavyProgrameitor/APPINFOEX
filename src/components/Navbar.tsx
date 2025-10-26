@@ -19,18 +19,22 @@ export default function NavBar() {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Mostrar "Cerrar sesión" solo en rutas de rol
+  // 🧭 Saber si estamos en una ruta de rol
   const isRoleRoute = useMemo(
-    () => pathname?.startsWith("/admin") || pathname?.startsWith("/bf") || pathname?.startsWith("/jr"),
+    () =>
+      pathname?.startsWith("/admin") ||
+      pathname?.startsWith("/bf") ||
+      pathname?.startsWith("/jr"),
     [pathname]
   );
 
-  // Fix hydration con next-themes
+  // 🌙 Tema
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const isLight = mounted ? theme === "light" : null;
 
+  // 🔐 Sesión Supabase
   useEffect(() => {
     let mountedFlag = true;
 
@@ -85,9 +89,8 @@ export default function NavBar() {
     <header className="fixed inset-x-0 top-0 z-40">
       <div className="mx-auto max-w-6xl px-4">
         <nav className="mt-3 rounded-2xl border-4 border-white/90 shadow-md backdrop-blur-md bg-[--card]/92 supports-[backdrop-filter]:bg-[--card]/85">
-          {/* Contenedor principal del navbar */}
           <div className="relative h-14 flex items-center justify-between px-4">
-            {/* Izquierda: Logo (enlace a inicio) */}
+            {/* Izquierda: Logo */}
             <Link href="/" className="flex items-center gap-3">
               <Image
                 src="/img/Logo.jpg"
@@ -99,14 +102,22 @@ export default function NavBar() {
               />
             </Link>
 
-            {/* Centro: Título absolutamente centrado */}
-            <span className="absolute left-1/2 -translate-x-1/2 text-sm md:text-base font-black text-center">
+            {/* 🏷️ Texto APP CONTROL-DIARIO */}
+            <span
+              className={`${
+                isRoleRoute
+                  ? // 🔹 En pantallas de rol: alineado a la izquierda del logo
+                    "absolute left-16 md:left-20 text-left"
+                  : // 🔹 En inicio: centrado total
+                    "absolute left-1/2 -translate-x-1/2 text-center"
+              } text-sm md:text-base font-black transition-all duration-300`}
+            >
               APP CONTROL-DIARIO
             </span>
 
-            {/* Derecha: Controles */}
+            {/* Derecha: controles */}
             <div className="flex items-center gap-2">
-              {/* Solo mostrar "Cerrar sesión" en rutas de rol y si hay usuario */}
+              {/* Solo mostrar cierre de sesión en pantallas de rol */}
               {isRoleRoute && !loading && email && (
                 <>
                   <span className="hidden sm:flex text-xs sm:text-sm items-center gap-2 px-3 py-1 rounded-xl border border-white/40 bg-white/10">
@@ -118,12 +129,12 @@ export default function NavBar() {
                     <span className="opacity-80">{email}</span>
                   </span>
                   <Button size="sm" variant="destructive" onClick={onLogout}>
-                    Salir
+                    Cerrar sesión
                   </Button>
                 </>
               )}
 
-              {/* Toggle de tema: siempre visible */}
+              {/* 🌗 Cambio de tema (siempre visible) */}
               <Button
                 variant="outline"
                 size="sm"
