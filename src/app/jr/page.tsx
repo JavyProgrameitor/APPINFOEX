@@ -23,7 +23,7 @@ type Selection = {
   casetaNombre?: string;
 };
 
-export default function StartPage() {
+export default function StartJR() {
   const router = useRouter();
   const [authed, setAuthed] = useState<boolean | null>(null);
 

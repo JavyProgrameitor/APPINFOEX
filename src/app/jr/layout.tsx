@@ -5,7 +5,7 @@ import { Menu } from "lucide-react";
 import Link from "next/link";
 import Footer from "@/components/Footer";
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function JRLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <div className="md:hidden border-b bg-background">

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
-import { supabaseBrowser as supabase } from "@/lib/supabase/browser";
+import { supabaseBrowser } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/Button";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -40,13 +40,13 @@ export default function NavBar() {
 
     const init = async () => {
       setLoading(true);
-      const { data } = await supabase.auth.getSession();
+      const { data } = await supabaseBrowser.auth.getSession();
       const session = data.session;
       if (!mountedFlag) return;
 
       if (session?.user) {
         setEmail(session.user.email ?? null);
-        const { data: rec } = await supabase
+        const { data: rec } = await supabaseBrowser
           .from("users")
           .select("rol")
           .eq("auth_user_id", session.user.id)
@@ -61,7 +61,7 @@ export default function NavBar() {
 
     init();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(() => {
       init();
     });
 
@@ -72,7 +72,7 @@ export default function NavBar() {
   }, []);
 
   const onLogout = async () => {
-    await supabase.auth.signOut();
+    await supabaseBrowser.auth.signOut();
     setEmail(null);
     setRol(null);
     router.replace("/");
@@ -101,8 +101,6 @@ export default function NavBar() {
                 priority
               />
             </Link>
-
-            {/* 🏷️ Texto APP CONTROL-DIARIO */}
             <span
               className={`${
                 isRoleRoute
@@ -114,7 +112,6 @@ export default function NavBar() {
             >
               APP CONTROL-DIARIO
             </span>
-
             {/* Derecha: controles */}
             <div className="flex items-center gap-2">
               {/* Solo mostrar cierre de sesión en pantallas de rol */}
@@ -133,8 +130,6 @@ export default function NavBar() {
                   </Button>
                 </>
               )}
-
-              {/* 🌗 Cambio de tema (siempre visible) */}
               <Button
                 variant="outline"
                 size="sm"

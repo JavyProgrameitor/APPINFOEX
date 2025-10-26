@@ -23,7 +23,7 @@ type Municipio = { id: string; nombre: string; zona_id: string };
 type Unidad = { id: string; nombre: string; zona_id: string };
 type Caseta = { id: string; nombre: string; municipio_id: string };
 
-function AddRosterPageClient() {
+function AddJR() {
   const router = useRouter();
   const params = useSearchParams();
 
@@ -183,43 +183,11 @@ function AddRosterPageClient() {
     setRoster((prev) => prev.filter((b) => b.dni !== dni));
   }
 
-  // --- Utilidad: importar desde BD los bomberos de la unidad/caseta (mezcla sin duplicar DNIs) ---
-  async function importarDesdeBD() {
-    if (tipo === "unidad" && unidadId) {
-      const { data } = await supabaseBrowser
-        .from("bomberos")
-        .select("dni,nombre,apellidos,is_jefe_reten")
-        .eq("unidad_id", unidadId);
-      if (data) {
-        mezclaBomberos(data as BomberoLite[]);
-      }
-    } else if (tipo === "caseta" && casetaId) {
-      const { data } = await supabaseBrowser
-        .from("bomberos")
-        .select("dni,nombre,apellidos,is_jefe_reten")
-        .eq("caseta_id", casetaId);
-      if (data) {
-        mezclaBomberos(data as BomberoLite[]);
-      }
-    } else {
-      setMsg("No se pudo resolver el destino en BD para importar.");
-    }
-  }
-
-  function mezclaBomberos(nuevos: BomberoLite[]) {
-    setRoster((prev) => {
-      const mapa = new Map(prev.map((b) => [b.dni, b]));
-      for (const b of nuevos) if (!mapa.has(b.dni)) mapa.set(b.dni, b);
-      return [...mapa.values()];
-    });
-  }
-
-  // --- Interfaz ---
   if (authed === null) return null;
 
   const tituloDestino =
     tipo === "unidad"
-      ? `Unidad: ${unidadNombre} (Zona: ${zonaNombre}, Prov.: ${provinciaNombre})`
+      ? `Unidad: ${unidadNombre} (Zona: ${zonaNombre})`
       : `Caseta: ${casetaNombre} — Municipio: ${municipioNombre} (Zona: ${zonaNombre}, Prov.: ${provinciaNombre})`;
 
   return (
@@ -227,22 +195,7 @@ function AddRosterPageClient() {
       <div className="mx-auto max-w-5xl p-6 md:p-10 space-y-4">
         <div className="flex justify-between items-center">
           <h1 className="text-xl font-semibold">Lista de Bomberos del día</h1>
-          <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              onClick={async () => {
-                await supabaseBrowser.auth.signOut();
-                router.replace("/");
-              }}
-            >
-              Cerrar sesión
-            </Button>
-            <Button variant="secondary" onClick={() => router.push("/jr")}>
-              Cambiar destino
-            </Button>
-          </div>
         </div>
-
         <Card className="shadow-xl ">
           <CardHeader>
             <CardTitle>{tituloDestino}</CardTitle>
@@ -251,9 +204,6 @@ function AddRosterPageClient() {
           <CardContent className="space-y-6">
             {/* Controles superiores */}
             <div className="flex flex-wrap items-center gap-2">
-              <Button variant="secondary" onClick={importarDesdeBD}>
-                Importar desde BD (mezclar)
-              </Button>
               <Button
                 variant="secondary"
                 onClick={() => {
@@ -311,7 +261,6 @@ function AddRosterPageClient() {
 
               <div className="rounded-xl border bg-background">
                 <div className="grid grid-cols-12 px-3 py-2 text-xs font-medium">
-                  <div className="col-span-2">DNI</div>
                   <div className="col-span-3">Nombre</div>
                   <div className="col-span-5">Apellidos</div>
                   <div className="col-span-1 text-center">JR</div>
@@ -320,7 +269,6 @@ function AddRosterPageClient() {
                 <div className="divide-y">
                   {roster.map((b) => (
                     <div key={b.dni} className="grid grid-cols-12 px-3 py-2 text-sm items-center">
-                      <div className="col-span-2 font-mono">{b.dni}</div>
                       <div className="col-span-3">{b.nombre}</div>
                       <div className="col-span-5">{b.apellidos}</div>
                       <div className="col-span-1 text-center">{b.is_jefe_reten ? "Sí" : "No"}</div>
@@ -355,7 +303,7 @@ function AddRosterPageClient() {
 export default function Page() {
   return (
     <Suspense fallback={<div>Cargando…</div>}>
-      <AddRosterPageClient />
+      <AddJR />
     </Suspense>
   );
 }
