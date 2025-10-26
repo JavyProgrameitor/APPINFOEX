@@ -3,12 +3,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import { supabaseBrowser } from "@/lib/supabase/browser";
+// y úsalo: const { data, error } = await supabaseBrowser.auth.signInWithPassword(...)
+
 import "./globals.css";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import Footer from "@/components/ui/Footer";
+import Footer from "@/components/Footer";
 
 type Rol = "admin" | "jr" | "bf";
 
@@ -30,25 +32,25 @@ export default function AuthPage() {
   // Si ya hay sesión, resolvemos rol y redirigimos
   useEffect(() => {
     if (process.env.NODE_ENV === "development") {
-      supabase.auth.signOut();
+      supabaseBrowser.auth.signOut();
     }
 
     (async () => {
-      const { data } = await supabase.auth.getSession();
+      const { data } = await supabaseBrowser  .auth.getSession();
       const session = data.session;
       if (!session) return;
 
       const ok = await resolveAndRouteByRole(session.user.id);
       if (!ok) {
         // Si el user no tiene rol válido, forzamos logout
-        await supabase.auth.signOut();
+        await supabaseBrowser.auth.signOut();
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function resolveAndRouteByRole(authUserId: string): Promise<boolean> {
-    const { data: rec, error: roleErr } = await supabase
+    const { data: rec, error: roleErr } = await supabaseBrowser
       .from("users")
       .select("rol")
       .eq("auth_user_id", authUserId)
@@ -82,19 +84,19 @@ export default function AuthPage() {
     try {
       if (mode === "signup") {
         // Registro (si lo permites). Puedes deshabilitar esta rama si sólo crea admins el alta.
-        const { data, error } = await supabase.auth.signUp({ email, password: pass });
+        const { data, error } = await supabaseBrowser.auth.signUp({ email, password: pass });
         if (error) throw error;
 
         if (data.session?.user?.id) {
           const ok = await resolveAndRouteByRole(data.session.user.id);
-          if (!ok) await supabase.auth.signOut();
+          if (!ok) await supabaseBrowser.auth.signOut();
         } else {
           // No hay sesión inmediata (email de verificación). Informamos al usuario.
           setError("Revisa tu correo para verificar la cuenta. Una vez verificada, inicia sesión.");
         }
       } else {
         // Sign in
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabaseBrowser.auth.signInWithPassword({
           email,
           password: pass,
         });
@@ -107,7 +109,7 @@ export default function AuthPage() {
 
         const ok = await resolveAndRouteByRole(data.user.id);
         if (!ok) {
-          await supabase.auth.signOut();
+          await supabaseBrowser.auth.signOut();
         }
       }
     } catch (err: unknown) {

@@ -1,9 +1,7 @@
-export default function BF() {
-  return (
-    <main className="min-h-screen flex items-center">
-      <div className="mx-auto max-w-5xl p-6 md:p-10">
-        <h1 className="text-2xl md:text-3xl font-semibold text-center"> Pantalla para listar el computo diario</h1>
-      </div>
-    </main>
-  )
+// app/admin/page.tsx
+export const revalidate = 0;              // evita cache
+export const dynamic = "force-dynamic";   // importante en Next 15 si viste contenido viejo
+
+export default function BFHome() {
+  return <div className="p-4">Bienvenido al panel de Bomberos Forestales</div>;
 }

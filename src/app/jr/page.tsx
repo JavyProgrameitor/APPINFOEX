@@ -1,11 +1,12 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
-
+import { supabaseBrowser } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+
 
 type Tipo = "unidad" | "caseta";
 
@@ -28,7 +29,7 @@ export default function StartPage() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.auth.getSession();
+      const { data } = await supabaseBrowser.auth.getSession();
       if (!data.session) {
         router.replace("/");
         return;
@@ -54,7 +55,7 @@ export default function StartPage() {
   // Cargar zonas
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase.rpc("get_zonas_enum");
+      const { data, error } = await supabaseBrowser.rpc("get_zonas_enum");
       if (!error && Array.isArray(data)) {
         setZonas(data as Zona[]);
       }
@@ -69,8 +70,8 @@ export default function StartPage() {
     }
     (async () => {
       const [{ data: mData }, { data: uData }] = await Promise.all([
-        supabase.from("municipios").select("id,nombre,zona").eq("zona", sel.zona).order("nombre", { ascending: true }),
-        supabase.from("unidades").select("id,nombre,zona").eq("zona", sel.zona).order("nombre", { ascending: true }),
+        supabaseBrowser.from("municipios").select("id,nombre,zona").eq("zona", sel.zona).order("nombre", { ascending: true }),
+        supabaseBrowser.from("unidades").select("id,nombre,zona").eq("zona", sel.zona).order("nombre", { ascending: true }),
       ]);
       if (mData) setMunicipios(mData as Municipio[]);
       if (uData) setUnidades(uData as Unidad[]);
@@ -84,7 +85,7 @@ export default function StartPage() {
       return;
     }
     (async () => {
-      const { data } = await supabase
+      const { data } = await supabaseBrowser
         .from("casetas")
         .select("id,nombre,municipio_id")
         .eq("municipio_id", sel.municipioId)

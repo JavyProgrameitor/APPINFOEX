@@ -1,0 +1,86 @@
+
+
+import { NextRequest, NextResponse } from "next/server";
+import { createServerClient, type CookieOptions as SupaCookieOptions, type CookieMethodsServer } from "@supabase/ssr";
+
+type Rol = "admin" | "bf" | "jr";
+
+const ROUTE_ROLE: Record<Rol, RegExp> = {
+  admin: /^\/admin(\/|$)/,
+  bf: /^\/bf(\/|$)/,
+  jr: /^\/jr(\/|$)/,
+};
+
+const HOME_BY_ROLE: Record<Rol, `/${Rol}`> = {
+  admin: "/admin",
+  bf: "/bf",
+  jr: "/jr",
+};
+
+// Estructuras que espera @supabase/ssr 0.7 para setAll / getAll
+type GetCookie = { name: string; value: string };
+type SetCookie = { name: string; value: string; options?: SupaCookieOptions };
+
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+
+  const isProtected = pathname.startsWith("/admin") || pathname.startsWith("/bf") || pathname.startsWith("/jr");
+  if (!isProtected) return NextResponse.next();
+
+  const res = NextResponse.next();
+
+  // ✅ Adapter para CookieMethodsServer (SOLO getAll y setAll en v0.7.0)
+  const cookiesAdapter: CookieMethodsServer = {
+    getAll(): GetCookie[] {
+      // Next 15 expone req.cookies.getAll(); si el tipo no lo muestra, hacemos cast seguro.
+      const items =
+        (req as unknown as { cookies: { getAll: () => { name: string; value: string }[] } })
+          .cookies
+          .getAll();
+      return items.map(({ name, value }) => ({ name, value }));
+    },
+    setAll(cookiesToSet: SetCookie[]) {
+      for (const { name, value, options } of cookiesToSet) {
+        res.cookies.set({ name, value, ...(options ?? {}) });
+      }
+    },
+  };
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: cookiesAdapter }
+  );
+
+  // 1) sesión
+  const { data: { user } = {} } = await supabase.auth.getUser();
+  if (!user) {
+    const loginUrl = new URL("/", req.url);
+    loginUrl.searchParams.set("next", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // 2) rol
+  const { data: rec, error } = await supabase
+    .from("users")
+    .select("rol")
+    .eq("auth_user_id", user.id)
+    .maybeSingle();
+
+  if (error || !rec?.rol) {
+    return NextResponse.redirect(new URL("/", req.url));
+  }
+
+  const rol = String(rec.rol) as Rol;
+
+  // 3) ruta permitida
+  if (!ROUTE_ROLE[rol].test(pathname)) {
+    return NextResponse.redirect(new URL(HOME_BY_ROLE[rol], req.url));
+  }
+
+  return res;
+}
+
+export const config = {
+  matcher: ["/admin/:path*", "/bf/:path*", "/jr/:path*"],
+};

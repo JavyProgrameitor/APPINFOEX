@@ -1,11 +1,11 @@
 // src/components/NavBar.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import { useRouter, usePathname } from "next/navigation";
+import { supabaseBrowser as supabase } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/Button";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -17,17 +17,28 @@ export default function NavBar() {
   const [email, setEmail] = useState<string | null>(null);
   const [rol, setRol] = useState<Rol | null>(null);
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Mostrar "Cerrar sesión" solo en rutas de rol
+  const isRoleRoute = useMemo(
+    () => pathname?.startsWith("/admin") || pathname?.startsWith("/bf") || pathname?.startsWith("/jr"),
+    [pathname]
+  );
+
+  // Fix hydration con next-themes
   const { theme, setTheme } = useTheme();
-  const isLight = theme === "light";
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const isLight = mounted ? theme === "light" : null;
 
   useEffect(() => {
-    let mounted = true;
+    let mountedFlag = true;
 
     const init = async () => {
       setLoading(true);
       const { data } = await supabase.auth.getSession();
       const session = data.session;
-      if (!mounted) return;
+      if (!mountedFlag) return;
 
       if (session?.user) {
         setEmail(session.user.email ?? null);
@@ -46,14 +57,12 @@ export default function NavBar() {
 
     init();
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
       init();
     });
 
     return () => {
-      mounted = false;
+      mountedFlag = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -75,13 +84,10 @@ export default function NavBar() {
   return (
     <header className="fixed inset-x-0 top-0 z-40">
       <div className="mx-auto max-w-6xl px-4">
-        {/* SÓLIDO: borde blanco en 4 lados y fondo más claro */}
-        <nav
-          className="mt-3 rounded-2xl border-4 border-white/90 shadow-md
-                     backdrop-blur-md bg-[--card]/92 supports-[backdrop-filter]:bg-[--card]/85"
-        >
-          <div className="h-14 flex items-center justify-between px-4">
-            {/* Left: Logo + brand */}
+        <nav className="mt-3 rounded-2xl border-4 border-white/90 shadow-md backdrop-blur-md bg-[--card]/92 supports-[backdrop-filter]:bg-[--card]/85">
+          {/* Contenedor principal del navbar */}
+          <div className="relative h-14 flex items-center justify-between px-4">
+            {/* Izquierda: Logo (enlace a inicio) */}
             <Link href="/" className="flex items-center gap-3">
               <Image
                 src="/img/Logo.jpg"
@@ -91,16 +97,17 @@ export default function NavBar() {
                 className="rounded-lg object-cover"
                 priority
               />
-              <span className="text-sm md:text-base text-center font-black">
-                APP INCIDENCIAS I.N.F.O.E.X
-              </span>
             </Link>
 
-            {/* Right: Auth controls */}
+            {/* Centro: Título absolutamente centrado */}
+            <span className="absolute left-1/2 -translate-x-1/2 text-sm md:text-base font-black text-center">
+              APP CONTROL-DIARIO
+            </span>
+
+            {/* Derecha: Controles */}
             <div className="flex items-center gap-2">
-              {loading ? (
-                <span className="text-xs opacity-70">cargando…</span>
-              ) : email ? (
+              {/* Solo mostrar "Cerrar sesión" en rutas de rol y si hay usuario */}
+              {isRoleRoute && !loading && email && (
                 <>
                   <span className="hidden sm:flex text-xs sm:text-sm items-center gap-2 px-3 py-1 rounded-xl border border-white/40 bg-white/10">
                     <span className="inline-flex items-center gap-1">
@@ -111,24 +118,26 @@ export default function NavBar() {
                     <span className="opacity-80">{email}</span>
                   </span>
                   <Button size="sm" variant="destructive" onClick={onLogout}>
-                    Cerrar sesión
+                    Salir
                   </Button>
                 </>
-              ) : (
-                <Link href="/" prefetch={false}>
-                  <Button size="sm">Iniciar sesión</Button>
-                </Link>
               )}
-            </div>
-            <div>
+
+              {/* Toggle de tema: siempre visible */}
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setTheme(isLight ? "dark" : "light")}
+                onClick={() => mounted && setTheme(isLight ? "dark" : "light")}
                 aria-label="Cambiar tema"
+                suppressHydrationWarning
               >
-                {isLight ? <Moon size={16} /> : <Sun size={16} />}
-                <span className="sr-only">Cambiar tema</span>
+                {!mounted ? (
+                  <span className="inline-block w-4 h-4" />
+                ) : isLight ? (
+                  <Moon size={16} />
+                ) : (
+                  <Sun size={16} />
+                )}
               </Button>
             </div>
           </div>

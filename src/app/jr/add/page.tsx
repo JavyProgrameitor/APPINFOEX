@@ -3,13 +3,12 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import { supabaseBrowser } from "@/lib/supabase/browser";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
-// Evita que Next intente prerender estáticamente esta ruta durante el build
-export const dynamic = "force-dynamic";
+
 
 type BomberoLite = {
   dni: string;
@@ -68,7 +67,7 @@ function AddRosterPageClient() {
   // --- Comprobación de sesión y resolución de IDs (por nombres) ---
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.auth.getSession();
+      const { data } = await supabaseBrowser.auth.getSession();
       if (!data.session) {
         router.replace("/");
         return;
@@ -76,14 +75,14 @@ function AddRosterPageClient() {
       setAuthed(true);
 
       // Resolver provincia -> zona -> (unidad|caseta)
-      const { data: pData } = await supabase.from("provincias").select("id,nombre");
+      const { data: pData } = await supabaseBrowser.from("provincias").select("id,nombre");
       const p = (pData || []).find((x: Provincia) => x.nombre === provinciaNombre) as
         | Provincia
         | undefined;
       if (!p) return;
       setProvinciaId(p.id);
 
-      const { data: zData } = await supabase
+      const { data: zData } = await supabaseBrowser
         .from("zonas")
         .select("id,nombre,provincia_id")
         .eq("provincia_id", p.id);
@@ -94,7 +93,7 @@ function AddRosterPageClient() {
       setZonaId(z.id);
 
       if (tipo === "unidad") {
-        const { data: uData } = await supabase
+        const { data: uData } = await supabaseBrowser
           .from("unidades")
           .select("id,nombre,zona_id")
           .eq("zona_id", z.id);
@@ -103,7 +102,7 @@ function AddRosterPageClient() {
           | undefined;
         if (u) setUnidadId(u.id);
       } else if (tipo === "caseta") {
-        const { data: mData } = await supabase
+        const { data: mData } = await supabaseBrowser
           .from("municipios")
           .select("id,nombre,zona_id")
           .eq("zona_id", z.id);
@@ -113,7 +112,7 @@ function AddRosterPageClient() {
         if (!m) return;
         setMunicipioId(m.id);
 
-        const { data: cData } = await supabase
+        const { data: cData } = await supabaseBrowser
           .from("casetas")
           .select("id,nombre,municipio_id")
           .eq("municipio_id", m.id);
@@ -187,7 +186,7 @@ function AddRosterPageClient() {
   // --- Utilidad: importar desde BD los bomberos de la unidad/caseta (mezcla sin duplicar DNIs) ---
   async function importarDesdeBD() {
     if (tipo === "unidad" && unidadId) {
-      const { data } = await supabase
+      const { data } = await supabaseBrowser
         .from("bomberos")
         .select("dni,nombre,apellidos,is_jefe_reten")
         .eq("unidad_id", unidadId);
@@ -195,7 +194,7 @@ function AddRosterPageClient() {
         mezclaBomberos(data as BomberoLite[]);
       }
     } else if (tipo === "caseta" && casetaId) {
-      const { data } = await supabase
+      const { data } = await supabaseBrowser
         .from("bomberos")
         .select("dni,nombre,apellidos,is_jefe_reten")
         .eq("caseta_id", casetaId);
@@ -232,7 +231,7 @@ function AddRosterPageClient() {
             <Button
               variant="secondary"
               onClick={async () => {
-                await supabase.auth.signOut();
+                await supabaseBrowser.auth.signOut();
                 router.replace("/");
               }}
             >

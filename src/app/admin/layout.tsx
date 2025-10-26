@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { SidebarAdmin } from "../../components/ui/Sidebar-admin";
+import { SidebarAdmin } from "../../components/Sidebar-admin";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
 import { Menu } from "lucide-react";
-import Footer from "@/components/ui/Footer";
+import Footer from "@/components/Footer";
 
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -19,13 +19,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </SheetTrigger>
             <SheetContent side="left" className="p-0">
               <SheetHeader className="px-4 py-3 border-b">
-                <SheetTitle className="font-semibold">Menu</SheetTitle>
+                <SheetTitle className="font-black">Panel de Administradores</SheetTitle>
                 </SheetHeader>
-              <nav className="space-y-1 p-4">
+             <nav className="flex flex-col items-center justify-center gap-4 py-8">
                 <SheetClose asChild>
                   <Link
                     href="/admin/forms"
-                    className="block rounded-md px-3 py-2 text-sm hover:bg-muted"
+                    className="w-10/12 text-center rounded-xl px-5 py-3 text-sm font-medium
+                               border-2 border-primary/60 bg-primary/10 hover:bg-primary/20
+                               dark:border-primary/40 dark:bg-primary/10 dark:hover:bg-primary/30
+                               transition-all duration-200 shadow-sm hover:shadow-md"
                   >
                     Formulario de Registro
                   </Link>
@@ -33,7 +36,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <SheetClose asChild>
                   <Link
                     href="/admin/reports"
-                    className="block rounded-md px-3 py-2 text-sm hover:bg-muted"
+                    className="w-10/12 text-center rounded-xl px-5 py-3 text-sm font-medium
+                               border-2 border-primary/60 bg-primary/10 hover:bg-primary/20
+                               dark:border-primary/40 dark:bg-primary/10 dark:hover:bg-primary/30
+                               transition-all duration-200 shadow-sm hover:shadow-md"
                   >
                     Listar Reportes
                   </Link>
@@ -41,7 +47,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </nav>
             </SheetContent>
           </Sheet>
-          <div className="ml-2 font-bold">Menu</div>
+          <div className="ml-3 font-bold text-primary text-sm">Menu</div>
         </div>
       </div>
       <div className="flex min-h-[calc(100vh-56px)]">

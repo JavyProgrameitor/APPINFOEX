@@ -1,8 +1,8 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
-import NavBar from "@/components/ui/Navbar";
-import { ThemeProvider } from "@/components/Theme-provider";
+import NavBar from "@/components/Navbar";
+import { ThemeProvider } from "@/components/ui/Theme-provider";
 
 export const metadata: Metadata = {
   title: "INFOEX",
