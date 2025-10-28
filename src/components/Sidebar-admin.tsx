@@ -9,7 +9,7 @@ import { FileText,Home, Users } from "lucide-react";
 const links = [
    { href: "/admin",       label: "Escritorio",     icon: Home },
    { href: "/admin/forms", label: "Formulario",    icon: FileText },
-  { href: "/admin/reports", label: "Reportes",    icon: Users },
+  { href: "/admin/users", label: "Agregar-Usuarios",    icon: Users },
 ];
 
 

@@ -1,10 +1,8 @@
-// src/app/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabaseBrowser } from "@/lib/supabase/browser";
-// y úsalo: const { data, error } = await supabaseBrowser.auth.signInWithPassword(...)
+import { createBrowserClient } from "@supabase/ssr";
 
 import "./globals.css";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -23,34 +21,35 @@ const ROLE_ROUTES: Record<Rol, string> = {
 export default function AuthPage() {
   const router = useRouter();
 
+  const supabase = useMemo(() => {
+    // Esto solo se ejecuta en el cliente porque este archivo tiene "use client"
+    return createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+  }, []);
+
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Si ya hay sesión, resolvemos rol y redirigimos
   useEffect(() => {
-    if (process.env.NODE_ENV === "development") {
-      supabaseBrowser.auth.signOut();
-    }
-
     (async () => {
-      const { data } = await supabaseBrowser  .auth.getSession();
+      const { data } = await supabase.auth.getSession();
       const session = data.session;
       if (!session) return;
 
       const ok = await resolveAndRouteByRole(session.user.id);
       if (!ok) {
-        // Si el user no tiene rol válido, forzamos logout
-        await supabaseBrowser.auth.signOut();
+        await supabase.auth.signOut();
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function resolveAndRouteByRole(authUserId: string): Promise<boolean> {
-    const { data: rec, error: roleErr } = await supabaseBrowser
+    const { data: rec, error: roleErr } = await supabase
       .from("users")
       .select("rol")
       .eq("auth_user_id", authUserId)
@@ -82,35 +81,20 @@ export default function AuthPage() {
     setLoading(true);
 
     try {
-      if (mode === "signup") {
-        // Registro (si lo permites). Puedes deshabilitar esta rama si sólo crea admins el alta.
-        const { data, error } = await supabaseBrowser.auth.signUp({ email, password: pass });
-        if (error) throw error;
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password: pass,
+      });
+      if (error) throw error;
 
-        if (data.session?.user?.id) {
-          const ok = await resolveAndRouteByRole(data.session.user.id);
-          if (!ok) await supabaseBrowser.auth.signOut();
-        } else {
-          // No hay sesión inmediata (email de verificación). Informamos al usuario.
-          setError("Revisa tu correo para verificar la cuenta. Una vez verificada, inicia sesión.");
-        }
-      } else {
-        // Sign in
-        const { data, error } = await supabaseBrowser.auth.signInWithPassword({
-          email,
-          password: pass,
-        });
-        if (error) throw error;
+      if (!data.user?.id) {
+        setError("No se pudo iniciar sesión. Inténtalo de nuevo.");
+        return;
+      }
 
-        if (!data.user?.id) {
-          setError("No se pudo iniciar sesión. Inténtalo de nuevo.");
-          return;
-        }
-
-        const ok = await resolveAndRouteByRole(data.user.id);
-        if (!ok) {
-          await supabaseBrowser.auth.signOut();
-        }
+      const ok = await resolveAndRouteByRole(data.user.id);
+      if (!ok) {
+        await supabase.auth.signOut();
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -148,19 +132,16 @@ export default function AuthPage() {
                 />
               </div>
 
-              {error && (
-                <p className="text-sm text-foreground">{error}</p>
-              )}
-              <Button type="submit" className="w-full" >
-                Entrar
+              {error && <p className="text-sm text-foreground">{error}</p>}
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Entrando..." : "Entrar"}
               </Button>
             </form>
           </CardContent>
         </Card>
       </main>
-      <div>
-        <Footer />
-      </div>
+      <Footer />
     </>
   );
 }
