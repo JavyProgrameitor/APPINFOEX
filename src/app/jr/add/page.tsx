@@ -15,112 +15,97 @@ type BomberoLite = {
   is_jefe_reten?: boolean;
 };
 
-type Provincia = { id: string; nombre: string };
-type Zona = { id: string; nombre: string; provincia_id: string };
-type Municipio = { id: string; nombre: string; zona_id: string };
-type Unidad = { id: string; nombre: string; zona_id: string };
+type Municipio = { id: string; nombre: string; zona: string };
+type Unidad = { id: string; nombre: string; zona: string };
 type Caseta = { id: string; nombre: string; municipio_id: string };
 
-function AddJR() {
+function AddJRInner() {
   const router = useRouter();
   const params = useSearchParams();
 
+  // ✅ crea cliente una vez por componente
+  const supabase = useMemo(() => supabaseBrowser(), []);
+
   const [authed, setAuthed] = useState<boolean | null>(null);
 
-  // ---
+  // Query params esperados desde /jr
   const tipo = params.get("tipo"); // "unidad" | "caseta"
-  const provinciaNombre = params.get("provincia") || "";
   const zonaNombre = params.get("zona") || "";
   const municipioNombre = params.get("municipio") || "";
   const unidadNombre = params.get("unidad") || "";
   const casetaNombre = params.get("caseta") || "";
 
-  // --- IDs reales para poder consultar BD por unidad/caseta ---
-  const [, setProvinciaId] = useState<string | null>(null);
-  const [, setZonaId] = useState<string | null>(null);
-  const [, setMunicipioId] = useState<string | null>(null);
+  // IDs reales
+  const [municipioId, setMunicipioId] = useState<string | null>(null);
   const [unidadId, setUnidadId] = useState<string | null>(null);
   const [casetaId, setCasetaId] = useState<string | null>(null);
 
-  // --- ROSTER (lista del día) con persistencia en localStorage ---
+  // Roster persistente por destino
   const storageKey = useMemo(() => {
     const part =
       tipo === "unidad"
-        ? (unidadId || `U:${provinciaNombre}/${zonaNombre}/${unidadNombre}`)
-        : (casetaId || `C:${provinciaNombre}/${zonaNombre}/${municipioNombre}/${casetaNombre}`);
+        ? (unidadId || `U:${zonaNombre}/${unidadNombre}`)
+        : (casetaId || `C:${zonaNombre}/${municipioNombre}/${casetaNombre}`);
     return `INFOEX:roster:${tipo}:${part}`;
-  }, [
-    tipo,
-    provinciaNombre,
-    zonaNombre,
-    municipioNombre,
-    unidadNombre,
-    casetaNombre,
-    unidadId,
-    casetaId,
-  ]);
+  }, [tipo, zonaNombre, municipioNombre, unidadNombre, casetaNombre, unidadId, casetaId]);
 
   const [roster, setRoster] = useState<BomberoLite[]>([]);
 
-  // --- Comprobación de sesión y resolución de IDs (por nombres) ---
+  // Sesión y resolución de IDs conforme a tu esquema
   useEffect(() => {
     (async () => {
-      const { data } = await supabaseBrowser.auth.getSession();
-      if (!data.session) {
+      const { data, error } = await supabase.auth.getSession();
+      if (error || !data.session) {
         router.replace("/");
         return;
       }
       setAuthed(true);
 
-      // Resolver provincia -> zona -> (unidad|caseta)
-      const { data: pData } = await supabaseBrowser.from("provincias").select("id,nombre");
-      const p = (pData || []).find((x: Provincia) => x.nombre === provinciaNombre) as
-        | Provincia
-        | undefined;
-      if (!p) return;
-      setProvinciaId(p.id);
-
-      const { data: zData } = await supabaseBrowser
-        .from("zonas")
-        .select("id,nombre,provincia_id")
-        .eq("provincia_id", p.id);
-      const z = (zData || []).find((x: Zona) => x.nombre === zonaNombre) as Zona | undefined;
-      if (!z) return;
-      setZonaId(z.id);
-
-      if (tipo === "unidad") {
-        const { data: uData } = await supabaseBrowser
+      // tipo "unidad": buscar por zona + nombre de unidad
+      if (tipo === "unidad" && zonaNombre && unidadNombre) {
+        const { data: uData } = await supabase
           .from("unidades")
-          .select("id,nombre,zona_id")
-          .eq("zona_id", z.id);
-        const u = (uData || []).find((x: Unidad) => x.nombre === unidadNombre) as
-          | Unidad
-          | undefined;
-        if (u) setUnidadId(u.id);
-      } else if (tipo === "caseta") {
-        const { data: mData } = await supabaseBrowser
-          .from("municipios")
-          .select("id,nombre,zona_id")
-          .eq("zona_id", z.id);
-        const m = (mData || []).find((x: Municipio) => x.nombre === municipioNombre) as
-          | Municipio
-          | undefined;
-        if (!m) return;
-        setMunicipioId(m.id);
+          .select("id,nombre,zona")
+          .eq("zona", zonaNombre)
+          .eq("nombre", unidadNombre)
+          .limit(1);
+        const u = (uData || [])[0] as Unidad | undefined;
+        setUnidadId(u?.id ?? null);
+        setMunicipioId(null);
+        setCasetaId(null);
+      }
 
-        const { data: cData } = await supabaseBrowser
-          .from("casetas")
-          .select("id,nombre,municipio_id")
-          .eq("municipio_id", m.id);
-        const c = (cData || []).find((x: Caseta) => x.nombre === casetaNombre) as
-          | Caseta
-          | undefined;
-        if (c) setCasetaId(c.id);
+      // tipo "caseta": resolver municipio (por nombre+zona) y luego caseta (por nombre)
+      if (tipo === "caseta" && zonaNombre && municipioNombre) {
+        const { data: mData } = await supabase
+          .from("municipios")
+          .select("id,nombre,zona")
+          .eq("zona", zonaNombre)
+          .eq("nombre", municipioNombre)
+          .limit(1);
+        const m = (mData || [])[0] as Municipio | undefined;
+        const mid = m?.id ?? null;
+        setMunicipioId(mid);
+
+        if (mid && casetaNombre) {
+          const { data: cData } = await supabase
+            .from("casetas")
+            .select("id,nombre,municipio_id")
+            .eq("municipio_id", mid)
+            .eq("nombre", casetaNombre)
+            .limit(1);
+          const c = (cData || [])[0] as Caseta | undefined;
+          setCasetaId(c?.id ?? null);
+        } else {
+          setCasetaId(null);
+        }
+
+        setUnidadId(null);
       }
     })();
-  }, [router, provinciaNombre, zonaNombre, municipioNombre, unidadNombre, casetaNombre, tipo]);
+  }, [router, supabase, tipo, zonaNombre, municipioNombre, unidadNombre, casetaNombre]);
 
-  // --- Cargar roster guardado (cuando tengamos la storageKey lista) ---
+  // Cargar roster guardado
   useEffect(() => {
     try {
       const raw = localStorage.getItem(storageKey);
@@ -128,14 +113,14 @@ function AddJR() {
         const parsed = JSON.parse(raw) as BomberoLite[];
         if (Array.isArray(parsed)) setRoster(parsed);
       } else {
-        setRoster([]); // nuevo destino -> lista vacía
+        setRoster([]);
       }
     } catch {
       // ignore
     }
   }, [storageKey]);
 
-  // --- Persistir automáticamente cada cambio ---
+  // Persistir roster
   useEffect(() => {
     try {
       localStorage.setItem(storageKey, JSON.stringify(roster));
@@ -144,7 +129,7 @@ function AddJR() {
     }
   }, [roster, storageKey]);
 
-  // --- Formulario para añadir bomberos al roster del día ---
+  // Formulario roster
   const [dni, setDni] = useState("");
   const [nombre, setNombre] = useState("");
   const [apellidos, setApellidos] = useState("");
@@ -179,7 +164,7 @@ function AddJR() {
     setRoster((prev) => prev.filter((b) => b.dni !== dni));
   }
 
-  // --- NUEVO: Proponer alta por email (para que Admin invite) ---
+  // Proponer alta (opcional): guarda pending en public.users con unidad/caseta
   const [emailNuevo, setEmailNuevo] = useState("");
   const [nombreNuevo, setNombreNuevo] = useState("");
   const [apellidosNuevo, setApellidosNuevo] = useState("");
@@ -193,6 +178,16 @@ function AddJR() {
     const email = emailNuevo.trim().toLowerCase();
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setProponerMsg("Introduce un email válido.");
+      return;
+    }
+
+    // unidadId/casetaId ya resueltos arriba
+    if (tipo === "unidad" && !unidadId) {
+      setProponerMsg("No se pudo resolver la unidad seleccionada.");
+      return;
+    }
+    if (tipo === "caseta" && !casetaId) {
+      setProponerMsg("No se pudo resolver la caseta seleccionada.");
       return;
     }
 
@@ -232,7 +227,7 @@ function AddJR() {
   const tituloDestino =
     tipo === "unidad"
       ? `Unidad: ${unidadNombre} (Zona: ${zonaNombre})`
-      : `Caseta: ${casetaNombre} — Municipio: ${municipioNombre} (Zona: ${zonaNombre}, Prov.: ${provinciaNombre})`;
+      : `Caseta: ${casetaNombre} — Municipio: ${municipioNombre} (Zona: ${zonaNombre})`;
 
   return (
     <main className="min-h-screen">
@@ -241,7 +236,7 @@ function AddJR() {
           <h1 className="text-xl font-semibold">Lista de Bomberos del día</h1>
         </div>
 
-        {/* NUEVO: Tarjeta para proponer alta por email */}
+        {/* Proponer alta por email */}
         <Card className="shadow-xl">
           <CardHeader>
             <CardTitle>Proponer alta de Bombero Forestal por email</CardTitle>
@@ -291,21 +286,17 @@ function AddJR() {
           </CardContent>
         </Card>
 
-        {/* Tarjeta de roster (tal como la tenías) */}
-        <Card className="shadow-xl ">
+        {/* Roster local */}
+        <Card className="shadow-xl">
           <CardHeader>
             <CardTitle>{tituloDestino}</CardTitle>
           </CardHeader>
-
           <CardContent className="space-y-6">
-            {/* Controles superiores */}
             <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant="secondary"
                 onClick={() => {
-                  if (confirm("¿Vaciar la lista guardada de este destino?")) {
-                    setRoster([]);
-                  }
+                  if (confirm("¿Vaciar la lista guardada de este destino?")) setRoster([]);
                 }}
               >
                 Vaciar lista
@@ -313,15 +304,10 @@ function AddJR() {
               {msg && <span className="text-sm text-red-600">{msg}</span>}
             </div>
 
-            {/* Formulario de alta local */}
             <form onSubmit={addBombero} className="grid grid-cols-1 md:grid-cols-5 gap-3">
               <div className="space-y-1 md:col-span-1">
                 <label className="text-sm font-medium">DNI</label>
-                <Input
-                  value={dni}
-                  onChange={(e) => setDni(e.target.value)}
-                  placeholder="12345678A"
-                />
+                <Input value={dni} onChange={(e) => setDni(e.target.value)} placeholder="12345678A" />
               </div>
               <div className="space-y-1 md:col-span-2">
                 <label className="text-sm font-medium">Nombre</label>
@@ -333,12 +319,7 @@ function AddJR() {
               </div>
 
               <div className="flex items-center gap-2 md:col-span-3">
-                <input
-                  id="jr"
-                  type="checkbox"
-                  checked={isJR}
-                  onChange={(e) => setIsJR(e.target.checked)}
-                />
+                <input id="jr" type="checkbox" checked={isJR} onChange={(e) => setIsJR(e.target.checked)} />
                 <label htmlFor="jr" className="text-sm">Jefe de Retén (JR)</label>
               </div>
 
@@ -347,12 +328,9 @@ function AddJR() {
               </div>
             </form>
 
-            {/* Lista persistente (localStorage) */}
             <div className="space-y-2">
               <div className="text-sm text-muted-foreground">
-                {roster.length === 0
-                  ? "No hay bomberos en la lista guardada para este destino."
-                  : `Bomberos en la lista (${roster.length})`}
+                {roster.length === 0 ? "No hay bomberos en la lista guardada para este destino." : `Bomberos en la lista (${roster.length})`}
               </div>
 
               <div className="rounded-xl border bg-background">
@@ -379,12 +357,11 @@ function AddJR() {
               </div>
             </div>
 
-            {/* Acciones inferiores */}
             <div className="flex justify-end gap-2">
               <Button variant="secondary" onClick={() => router.push("/jr")}>
                 Atrás
               </Button>
-              <Button onClick={() => alert("Guardado localStore . Próximo paso: control_diario")}>
+              <Button onClick={() => alert("Guardado en localStorage. Próximo paso: control_diario")}>
                 Aceptar
               </Button>
             </div>
@@ -395,11 +372,11 @@ function AddJR() {
   );
 }
 
-// El componente de página que Next renderiza
+// Página con Suspense
 export default function Page() {
   return (
     <Suspense fallback={<div>Cargando…</div>}>
-      <AddJR />
+      <AddJRInner />
     </Suspense>
   );
 }

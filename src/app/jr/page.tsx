@@ -1,12 +1,11 @@
-
+// src/app/jr/page.tsx  (StartJR)
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-
 
 type Tipo = "unidad" | "caseta";
 
@@ -25,18 +24,21 @@ type Selection = {
 
 export default function StartJR() {
   const router = useRouter();
+  // ✅ crea una instancia del cliente sólo una vez
+  const supabase = useMemo(() => supabaseBrowser(), []);
+
   const [authed, setAuthed] = useState<boolean | null>(null);
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabaseBrowser.auth.getSession();
-      if (!data.session) {
+      const { data, error } = await supabase.auth.getSession();
+      if (error || !data.session) {
         router.replace("/");
         return;
       }
       setAuthed(true);
     })();
-  }, [router]);
+  }, [router, supabase]);
 
   const [sel, setSel] = useState<Selection>({});
 
@@ -52,31 +54,44 @@ export default function StartJR() {
   const selectClass = (isSelected: boolean) =>
     `${selectBase} ${isSelected ? "border-white" : "border-green-600"}`;
 
-  // Cargar zonas
+  // Cargar zonas (RPC con fallback)
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabaseBrowser.rpc("get_zonas_enum");
-      if (!error && Array.isArray(data)) {
-        setZonas(data as Zona[]);
+      // 1) Intentar RPC get_zonas_enum
+      const rpc = await supabase.rpc("get_zonas_enum");
+      if (!rpc.error && Array.isArray(rpc.data)) {
+        setZonas(rpc.data as Zona[]);
+        return;
       }
-    })();
-  }, []);
+
+
 
   // Cuando cambia zona, cargar municipios y unidades
   useEffect(() => {
     if (!sel.zona) {
-      setMunicipios([]); setUnidades([]); setCasetas([]);
+      setMunicipios([]);
+      setUnidades([]);
+      setCasetas([]);
       return;
     }
     (async () => {
       const [{ data: mData }, { data: uData }] = await Promise.all([
-        supabaseBrowser.from("municipios").select("id,nombre,zona").eq("zona", sel.zona).order("nombre", { ascending: true }),
-        supabaseBrowser.from("unidades").select("id,nombre,zona").eq("zona", sel.zona).order("nombre", { ascending: true }),
+        supabase
+          .from("municipios")
+          .select("id,nombre,zona")
+          .eq("zona", sel.zona)
+          .order("nombre", { ascending: true }),
+        supabase
+          .from("unidades")
+          .select("id,nombre,zona")
+          .eq("zona", sel.zona)
+          .order("nombre", { ascending: true }),
       ]);
       if (mData) setMunicipios(mData as Municipio[]);
       if (uData) setUnidades(uData as Unidad[]);
+      setCasetas([]); // reset casetas al cambiar zona
     })();
-  }, [sel.zona]);
+  }, [sel.zona, supabase]);
 
   // Cuando cambia municipio, cargar casetas
   useEffect(() => {
@@ -85,14 +100,14 @@ export default function StartJR() {
       return;
     }
     (async () => {
-      const { data } = await supabaseBrowser
+      const { data } = await supabase
         .from("casetas")
         .select("id,nombre,municipio_id")
         .eq("municipio_id", sel.municipioId)
         .order("nombre", { ascending: true });
       if (data) setCasetas(data as Caseta[]);
     })();
-  }, [sel.municipioId]);
+  }, [sel.municipioId, supabase]);
 
   const noCasetas = sel.tipo === "caseta" && !!sel.municipioId && casetas.length === 0;
 
@@ -104,7 +119,7 @@ export default function StartJR() {
 
   function goNext() {
     const zonaNombre = sel.zona;
-    const municipioNombre = municipios.find(m => m.id === sel.municipioId)?.nombre;
+    const municipioNombre = municipios.find((m) => m.id === sel.municipioId)?.nombre;
 
     const params = new URLSearchParams();
     if (zonaNombre) params.set("zona", zonaNombre);
@@ -130,22 +145,35 @@ export default function StartJR() {
           <CardContent className="space-y-8">
             {/* Zona */}
             <div className="space-y-2 md:max-w-lg">
-              <label htmlFor="zona-select" className="text-sm font-medium">Zona</label>
+              <label htmlFor="zona-select" className="text-sm font-medium">
+                Zona
+              </label>
               <select
                 id="zona-select"
                 className={selectClass(!!sel.zona)}
                 value={sel.zona ?? ""}
                 onChange={(e) => {
                   const value = e.target.value || undefined;
-                  setSel({ zona: value, tipo: undefined, municipioId: undefined, unidadNombre: undefined, casetaNombre: undefined });
+                  setSel({
+                    zona: value,
+                    tipo: undefined,
+                    municipioId: undefined,
+                    unidadNombre: undefined,
+                    casetaNombre: undefined,
+                  });
                 }}
               >
-                <option value="" disabled>Selecciona zona…</option>
+                <option value="" disabled>
+                  Selecciona zona…
+                </option>
                 {zonas.map((z) => (
-                  <option key={z} value={z}>{z}</option>
+                  <option key={z} value={z}>
+                    {z}
+                  </option>
                 ))}
               </select>
             </div>
+
             {/* Tipo */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Tipo de puesto</label>
@@ -189,22 +217,29 @@ export default function StartJR() {
                 </Button>
               </div>
             </div>
+
             {/* Según tipo */}
             {sel.tipo === "unidad" && (
               <div className="space-y-2 md:max-w-lg">
-                <label htmlFor="unidad-select" className="text-sm font-medium">Unidad</label>
+                <label htmlFor="unidad-select" className="text-sm font-medium">
+                  Unidad
+                </label>
                 <select
                   id="unidad-select"
                   className={selectClass(!!sel.unidadNombre)}
                   value={sel.unidadNombre ?? ""}
-                  onChange={(e) => setSel((prev) => ({ ...prev, unidadNombre: e.target.value || undefined }))}
+                  onChange={(e) =>
+                    setSel((prev) => ({ ...prev, unidadNombre: e.target.value || undefined }))
+                  }
                   disabled={!sel.zona}
                 >
                   <option value="" disabled>
                     {sel.zona ? "Selecciona unidad…" : "Selecciona zona primero"}
                   </option>
                   {unidades.map((u) => (
-                    <option key={u.id} value={u.nombre}>{u.nombre}</option>
+                    <option key={u.id} value={u.nombre}>
+                      {u.nombre}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -213,19 +248,29 @@ export default function StartJR() {
             {sel.tipo === "caseta" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:max-w-3xl">
                 <div className="space-y-2">
-                  <label htmlFor="municipio-select" className="text-sm font-medium">Municipio</label>
+                  <label htmlFor="municipio-select" className="text-sm font-medium">
+                    Municipio
+                  </label>
                   <select
                     id="municipio-select"
                     className={selectClass(!!sel.municipioId)}
                     value={sel.municipioId ?? ""}
-                    onChange={(e) => setSel((prev) => ({ ...prev, municipioId: e.target.value || undefined, casetaNombre: undefined }))}
+                    onChange={(e) =>
+                      setSel((prev) => ({
+                        ...prev,
+                        municipioId: e.target.value || undefined,
+                        casetaNombre: undefined,
+                      }))
+                    }
                     disabled={!sel.zona}
                   >
                     <option value="" disabled>
                       {sel.zona ? "Selecciona municipio…" : "Selecciona zona primero"}
                     </option>
                     {municipios.map((m) => (
-                      <option key={m.id} value={m.id}>{m.nombre}</option>
+                      <option key={m.id} value={m.id}>
+                        {m.nombre}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -239,19 +284,25 @@ export default function StartJR() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <label htmlFor="caseta-select" className="text-sm font-medium">Caseta</label>
+                    <label htmlFor="caseta-select" className="text-sm font-medium">
+                      Caseta
+                    </label>
                     <select
                       id="caseta-select"
                       className={selectClass(!!sel.casetaNombre)}
                       value={sel.casetaNombre ?? ""}
-                      onChange={(e) => setSel((prev) => ({ ...prev, casetaNombre: e.target.value || undefined }))}
+                      onChange={(e) =>
+                        setSel((prev) => ({ ...prev, casetaNombre: e.target.value || undefined }))
+                      }
                       disabled={!sel.municipioId}
                     >
                       <option value="" disabled>
                         {sel.municipioId ? "Selecciona caseta…" : "Selecciona municipio primero"}
                       </option>
                       {casetas.map((c) => (
-                        <option key={c.id} value={c.nombre}>{c.nombre}</option>
+                        <option key={c.id} value={c.nombre}>
+                          {c.nombre}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -264,16 +315,17 @@ export default function StartJR() {
             {/* Acciones */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
               <div className="text-sm text-muted-foreground">
-                {ready ? (
-                  <span className="text-foreground">Todo listo 🎉</span>
-                ) : (
-                  "Completa los campos para continuar"
-                )}
+                {ready ? <span className="text-foreground">Todo listo 🎉</span> : "Completa los campos para continuar"}
               </div>
               <div className="flex gap-2">
                 <Button
                   variant="secondary"
-                  onClick={() => { setSel({}); setMunicipios([]); setUnidades([]); setCasetas([]); }}
+                  onClick={() => {
+                    setSel({});
+                    setMunicipios([]);
+                    setUnidades([]);
+                    setCasetas([]);
+                  }}
                 >
                   Limpiar
                 </Button>
