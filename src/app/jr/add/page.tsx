@@ -220,6 +220,7 @@ function AddJR() {
         setApellidosNuevo("");
       }
     } catch (err) {
+      console.error(err);
       setProponerMsg("Error de red al proponer usuario.");
     } finally {
       setProponiendo(false);
