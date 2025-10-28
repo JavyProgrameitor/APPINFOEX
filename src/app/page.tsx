@@ -1,9 +1,11 @@
 // src/app/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/browser";
+// y úsalo: const { data, error } = await supabaseBrowser.auth.signInWithPassword(...)
+
 import "./globals.css";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -21,44 +23,34 @@ const ROLE_ROUTES: Record<Rol, string> = {
 export default function AuthPage() {
   const router = useRouter();
 
-  
-  const supabase = useMemo(() => supabaseBrowser(), []);
-
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
-  const [mode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Si ya hay sesión, resolvemos rol y redirigimos
   useEffect(() => {
-    let cancelled = false;
+    if (process.env.NODE_ENV === "development") {
+      supabaseBrowser.auth.signOut();
+    }
 
     (async () => {
-      // Opcional: en dev limpiar sesión para probar
-      if (process.env.NODE_ENV === "development") {
-        await supabase.auth.signOut().catch(() => {});
-      }
-
-      const { data } = await supabase.auth.getSession();
-      if (cancelled) return;
-
+      const { data } = await supabaseBrowser  .auth.getSession();
       const session = data.session;
-      if (!session?.user?.id) return;
+      if (!session) return;
 
       const ok = await resolveAndRouteByRole(session.user.id);
       if (!ok) {
-        await supabase.auth.signOut().catch(() => {});
+        // Si el user no tiene rol válido, forzamos logout
+        await supabaseBrowser.auth.signOut();
       }
     })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [supabase]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function resolveAndRouteByRole(authUserId: string): Promise<boolean> {
-    const { data: rec, error: roleErr } = await supabase
+    const { data: rec, error: roleErr } = await supabaseBrowser
       .from("users")
       .select("rol")
       .eq("auth_user_id", authUserId)
@@ -91,19 +83,20 @@ export default function AuthPage() {
 
     try {
       if (mode === "signup") {
-        // Si no usas signup directo, puedes eliminar esta rama
-        const { data, error } = await supabase.auth.signUp({ email, password: pass });
+        // Registro (si lo permites). Puedes deshabilitar esta rama si sólo crea admins el alta.
+        const { data, error } = await supabaseBrowser.auth.signUp({ email, password: pass });
         if (error) throw error;
 
         if (data.session?.user?.id) {
           const ok = await resolveAndRouteByRole(data.session.user.id);
-          if (!ok) await supabase.auth.signOut();
+          if (!ok) await supabaseBrowser.auth.signOut();
         } else {
+          // No hay sesión inmediata (email de verificación). Informamos al usuario.
           setError("Revisa tu correo para verificar la cuenta. Una vez verificada, inicia sesión.");
         }
       } else {
         // Sign in
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabaseBrowser.auth.signInWithPassword({
           email,
           password: pass,
         });
@@ -115,7 +108,9 @@ export default function AuthPage() {
         }
 
         const ok = await resolveAndRouteByRole(data.user.id);
-        if (!ok) await supabase.auth.signOut();
+        if (!ok) {
+          await supabaseBrowser.auth.signOut();
+        }
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -153,20 +148,16 @@ export default function AuthPage() {
                 />
               </div>
 
-              {error && <p className="text-sm text-foreground">{error}</p>}
-
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Entrando…" : "Entrar"}
+              {error && (
+                <p className="text-sm text-foreground">{error}</p>
+              )}
+              <Button type="submit" className="w-full" >
+                Entrar
               </Button>
             </form>
           </CardContent>
-          <p className="text-sm text-center text-muted-foreground">
-            ¿No tienes cuenta?{" "}
-            <a href="/registro" className="underline underline-offset-4">Regístrate aquí</a>
-          </p>
         </Card>
       </main>
-
       <div>
         <Footer />
       </div>

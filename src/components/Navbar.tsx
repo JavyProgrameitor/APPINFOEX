@@ -9,7 +9,6 @@ import { supabaseBrowser } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/Button";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import logo from "../../public/img/Logo.jpg";
 
 type Rol = "admin" | "jr" | "bf";
 
@@ -19,9 +18,6 @@ export default function NavBar() {
   const [rol, setRol] = useState<Rol | null>(null);
   const router = useRouter();
   const pathname = usePathname();
-
-  // 👉 instancia del cliente solo una vez
-  const supabase = useMemo(() => supabaseBrowser(), []);
 
   // 🧭 Saber si estamos en una ruta de rol
   const isRoleRoute = useMemo(
@@ -36,7 +32,7 @@ export default function NavBar() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-  const isLight = mounted ? theme === "light" : false;
+  const isLight = mounted ? theme === "light" : null;
 
   // 🔐 Sesión Supabase
   useEffect(() => {
@@ -44,22 +40,18 @@ export default function NavBar() {
 
     const init = async () => {
       setLoading(true);
-      const { data } = await supabase.auth.getSession();
+      const { data } = await supabaseBrowser.auth.getSession();
       const session = data.session;
       if (!mountedFlag) return;
 
       if (session?.user) {
         setEmail(session.user.email ?? null);
-
-        const { data: rec, error } = await supabase
+        const { data: rec } = await supabaseBrowser
           .from("users")
           .select("rol")
           .eq("auth_user_id", session.user.id)
           .maybeSingle();
-
-        if (!mountedFlag) return;
-        if (!error && rec?.rol) setRol(rec.rol as Rol);
-        else setRol(null);
+        if (rec?.rol) setRol(rec.rol as Rol);
       } else {
         setEmail(null);
         setRol(null);
@@ -69,21 +61,18 @@ export default function NavBar() {
 
     init();
 
-    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(() => {
       init();
     });
 
     return () => {
       mountedFlag = false;
-      sub?.subscription?.unsubscribe?.();
-      // compatibilidad con distintas versiones:
-      // @ts-expect-error
-      sub?.unsubscribe?.();
+      subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, []);
 
   const onLogout = async () => {
-    await supabase.auth.signOut();
+    await supabaseBrowser.auth.signOut();
     setEmail(null);
     setRol(null);
     router.replace("/");
@@ -102,36 +91,30 @@ export default function NavBar() {
         <nav className="mt-3 rounded-2xl border-4 border-white/90 shadow-md backdrop-blur-md bg-[--card]/92 supports-[backdrop-filter]:bg-[--card]/85">
           <div className="relative h-14 flex items-center justify-between px-4">
             {/* Izquierda: Logo */}
-            <button
-              onClick={async () => {
-                try {
-                  await supabase.auth.signOut();
-                } catch {}
-                router.replace("/"); // o router.push("/")
-              }}
-              className="flex items-center gap-3"
-              aria-label="Ir al inicio y salir"
-            >
+            <Link href="/" className="flex items-center gap-3">
               <Image
-                src={logo}
+                src="/img/Logo.jpg"
                 alt="INFOEX"
-                className="h-9 w-auto rounded-lg object-cover"
+                width={36}
+                height={36}
+                className="rounded-lg object-cover"
                 priority
               />
-            </button>
-
+            </Link>
             <span
               className={`${
                 isRoleRoute
-                  ? "absolute left-16 md:left-20 text-left"
-                  : "absolute left-1/2 -translate-x-1/2 text-center"
+                  ? // 🔹 En pantallas de rol: alineado a la izquierda del logo
+                    "absolute left-16 md:left-20 text-left"
+                  : // 🔹 En inicio: centrado total
+                    "absolute left-1/2 -translate-x-1/2 text-center"
               } text-sm md:text-base font-black transition-all duration-300`}
             >
               APP CONTROL-DIARIO
             </span>
-
             {/* Derecha: controles */}
             <div className="flex items-center gap-2">
+              {/* Solo mostrar cierre de sesión en pantallas de rol */}
               {isRoleRoute && !loading && email && (
                 <>
                   <span className="hidden sm:flex text-xs sm:text-sm items-center gap-2 px-3 py-1 rounded-xl border border-white/40 bg-white/10">
@@ -147,7 +130,6 @@ export default function NavBar() {
                   </Button>
                 </>
               )}
-
               <Button
                 variant="outline"
                 size="sm"
