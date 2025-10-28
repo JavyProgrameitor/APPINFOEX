@@ -8,8 +8,6 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
-
-
 type BomberoLite = {
   dni: string;
   nombre: string;
@@ -86,9 +84,7 @@ function AddJR() {
         .from("zonas")
         .select("id,nombre,provincia_id")
         .eq("provincia_id", p.id);
-      const z = (zData || []).find((x: Zona) => x.nombre === zonaNombre) as
-        | Zona
-        | undefined;
+      const z = (zData || []).find((x: Zona) => x.nombre === zonaNombre) as Zona | undefined;
       if (!z) return;
       setZonaId(z.id);
 
@@ -106,9 +102,9 @@ function AddJR() {
           .from("municipios")
           .select("id,nombre,zona_id")
           .eq("zona_id", z.id);
-        const m = (mData || []).find(
-          (x: Municipio) => x.nombre === municipioNombre
-        ) as Municipio | undefined;
+        const m = (mData || []).find((x: Municipio) => x.nombre === municipioNombre) as
+          | Municipio
+          | undefined;
         if (!m) return;
         setMunicipioId(m.id);
 
@@ -116,9 +112,9 @@ function AddJR() {
           .from("casetas")
           .select("id,nombre,municipio_id")
           .eq("municipio_id", m.id);
-        const c = (cData || []).find(
-          (x: Caseta) => x.nombre === casetaNombre
-        ) as Caseta | undefined;
+        const c = (cData || []).find((x: Caseta) => x.nombre === casetaNombre) as
+          | Caseta
+          | undefined;
         if (c) setCasetaId(c.id);
       }
     })();
@@ -183,6 +179,53 @@ function AddJR() {
     setRoster((prev) => prev.filter((b) => b.dni !== dni));
   }
 
+  // --- NUEVO: Proponer alta por email (para que Admin invite) ---
+  const [emailNuevo, setEmailNuevo] = useState("");
+  const [nombreNuevo, setNombreNuevo] = useState("");
+  const [apellidosNuevo, setApellidosNuevo] = useState("");
+  const [proponiendo, setProponiendo] = useState(false);
+  const [proponerMsg, setProponerMsg] = useState<string | null>(null);
+
+  async function proponerAlta(e: React.FormEvent) {
+    e.preventDefault();
+    setProponerMsg(null);
+
+    const email = emailNuevo.trim().toLowerCase();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setProponerMsg("Introduce un email válido.");
+      return;
+    }
+
+    setProponiendo(true);
+    try {
+      const res = await fetch("/api/jr/proponer-usuario", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          nombre: nombreNuevo.trim() || null,
+          apellidos: apellidosNuevo.trim() || null,
+          unidad_id: tipo === "unidad" ? unidadId : null,
+          caseta_id: tipo === "caseta" ? casetaId : null,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) {
+        setProponerMsg(json?.error || "No se pudo proponer el usuario.");
+      } else {
+        setProponerMsg("Propuesto correctamente. El Admin podrá invitarlo por email.");
+        setEmailNuevo("");
+        setNombreNuevo("");
+        setApellidosNuevo("");
+      }
+    } catch (err) {
+      setProponerMsg("Error de red al proponer usuario.");
+    } finally {
+      setProponiendo(false);
+    }
+  }
+
   if (authed === null) return null;
 
   const tituloDestino =
@@ -196,6 +239,58 @@ function AddJR() {
         <div className="flex justify-between items-center">
           <h1 className="text-xl font-semibold">Lista de Bomberos del día</h1>
         </div>
+
+        {/* NUEVO: Tarjeta para proponer alta por email */}
+        <Card className="shadow-xl">
+          <CardHeader>
+            <CardTitle>Proponer alta de Bombero Forestal por email</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <form onSubmit={proponerAlta} className="grid grid-cols-1 md:grid-cols-6 gap-3">
+              <div className="space-y-1 md:col-span-2">
+                <label className="text-sm font-medium">Email*</label>
+                <Input
+                  type="email"
+                  value={emailNuevo}
+                  onChange={(e) => setEmailNuevo(e.target.value)}
+                  placeholder="usuario@dominio.com"
+                  required
+                />
+              </div>
+              <div className="space-y-1 md:col-span-2">
+                <label className="text-sm font-medium">Nombre</label>
+                <Input
+                  value={nombreNuevo}
+                  onChange={(e) => setNombreNuevo(e.target.value)}
+                  placeholder="Nombre"
+                />
+              </div>
+              <div className="space-y-1 md:col-span-2">
+                <label className="text-sm font-medium">Apellidos</label>
+                <Input
+                  value={apellidosNuevo}
+                  onChange={(e) => setApellidosNuevo(e.target.value)}
+                  placeholder="Apellidos"
+                />
+              </div>
+              <div className="md:col-span-6 flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">
+                  Se guardará en <code>users</code> con rol <b>pending</b>{tipo === "unidad" ? " y la unidad actual." : " y la caseta actual."}
+                </span>
+                <Button type="submit" disabled={proponiendo}>
+                  {proponiendo ? "Enviando..." : "Proponer alta"}
+                </Button>
+              </div>
+            </form>
+            {proponerMsg && (
+              <p className={`text-sm ${proponerMsg.startsWith("Propuesto") ? "text-green-700" : "text-red-700"}`}>
+                {proponerMsg}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Tarjeta de roster (tal como la tenías) */}
         <Card className="shadow-xl ">
           <CardHeader>
             <CardTitle>{tituloDestino}</CardTitle>
@@ -299,7 +394,7 @@ function AddJR() {
   );
 }
 
-// El componente de página que Next renderiza: aquí envolvemos en Suspense
+// El componente de página que Next renderiza
 export default function Page() {
   return (
     <Suspense fallback={<div>Cargando…</div>}>
