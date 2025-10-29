@@ -7,17 +7,15 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
       type={type}
       data-slot="input"
       className={cn(
-        // Base: fondo transparente + borde blanco
-        "h-9 w-full min-w-0 rounded-md border border-white bg-transparent px-3 py-1 text-base text-white " +
-          "shadow-xs transition-all duration-200 outline-none " +
-          "placeholder:text-gray-400 file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium " +
-          "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-        // Hover → cambia el cursor y acentúa el borde
-        "hover:border-white/80 hover:cursor-pointer",
-        // Focus → fondo blanco, texto oscuro, anillo sutil
-        "focus:bg-white focus:text-black focus:border-white focus:ring-2 focus:ring-white/50",
-        // Estados de error o inválido
-        "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+        "h-9 w-full min-w-0 rounded-md border px-3 py-1 text-base md:text-sm shadow-xs outline-none transition-colors",
+        // base colors via CSS vars
+        "bg-[var(--card)] text-[var(--foreground)] border-[var(--border)] placeholder:[color:var(--muted-foreground)]",
+        // hover/focus
+        "hover:border-[color-mix(in_oklab,var(--border),black_10%)]",
+        "focus:border-[var(--ring)] focus:ring-2 focus:ring-[var(--ring)]",
+        // disabled / invalid
+        "disabled:opacity-50 disabled:cursor-not-allowed",
+        "aria-invalid:border-destructive aria-invalid:ring-destructive/30",
         className
       )}
       {...props}

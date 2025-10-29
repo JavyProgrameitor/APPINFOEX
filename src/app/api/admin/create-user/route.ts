@@ -1,106 +1,107 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
+
+type Rol = "admin" | "bf" | "jr";
+type Body = {
+  email: string;
+  password: string;            // requerido
+  rol: Rol;
+  dni?: string;
+  nombre?: string;
+  apellidos?: string;
+};
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // ⚠️ solo en servidor
+  process.env.SUPABASE_SERVICE_ROLE_KEY! // ⚠️ SOLO server
 );
+
+async function getRoleOfCurrentUser(): Promise<Rol | null> {
+  const store = await cookies();
+  const supa = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get: (name: string) => store.get(name)?.value,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        set: (name: string, value: string, options: any) =>
+          store.set({ name, value, ...options }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        remove: (name: string, options: any) =>
+          store.set({ name, value: "", ...options, maxAge: 0 }),
+      },
+    }
+  );
+
+  const { data: { user } } = await supa.auth.getUser();
+  if (!user) return null;
+
+  const { data: rec } = await supa
+    .from("users")
+    .select("rol")
+    .eq("auth_user_id", user.id)
+    .maybeSingle();
+
+  return (rec?.rol as Rol) ?? null;
+}
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const {
+    const callerRole = await getRoleOfCurrentUser();
+    if (callerRole !== "admin") {
+      return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+    }
+
+    const body = (await req.json()) as Body;
+    const { email, password, rol, dni, nombre, apellidos } = body;
+
+    if (!email || !password || !rol) {
+      return NextResponse.json({ error: "Faltan campos (email, password, rol)" }, { status: 400 });
+    }
+    if (password.length < 6) {
+      return NextResponse.json({ error: "La contraseña debe tener al menos 6 caracteres" }, { status: 400 });
+    }
+    if (!["admin","bf","jr"].includes(rol)) {
+      return NextResponse.json({ error: "Rol inválido" }, { status: 400 });
+    }
+
+    const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      dni,
-      nombre,
-      apellidos,
-      rol,        // "admin" | "bf" | "jr"
-      unidad_id,  // opcional
-      caseta_id,  // opcional
-    } = body as {
-      email: string;
-      password: string;
-      dni: string;
-      nombre?: string;
-      apellidos?: string;
-      rol: "admin" | "bf" | "jr";
-      unidad_id?: string;
-      caseta_id?: string;
+      email_confirm: true,
+      app_metadata: { role: rol },
+      user_metadata: { rol, dni, nombre, apellidos },
+    });
+    if (createErr || !created?.user) {
+      return NextResponse.json({ error: createErr?.message || "No se pudo crear el usuario (auth)" }, { status: 400 });
+    }
+
+    const auth_user_id = created.user.id;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const upsertPayload: any = {
+      auth_user_id,
+      rol,
+      dni: dni ?? null,
+      nombre: nombre ?? "",
+      apellidos: apellidos ?? ""
     };
 
-    // Validaciones mínimas
-    if (!email || !password || !dni || !rol) {
-      return NextResponse.json(
-        { error: "Faltan campos: email, password, dni y rol son obligatorios." },
-        { status: 400 }
-      );
+    const { error: upsertErr } = await supabaseAdmin
+      .from("users")
+      .upsert(upsertPayload, { onConflict: "auth_user_id" });
+
+    if (upsertErr) {
+      return NextResponse.json({ error: upsertErr.message }, { status: 400 });
     }
-
-    console.log("ENV ok?", {
-      url: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-      serviceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-    });
-
-    // 1) Crear usuario en Auth (sin metadatos para evitar 500 raros).
-    // Si esto funcionase y quieres meter metadatos, puedes añadirlos después.
-    const { data: userData, error: authErr } =
-      await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: false, // ponlo a true si necesitas correo de confirmación
-      });
-
-    if (authErr || !userData?.user) {
-      console.error("❌ Auth createUser error:", authErr);
-      // Devuelve 400 de verdad (no 200 con body)
-      return NextResponse.json(
-        {
-          error:
-            (authErr as any)?.message ||
-            (authErr as any)?.error_description ||
-            "No se pudo crear el usuario en Auth.",
-          code: (authErr as any)?.code,
-          status: (authErr as any)?.status,
-        },
-        { status: 400 }
-      );
-    }
-
-    const auth_user_id = userData.user.id;
-    console.log("✅ Usuario Auth creado:", auth_user_id);
-
-    // 2) Insertar en public.users
-    const { error: insertErr } = await supabaseAdmin.from("users").insert({
-      auth_user_id,
-      email,
-      dni,
-      nombre,
-      apellidos,
-      rol, // enum ('admin'|'bf'|'jr') debe existir exactamente en tu tipo rol
-      unidad_id: (unidad_id || "").trim() || null,
-      caseta_id: (caseta_id || "").trim() || null,
-    });
-
-    if (insertErr) {
-      console.error("❌ Error insertando en public.users:", insertErr);
-      return NextResponse.json(
-        { error: insertErr.message },
-        { status: 400 }
-      );
-    }
-
-    // (Opcional) si quieres guardar rol también en app_metadata:
-    // await supabaseAdmin.auth.admin.updateUserById(auth_user_id, {
-    //   app_metadata: { role: rol }
-    // });
 
     return NextResponse.json({ ok: true, auth_user_id }, { status: 200 });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (e: any) {
     console.error("❌ Error inesperado:", e);
-    return NextResponse.json(
-      { error: "Error inesperado en servidor." },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Error inesperado en servidor." }, { status: 500 });
   }
 }
