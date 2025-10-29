@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
+import { getSupabaseBrowser } from "@/lib/supabase/client";
 
 export default function AdminUsersPage() {
   const [form, setForm] = useState({
@@ -17,41 +18,41 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setMsg(null);
-    try {
-      const res = await fetch("/api/admin/create-user", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: form.email,
-          password: form.password,
-          rol: form.rol,
-          dni: form.dni?.trim() || undefined,
-          nombre: form.nombre?.trim() || undefined,
-          apellidos: form.apellidos?.trim() || undefined,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Error desconocido");
-      setMsg("Usuario creado correctamente.");
-      setForm({
-        email: "",
-        password: "",
-        rol: "bf",
-        dni: "",
-        nombre: "",
-        apellidos: "",
-      });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      setMsg(`Error: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
+async function onSubmit(e: React.FormEvent) {
+  e.preventDefault();
+  setLoading(true);
+  setMsg(null);
+  try {
+    const supa = getSupabaseBrowser();
+    const { data: { session } } = await supa.auth.getSession();
+    const token = session?.access_token;
+
+    const res = await fetch("/api/admin/create-user", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({
+        email: form.email,
+        password: form.password,
+        rol: form.rol,
+        dni: form.dni?.trim() || undefined,
+        nombre: form.nombre?.trim() || undefined,
+        apellidos: form.apellidos?.trim() || undefined,
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || "Error desconocido");
+    setMsg("Usuario creado correctamente.");
+    setForm({ email: "", password: "", rol: "bf", dni: "", nombre: "", apellidos: "" });
+  } catch (err: any) {
+    setMsg(`Error: ${err.message}`);
+  } finally {
+    setLoading(false);
   }
+}
 
   return (
     <main className="p-4 max-w-2xl mx-auto">
