@@ -100,7 +100,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ ok: true, auth_user_id }, { status: 200 });
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error("❌ Error inesperado:", e);
     return NextResponse.json({ error: "Error inesperado en servidor." }, { status: 500 });
   }

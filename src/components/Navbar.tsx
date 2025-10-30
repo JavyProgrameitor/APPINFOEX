@@ -1,7 +1,7 @@
 // src/components/NavBar.tsx
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
@@ -19,7 +19,6 @@ export default function NavBar() {
   const router = useRouter();
   const pathname = usePathname();
 
-  // rutas donde tiene sentido mostrar "Salir"
   const isRoleRoute = useMemo(
     () =>
       pathname?.startsWith("/admin") ||
@@ -34,9 +33,17 @@ export default function NavBar() {
   useEffect(() => setMounted(true), []);
   const isLight = mounted ? theme === "light" : null;
 
-  // función para pedir /api/me
+  // 👇 marca para saltarnos UNA sola petición justo después del logout
+  const justLoggedOutRef = useRef(false);
+
   const fetchMe = useCallback(
     async (opts?: { redirectOn401?: boolean }) => {
+      // si acabamos de pulsar "Salir", nos saltamos una vuelta
+      if (justLoggedOutRef.current) {
+        justLoggedOutRef.current = false;
+        return;
+      }
+
       setLoading(true);
       try {
         const res = await fetch("/api/me", {
@@ -53,7 +60,10 @@ export default function NavBar() {
           setEmail(null);
           setRol(null);
           if (opts?.redirectOn401) {
-            router.replace("/");
+            // solo redirigimos si NO estamos ya en /
+            if (pathname !== "/") {
+              router.replace("/");
+            }
           }
         } else {
           // otro error
@@ -67,12 +77,11 @@ export default function NavBar() {
         setLoading(false);
       }
     },
-    [router]
+    [router, pathname]
   );
 
   // 1) al montar
   useEffect(() => {
-    // si estoy en ruta de rol y no tengo sesión → quiero redirigir
     fetchMe({ redirectOn401: true });
   }, [fetchMe]);
 
@@ -81,7 +90,7 @@ export default function NavBar() {
     fetchMe({ redirectOn401: isRoleRoute });
   }, [fetchMe, isRoleRoute]);
 
-  // 3) cuando la pestaña vuelva a estar visible (viene bien en producción)
+  // 3) cuando la pestaña vuelva a estar visible
   useEffect(() => {
     const onVis = () => {
       if (document.visibilityState === "visible") {
@@ -101,7 +110,8 @@ export default function NavBar() {
     } catch {
       // ignore
     }
-    // limpiamos el estado del navbar
+    // marcamos que acabamos de salir para no reconsultar justo después
+    justLoggedOutRef.current = true;
     setEmail(null);
     setRol(null);
     router.replace("/");
@@ -144,7 +154,6 @@ export default function NavBar() {
 
             {/* Derecha */}
             <div className="flex items-center gap-2">
-              {/* Solo mostrar en rutas de rol y cuando sí hay sesión */}
               {isRoleRoute && !loading && email && (
                 <>
                   <span className="hidden sm:flex text-xs sm:text-sm items-center gap-2 px-3 py-1 rounded-xl border border-white/40 bg-white/10">
