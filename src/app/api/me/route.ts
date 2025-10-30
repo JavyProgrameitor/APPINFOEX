@@ -3,14 +3,17 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET() {
-  const supabase = await createClient(); // no hace falta await
+  // en tu proyecto createClient() es async → hay que await
+  const supabase = await createClient();
 
   // 1) ver si hay usuario autenticado
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser();
 
-  if (!user) {
+  // si el propio getUser falla, tratamos como no autenticado
+  if (userError || !user) {
     return NextResponse.json(
       { email: null, rol: null },
       { status: 401 }
@@ -18,11 +21,22 @@ export async function GET() {
   }
 
   // 2) buscar su rol en tu tabla users
-  const { data: rec } = await supabase
+  const { data: rec, error: roleError } = await supabase
     .from("users")
     .select("rol")
     .eq("auth_user_id", user.id)
     .maybeSingle();
+
+  if (roleError) {
+    // si hay usuario pero no pudimos leer rol, devolvemos email y rol null
+    return NextResponse.json(
+      {
+        email: user.email ?? null,
+        rol: null,
+      },
+      { status: 200 }
+    );
+  }
 
   return NextResponse.json(
     {

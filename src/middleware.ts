@@ -17,7 +17,6 @@ const HOME_BY_ROLE: Record<Rol, `/${Rol}`> = {
   jr: "/jr",
 };
 
-// Estructuras que espera @supabase/ssr 0.7 para setAll / getAll
 type GetCookie = { name: string; value: string };
 type SetCookie = { name: string; value: string; options?: SupaCookieOptions };
 
@@ -29,10 +28,9 @@ export async function middleware(req: NextRequest) {
 
   const res = NextResponse.next();
 
-  // ✅ Adapter para CookieMethodsServer (SOLO getAll y setAll en v0.7.0)
   const cookiesAdapter: CookieMethodsServer = {
     getAll(): GetCookie[] {
-      // Next 15 expone req.cookies.getAll(); si el tipo no lo muestra, hacemos cast seguro.
+      
       const items =
         (req as unknown as { cookies: { getAll: () => { name: string; value: string }[] } })
           .cookies
@@ -52,7 +50,7 @@ export async function middleware(req: NextRequest) {
     { cookies: cookiesAdapter }
   );
 
-  // 1) sesión
+  // sesión
   const { data: { user } = {} } = await supabase.auth.getUser();
   if (!user) {
     const loginUrl = new URL("/", req.url);
@@ -60,7 +58,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // 2) rol
+  // rol
   const { data: rec, error } = await supabase
     .from("users")
     .select("rol")

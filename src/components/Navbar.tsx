@@ -1,7 +1,7 @@
 // src/components/NavBar.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
@@ -15,9 +15,11 @@ export default function NavBar() {
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState<string | null>(null);
   const [rol, setRol] = useState<Rol>(null);
+
   const router = useRouter();
   const pathname = usePathname();
 
+  // rutas donde tiene sentido mostrar "Salir"
   const isRoleRoute = useMemo(
     () =>
       pathname?.startsWith("/admin") ||
@@ -26,59 +28,80 @@ export default function NavBar() {
     [pathname]
   );
 
+  // tema
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const isLight = mounted ? theme === "light" : null;
 
-  useEffect(() => {
-    let alive = true;
-
-    const load = async () => {
+  // función para pedir /api/me
+  const fetchMe = useCallback(
+    async (opts?: { redirectOn401?: boolean }) => {
       setLoading(true);
       try {
         const res = await fetch("/api/me", {
           method: "GET",
           credentials: "include",
         });
-        const json = await res.json();
-        console.log("[NavBar] /api/me ->", json);
 
-        if (!alive) return;
-
-        if (res.ok) {
+        if (res.status === 200) {
+          const json = await res.json();
           setEmail(json.email);
           setRol(json.rol);
+        } else if (res.status === 401) {
+          // no hay sesión
+          setEmail(null);
+          setRol(null);
+          if (opts?.redirectOn401) {
+            router.replace("/");
+          }
         } else {
+          // otro error
           setEmail(null);
           setRol(null);
         }
       } catch {
-        if (!alive) return;
         setEmail(null);
         setRol(null);
       } finally {
-        if (alive) setLoading(false);
+        setLoading(false);
+      }
+    },
+    [router]
+  );
+
+  // 1) al montar
+  useEffect(() => {
+    // si estoy en ruta de rol y no tengo sesión → quiero redirigir
+    fetchMe({ redirectOn401: true });
+  }, [fetchMe]);
+
+  // 2) cada vez que cambie la ruta → vuelvo a mirar la sesión
+  useEffect(() => {
+    fetchMe({ redirectOn401: isRoleRoute });
+  }, [fetchMe, isRoleRoute]);
+
+  // 3) cuando la pestaña vuelva a estar visible (viene bien en producción)
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === "visible") {
+        fetchMe({ redirectOn401: isRoleRoute });
       }
     };
-
-    load();
-
-    return () => {
-      alive = false;
-    };
-  }, []);
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [fetchMe, isRoleRoute]);
 
   const onLogout = async () => {
     try {
-      const res = await fetch("/api/logout", {
+      await fetch("/api/logout", {
         method: "POST",
         credentials: "include",
       });
-      console.log("[NavBar] /api/logout ->", await res.json());
     } catch {
       // ignore
     }
+    // limpiamos el estado del navbar
     setEmail(null);
     setRol(null);
     router.replace("/");
@@ -96,6 +119,7 @@ export default function NavBar() {
       <div className="mx-auto max-w-6xl px-4">
         <nav className="mt-3 rounded-2xl border-4 border-white/90 shadow-md backdrop-blur-md bg-[--card]/92 supports-[backdrop-filter]:bg-[--card]/85">
           <div className="relative h-14 flex items-center justify-between px-4">
+            {/* Izquierda */}
             <Link href="/" className="flex items-center gap-3">
               <Image
                 src="/img/Logo.jpg"
@@ -106,6 +130,8 @@ export default function NavBar() {
                 priority
               />
             </Link>
+
+            {/* Título */}
             <span
               className={`${
                 isRoleRoute
@@ -115,7 +141,10 @@ export default function NavBar() {
             >
               APP CONTROL-DIARIO
             </span>
+
+            {/* Derecha */}
             <div className="flex items-center gap-2">
+              {/* Solo mostrar en rutas de rol y cuando sí hay sesión */}
               {isRoleRoute && !loading && email && (
                 <>
                   <span className="hidden sm:flex text-xs sm:text-sm items-center gap-2 px-3 py-1 rounded-xl border border-white/40 bg-white/10">
@@ -131,6 +160,7 @@ export default function NavBar() {
                   </Button>
                 </>
               )}
+
               <Button
                 variant="outline"
                 size="sm"
