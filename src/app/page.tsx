@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -21,8 +22,8 @@ const ROLE_ROUTES: Record<Rol, string> = {
 export default function AuthPage() {
   const router = useRouter();
 
+  // cliente SOLO en browser
   const supabase = useMemo(() => {
-    // Esto solo se ejecuta en el cliente porque este archivo tiene "use client"
     return createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -34,6 +35,7 @@ export default function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // al montar: si ya hay sesión en el cliente, resolvemos rol y redirigimos
   useEffect(() => {
     (async () => {
       const { data } = await supabase.auth.getSession();
@@ -49,6 +51,7 @@ export default function AuthPage() {
   }, []);
 
   async function resolveAndRouteByRole(authUserId: string): Promise<boolean> {
+    // leemos la tabla users desde el cliente
     const { data: rec, error: roleErr } = await supabase
       .from("users")
       .select("rol")

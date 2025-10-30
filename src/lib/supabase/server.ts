@@ -1,26 +1,26 @@
 // src/lib/supabase/server.ts
-// src/lib/supabase/server.ts
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 
-export async function getSupabaseServer() {
-  const store = await cookies(); // ← ahora sí, await
+export async function createClient() {
+  const cookieStore = await cookies();
 
-  return createServerClient(
+  const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         get(name: string) {
-          return store.get(name)?.value;
+          return cookieStore.get(name)?.value;
         },
-        set(name: string, value: string, options: any) {
-          store.set({ name, value, ...options });
-        },
-        remove(name: string, options: any) {
-          store.set({ name, value: "", ...options, maxAge: 0 });
-        },
+        // En rutas API no vamos a escribir cookies aquí.
+        // Si más adelante quieres refresco de sesión con escritura,
+        // eso lo hacemos dentro del propio handler con NextResponse.
+        set() {},
+        remove() {},
       },
     }
   );
+
+  return supabase;
 }

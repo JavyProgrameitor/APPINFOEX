@@ -47,8 +47,8 @@ async function onSubmit(e: React.FormEvent) {
     if (!res.ok) throw new Error(data?.error || "Error desconocido");
     setMsg("Usuario creado correctamente.");
     setForm({ email: "", password: "", rol: "bf", dni: "", nombre: "", apellidos: "" });
-  } catch (err: any) {
-    setMsg(`Error: ${err.message}`);
+  } catch (err: unknown) {
+    setMsg(`Error: ${err}`);
   } finally {
     setLoading(false);
   }

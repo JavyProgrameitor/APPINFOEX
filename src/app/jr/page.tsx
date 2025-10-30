@@ -1,18 +1,16 @@
-
+// src/app/jr/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabaseBrowser } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-
 
 type Tipo = "unidad" | "caseta";
 
 type Zona = string;
-type Municipio = { id: string; nombre: string; zona: Zona };
-type Unidad = { id: string; nombre: string; zona: Zona };
+type Municipio = { id: string; nombre: string };
+type Unidad = { id: string; nombre: string };
 type Caseta = { id: string; nombre: string; municipio_id: string };
 
 type Selection = {
@@ -27,14 +25,20 @@ export default function StartJR() {
   const router = useRouter();
   const [authed, setAuthed] = useState<boolean | null>(null);
 
+  // 1) comprobar sesión (ya no usamos supabaseBrowser)
   useEffect(() => {
     (async () => {
-      const { data } = await supabaseBrowser.auth.getSession();
-      if (!data.session) {
+      try {
+        const res = await fetch("/api/me", { credentials: "include" });
+        const json = await res.json();
+        if (!res.ok || !json.email) {
+          router.replace("/");
+          return;
+        }
+        setAuthed(true);
+      } catch {
         router.replace("/");
-        return;
       }
-      setAuthed(true);
     })();
   }, [router]);
 
@@ -45,56 +49,67 @@ export default function StartJR() {
   const [unidades, setUnidades] = useState<Unidad[]>([]);
   const [casetas, setCasetas] = useState<Caseta[]>([]);
 
-  // 👇 Helper para el borde de los selects
+  // estilos select
   const selectBase =
-    "h-10 w-full rounded-xl border-2 bg-background px-3 text-sm outline-none ring-offset-background transition-colors " +
-    "focus-visible:ring-2 focus-visible:ring-ring-40 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer";
+    "h-10 w-full rounded-xl border-2 bg-background text-foreground px-3 text-sm outline-none ring-offset-background transition-colors " +
+    "focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer";
   const selectClass = (isSelected: boolean) =>
     `${selectBase} ${isSelected ? "border-white" : "border-green-600"}`;
 
-  // Cargar zonas
+  // 2) cargar zonas
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabaseBrowser.rpc("get_zonas_enum");
-      if (!error && Array.isArray(data)) {
-        setZonas(data as Zona[]);
+      try {
+        const res = await fetch("/api/zonas");
+        const json = await res.json();
+        if (Array.isArray(json)) {
+          setZonas(json as Zona[]);
+        } else if (Array.isArray(json.zonas)) {
+          setZonas(json.zonas as Zona[]);
+        }
+      } catch {
+        setZonas([]);
       }
     })();
   }, []);
 
-  // Cuando cambia zona, cargar municipios y unidades
+  // 3) cuando cambia zona, cargar municipios y unidades
   useEffect(() => {
     if (!sel.zona) {
-      setMunicipios([]); setUnidades([]); setCasetas([]);
+      setMunicipios([]);
+      setUnidades([]);
+      setCasetas([]);
       return;
     }
     (async () => {
-      const [{ data: mData }, { data: uData }] = await Promise.all([
-        supabaseBrowser.from("municipios").select("id,nombre,zona").eq("zona", sel.zona).order("nombre", { ascending: true }),
-        supabaseBrowser.from("unidades").select("id,nombre,zona").eq("zona", sel.zona).order("nombre", { ascending: true }),
+      const [mRes, uRes] = await Promise.all([
+        fetch(`/api/municipios?zona=${encodeURIComponent(sel.zona!)}`),
+        fetch(`/api/unidades?zona=${encodeURIComponent(sel.zona!)}`),
       ]);
-      if (mData) setMunicipios(mData as Municipio[]);
-      if (uData) setUnidades(uData as Unidad[]);
+      const mJson = await mRes.json();
+      const uJson = await uRes.json();
+      setMunicipios(Array.isArray(mJson) ? mJson : mJson.municipios ?? []);
+      setUnidades(Array.isArray(uJson) ? uJson : uJson.unidades ?? []);
     })();
   }, [sel.zona]);
 
-  // Cuando cambia municipio, cargar casetas
+  // 4) cuando cambia municipio, cargar casetas
   useEffect(() => {
     if (!sel.municipioId) {
       setCasetas([]);
       return;
     }
     (async () => {
-      const { data } = await supabaseBrowser
-        .from("casetas")
-        .select("id,nombre,municipio_id")
-        .eq("municipio_id", sel.municipioId)
-        .order("nombre", { ascending: true });
-      if (data) setCasetas(data as Caseta[]);
+      const res = await fetch(
+        `/api/casetas?municipio_id=${encodeURIComponent(sel.municipioId!)}`
+      );
+      const json = await res.json();
+      setCasetas(Array.isArray(json) ? json : json.casetas ?? []);
     })();
   }, [sel.municipioId]);
 
-  const noCasetas = sel.tipo === "caseta" && !!sel.municipioId && casetas.length === 0;
+  const noCasetas =
+    sel.tipo === "caseta" && !!sel.municipioId && casetas.length === 0;
 
   const ready =
     !!sel.zona &&
@@ -104,7 +119,7 @@ export default function StartJR() {
 
   function goNext() {
     const zonaNombre = sel.zona;
-    const municipioNombre = municipios.find(m => m.id === sel.municipioId)?.nombre;
+    const municipioNombre = municipios.find((m) => m.id === sel.municipioId)?.nombre;
 
     const params = new URLSearchParams();
     if (zonaNombre) params.set("zona", zonaNombre);
@@ -118,7 +133,7 @@ export default function StartJR() {
   if (authed === null) return null;
 
   return (
-    <main className="min-h-screen  dark:from-slate-950 dark:to-slate-900">
+    <main className="min-h-screen dark:from-slate-950 dark:to-slate-900">
       <div className="mx-auto max-w-4xl p-6 md:p-10">
         <Card className="shadow-xl border-border dark:border-border">
           <CardHeader className="space-y-2">
@@ -130,22 +145,35 @@ export default function StartJR() {
           <CardContent className="space-y-8">
             {/* Zona */}
             <div className="space-y-2 md:max-w-lg">
-              <label htmlFor="zona-select" className="text-sm font-medium">Zona</label>
+              <label htmlFor="zona-select" className="text-sm font-medium">
+                Zona
+              </label>
               <select
                 id="zona-select"
                 className={selectClass(!!sel.zona)}
                 value={sel.zona ?? ""}
                 onChange={(e) => {
                   const value = e.target.value || undefined;
-                  setSel({ zona: value, tipo: undefined, municipioId: undefined, unidadNombre: undefined, casetaNombre: undefined });
+                  setSel({
+                    zona: value,
+                    tipo: undefined,
+                    municipioId: undefined,
+                    unidadNombre: undefined,
+                    casetaNombre: undefined,
+                  });
                 }}
               >
-                <option value="" disabled>Selecciona zona…</option>
+                <option value="" disabled>
+                  Selecciona zona…
+                </option>
                 {zonas.map((z) => (
-                  <option key={z} value={z}>{z}</option>
+                  <option key={z} value={z}>
+                    {z}
+                  </option>
                 ))}
               </select>
             </div>
+
             {/* Tipo */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Tipo de puesto</label>
@@ -156,7 +184,7 @@ export default function StartJR() {
                   className={`h-10 rounded-xl px-3 text-sm transition-colors 
                 text-white cursor-pointer bg-green-600 hover:bg-green-800
                 disabled:cursor-not-allowed
-                ${sel.tipo === "unidad" ? "ring-2 ring-ring-40 bg-green-600" : ""}`}
+                ${sel.tipo === "unidad" ? "ring-2 ring-ring bg-green-600" : ""}`}
                   onClick={() =>
                     setSel((prev) => ({
                       ...prev,
@@ -175,7 +203,7 @@ export default function StartJR() {
                   className={`h-10 rounded-xl px-3 text-sm transition-colors 
                 text-white cursor-pointer bg-green-600 hover:bg-green-800
                 disabled:cursor-not-allowed
-                ${sel.tipo === "caseta" ? "ring-2 ring-ring-40 bg-green-600" : ""}`}
+                ${sel.tipo === "caseta" ? "ring-2 ring-ring bg-green-600" : ""}`}
                   onClick={() =>
                     setSel((prev) => ({
                       ...prev,
@@ -189,22 +217,32 @@ export default function StartJR() {
                 </Button>
               </div>
             </div>
+
             {/* Según tipo */}
             {sel.tipo === "unidad" && (
               <div className="space-y-2 md:max-w-lg">
-                <label htmlFor="unidad-select" className="text-sm font-medium">Unidad</label>
+                <label htmlFor="unidad-select" className="text-sm font-medium">
+                  Unidad
+                </label>
                 <select
                   id="unidad-select"
                   className={selectClass(!!sel.unidadNombre)}
                   value={sel.unidadNombre ?? ""}
-                  onChange={(e) => setSel((prev) => ({ ...prev, unidadNombre: e.target.value || undefined }))}
+                  onChange={(e) =>
+                    setSel((prev) => ({
+                      ...prev,
+                      unidadNombre: e.target.value || undefined,
+                    }))
+                  }
                   disabled={!sel.zona}
                 >
                   <option value="" disabled>
                     {sel.zona ? "Selecciona unidad…" : "Selecciona zona primero"}
                   </option>
                   {unidades.map((u) => (
-                    <option key={u.id} value={u.nombre}>{u.nombre}</option>
+                    <option key={u.id} value={u.nombre}>
+                      {u.nombre}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -213,19 +251,32 @@ export default function StartJR() {
             {sel.tipo === "caseta" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:max-w-3xl">
                 <div className="space-y-2">
-                  <label htmlFor="municipio-select" className="text-sm font-medium">Municipio</label>
+                  <label
+                    htmlFor="municipio-select"
+                    className="text-sm font-medium"
+                  >
+                    Municipio
+                  </label>
                   <select
                     id="municipio-select"
                     className={selectClass(!!sel.municipioId)}
                     value={sel.municipioId ?? ""}
-                    onChange={(e) => setSel((prev) => ({ ...prev, municipioId: e.target.value || undefined, casetaNombre: undefined }))}
+                    onChange={(e) =>
+                      setSel((prev) => ({
+                        ...prev,
+                        municipioId: e.target.value || undefined,
+                        casetaNombre: undefined,
+                      }))
+                    }
                     disabled={!sel.zona}
                   >
                     <option value="" disabled>
                       {sel.zona ? "Selecciona municipio…" : "Selecciona zona primero"}
                     </option>
                     {municipios.map((m) => (
-                      <option key={m.id} value={m.id}>{m.nombre}</option>
+                      <option key={m.id} value={m.id}>
+                        {m.nombre}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -239,27 +290,39 @@ export default function StartJR() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <label htmlFor="caseta-select" className="text-sm font-medium">Caseta</label>
+                    <label
+                      htmlFor="caseta-select"
+                      className="text-sm font-medium"
+                    >
+                      Caseta
+                    </label>
                     <select
                       id="caseta-select"
                       className={selectClass(!!sel.casetaNombre)}
                       value={sel.casetaNombre ?? ""}
-                      onChange={(e) => setSel((prev) => ({ ...prev, casetaNombre: e.target.value || undefined }))}
+                      onChange={(e) =>
+                        setSel((prev) => ({
+                          ...prev,
+                          casetaNombre: e.target.value || undefined,
+                        }))
+                      }
                       disabled={!sel.municipioId}
                     >
                       <option value="" disabled>
-                        {sel.municipioId ? "Selecciona caseta…" : "Selecciona municipio primero"}
+                        {sel.municipioId
+                          ? "Selecciona caseta…"
+                          : "Selecciona municipio primero"}
                       </option>
                       {casetas.map((c) => (
-                        <option key={c.id} value={c.nombre}>{c.nombre}</option>
+                        <option key={c.id} value={c.nombre}>
+                          {c.nombre}
+                        </option>
                       ))}
                     </select>
                   </div>
                 )}
               </div>
             )}
-
-            <div className="h-px" />
 
             {/* Acciones */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -273,7 +336,12 @@ export default function StartJR() {
               <div className="flex gap-2">
                 <Button
                   variant="secondary"
-                  onClick={() => { setSel({}); setMunicipios([]); setUnidades([]); setCasetas([]); }}
+                  onClick={() => {
+                    setSel({});
+                    setMunicipios([]);
+                    setUnidades([]);
+                    setCasetas([]);
+                  }}
                 >
                   Limpiar
                 </Button>
