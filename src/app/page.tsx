@@ -53,7 +53,7 @@ export default function AuthPage() {
   async function resolveAndRouteByRole(authUserId: string): Promise<boolean> {
     // leemos la tabla users desde el cliente
     const { data: rec, error: roleErr } = await supabase
-      .from("users")
+      .from("usuarios")
       .select("rol")
       .eq("auth_user_id", authUserId)
       .maybeSingle();
@@ -110,7 +110,7 @@ export default function AuthPage() {
   return (
     <>
       <main className="min-h-screen flex items-center justify-center">
-        <Card className="w-full max-w-sm shadow-xl">
+        <Card className="w-full max-w-sm shadow-2xl">
           <CardContent>
             <form onSubmit={onSubmit} className="space-y-3">
               <div className="space-y-1">

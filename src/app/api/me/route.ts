@@ -10,16 +10,17 @@ export async function GET() {
     error,
   } = await supabase.auth.getUser();
 
-  if (error || !user) {
+  
+   if (error || !user) {
     return NextResponse.json(
-      { email: null, rol: null },
-      { status: 200}
+      { email: null, rol: null, unidad_id: null, caseta_id: null },
+      { status: 401 }
     );
   }
 
   const { data: rec } = await supabase
-    .from("users")
-    .select("rol")
+    .from("usuarios")
+    .select("rol, unidad_id, caseta_id")
     .eq("auth_user_id", user.id)
     .maybeSingle();
 
@@ -27,6 +28,8 @@ export async function GET() {
     {
       email: user.email ?? null,
       rol: (rec?.rol as "admin" | "jr" | "bf" | null) ?? null,
+      unidad_id: rec?.unidad_id ?? null,
+      caseta_id: rec?.caseta_id ?? null,
     },
     { status: 200 }
   );

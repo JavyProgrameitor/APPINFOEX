@@ -7,36 +7,37 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
-type BomberoLite = {
+type Bombero = {
   dni: string;
   nombre: string;
   apellidos: string;
-  is_jefe_reten?: boolean;
 };
 
-function AddJR() {
+function AgregarBomberos() {
   const router = useRouter();
   const params = useSearchParams();
 
-  // --- llegan en la URL desde la página anterior ---
+  // --- Parámetros recibidos desde la página anterior ---
   const tipo = params.get("tipo"); // "unidad" | "caseta"
-  const provinciaNombre = params.get("provincia") || ""; // puede que ya no lo uses
   const zonaNombre = params.get("zona") || "";
   const municipioNombre = params.get("municipio") || "";
   const unidadNombre = params.get("unidad") || "";
   const casetaNombre = params.get("caseta") || "";
 
-  // Ya no vamos a resolver IDs en la BBDD
-  const [unidadId] = useState<string | null>(null);
-  const [casetaId] = useState<string | null>(null);
+  // IDs reales
+  const unidadId = params.get("unidad_id") || "";
+  const casetaId = params.get("caseta_id") || "";
 
-  // --- ROSTER (lista del día) con persistencia en localStorage ---
-  const storageKey = useMemo(() => {
-    const part =
+  // si venimos de /jr/note nos puede traer la key exacta
+  const forcedKey = params.get("ls");
+
+  // 1) clave base (la que produciríamos nosotros)
+  const baseKey = useMemo(() => {
+    const parte =
       tipo === "unidad"
-        ? (unidadId || `U:${zonaNombre}/${unidadNombre}`)
-        : (casetaId || `C:${zonaNombre}/${municipioNombre}/${casetaNombre}`);
-    return `INFOEX:roster:${tipo}:${part}`;
+        ? unidadId || `U:${zonaNombre}/${unidadNombre}`
+        : casetaId || `C:${zonaNombre}/${municipioNombre}/${casetaNombre}`;
+    return `INFOEX:lista:${tipo}:${parte}`;
   }, [
     tipo,
     zonaNombre,
@@ -47,112 +48,238 @@ function AddJR() {
     casetaId,
   ]);
 
-  const [roster, setRoster] = useState<BomberoLite[]>([]);
+  // 2) clave definitiva que vamos a usar
+  const [storageKey, setStorageKey] = useState<string | null>(null);
 
-  // cargar roster guardado
+  // 3) la lista cargada (null = aún no la he cargado, [] = la he cargado vacía)
+  const [listaBomberos, setListaBomberos] = useState<Bombero[] | null>(null);
+
+  // 4) para saber si lo que hay en pantalla pertenece ya a *esa* clave
+  const [loadedForKey, setLoadedForKey] = useState<string | null>(null);
+
+  // 👇 decidir la key
   useEffect(() => {
+    // prioridad 1: la que venga en la URL
+    if (forcedKey) {
+      setStorageKey(forcedKey);
+      return;
+    }
+
+    // prioridad 2: si hay id real, usamos la base
+    if (
+      (tipo === "unidad" && unidadId) ||
+      (tipo === "caseta" && casetaId)
+    ) {
+      setStorageKey(baseKey);
+      return;
+    }
+
+    // prioridad 3: intentar buscar una que empiece por el prefijo
+    try {
+      const prefix = `INFOEX:lista:${tipo}:`;
+      let found: string | null = null;
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(prefix)) {
+          found = k;
+          break;
+        }
+      }
+      setStorageKey(found || baseKey);
+    } catch {
+      setStorageKey(baseKey);
+    }
+  }, [forcedKey, baseKey, tipo, unidadId, casetaId]);
+
+  // 👇 cargar la lista de ESA key (solo cuando la tengamos)
+  useEffect(() => {
+    if (!storageKey) return;
     try {
       const raw = localStorage.getItem(storageKey);
       if (raw) {
-        const parsed = JSON.parse(raw) as BomberoLite[];
-        if (Array.isArray(parsed)) setRoster(parsed);
-        else setRoster([]);
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          setListaBomberos(parsed);
+        } else {
+          setListaBomberos([]);
+        }
       } else {
-        setRoster([]);
+        setListaBomberos([]);
       }
+      setLoadedForKey(storageKey);
     } catch {
-      setRoster([]);
+      setListaBomberos([]);
+      setLoadedForKey(storageKey);
     }
   }, [storageKey]);
 
-  // persistir roster
+  // 👇 guardar solo cuando:
+  // - tenemos key
+  // - hemos cargado precisamente esa key
+  // - tenemos lista (no es null)
   useEffect(() => {
+    if (!storageKey) return;
+    if (loadedForKey !== storageKey) return;
+    if (listaBomberos === null) return;
     try {
-      localStorage.setItem(storageKey, JSON.stringify(roster));
+      localStorage.setItem(storageKey, JSON.stringify(listaBomberos));
     } catch {
       // ignore
     }
-  }, [roster, storageKey]);
+  }, [listaBomberos, storageKey, loadedForKey]);
 
-  // --- Formulario para añadir bomberos al roster del día ---
+  // --- formulario ---
   const [dni, setDni] = useState("");
-  const [nombre, setNombre] = useState("");
-  const [apellidos, setApellidos] = useState("");
-  const [isJR, setIsJR] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [mensaje, setMensaje] = useState<string | null>(null);
+  const [cargando, setCargando] = useState(false);
 
-  function addBombero(e: React.FormEvent) {
+  async function agregarBombero(e: React.FormEvent) {
     e.preventDefault();
-    setMsg(null);
-    const clean: BomberoLite = {
-      dni: dni.trim().toUpperCase(),
-      nombre: nombre.trim(),
-      apellidos: apellidos.trim(),
-      is_jefe_reten: isJR,
-    };
-    if (!clean.dni || !clean.nombre || !clean.apellidos) {
-      setMsg("Completa DNI, nombre y apellidos.");
+    setMensaje(null);
+    if (!storageKey) return; // aún no sé dónde guardar
+
+    const dniLimpio = dni.trim().toUpperCase();
+    if (!dniLimpio) {
+      setMensaje("Debes introducir un DNI.");
       return;
     }
-    if (roster.some((b) => b.dni === clean.dni)) {
-      setMsg("Ya hay un bombero con ese DNI en la lista.");
+
+    if (Array.isArray(listaBomberos) && listaBomberos.some((b) => b.dni === dniLimpio)) {
+      setMensaje("Ya hay un bombero con ese DNI en la lista.");
       return;
     }
-    setRoster((prev) => [...prev, clean]);
-    setDni("");
-    setNombre("");
-    setApellidos("");
-    setIsJR(false);
+
+    setCargando(true);
+    try {
+      const res = await fetch(`/api/usuarios/dni?dni=${encodeURIComponent(dniLimpio)}`, {
+        credentials: "include",
+      });
+
+      if (res.status === 404) {
+        setMensaje("Ese DNI no existe en INFOEX.");
+        return;
+      }
+
+      const dbUser = await res.json();
+
+      if (dbUser.rol !== "bf") {
+        setMensaje("Solo puedes añadir Bomberos Forestales (bf).");
+        return;
+      }
+
+      if (tipo === "unidad" && unidadId) {
+        if (dbUser.unidad_id !== unidadId) {
+          setMensaje("Ese bombero no pertenece a tu unidad.");
+          return;
+        }
+      }
+      if (tipo === "caseta" && casetaId) {
+        if (dbUser.caseta_id !== casetaId) {
+          setMensaje("Ese bombero no pertenece a tu caseta.");
+          return;
+        }
+      }
+
+      const nuevo: Bombero = {
+        dni: dniLimpio,
+        nombre: dbUser.nombre,
+        apellidos: dbUser.apellidos,
+      };
+
+      setListaBomberos((prev) => {
+        const base = Array.isArray(prev) ? prev : [];
+        return [...base, nuevo];
+      });
+      setDni("");
+    } catch (err) {
+      console.error(err);
+      setMensaje("Error al verificar el bombero. Inténtalo de nuevo.");
+    } finally {
+      setCargando(false);
+    }
   }
 
-  function removeBombero(dni: string) {
-    setRoster((prev) => prev.filter((b) => b.dni !== dni));
+  function eliminarBombero(dni: string) {
+    setListaBomberos((prev) => {
+      const base = Array.isArray(prev) ? prev : [];
+      return base.filter((b) => b.dni !== dni);
+    });
   }
 
-  // si alguien llega sin params mínimos, lo mandamos atrás
+  // seguridad: si entra sin tipo → hacia /jr
   useEffect(() => {
-    if (!tipo || !zonaNombre) {
+    if (!tipo) {
       router.replace("/jr");
     }
-  }, [tipo, zonaNombre, router]);
+  }, [tipo, router]);
 
   const tituloDestino =
     tipo === "unidad"
-      ? `Unidad: ${unidadNombre} (Zona: ${zonaNombre})`
-      : `Caseta: ${casetaNombre} — Municipio: ${municipioNombre} (Zona: ${zonaNombre}${
-          provinciaNombre ? `, Prov.: ${provinciaNombre}` : ""
-        })`;
+      ? `Unidad: ${unidadNombre || "(sin nombre)"}`
+      : `Caseta: ${casetaNombre || "(sin nombre)"} — Municipio: ${municipioNombre || ""}`;
+
+  // pasar a notas → le paso SIEMPRE la key que estoy usando
+  const irANotas = () => {
+    if (!storageKey) return;
+    const sp = new URLSearchParams({
+      tipo: tipo || "",
+      zona: zonaNombre,
+      municipio: municipioNombre,
+      unidad: unidadNombre,
+      caseta: casetaNombre,
+      unidad_id: unidadId,
+      caseta_id: casetaId,
+      ls: storageKey,
+    });
+    router.push(`/jr/note?${sp.toString()}`);
+  };
+
+  const listaEstáCargando = listaBomberos === null;
 
   return (
     <main className="min-h-screen">
       <div className="mx-auto max-w-5xl p-6 md:p-10 space-y-4">
-        <div className="flex justify-between items-center">
-          <h1 className="text-xl font-semibold">Lista de Bomberos del día</h1>
+        {/* “paginación” arriba */}
+        <div className="flex gap-2 mb-2">
+          <Button variant="outline" size="sm" className="font-semibold">
+            1. Bomberos
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={!storageKey}
+            onClick={irANotas}
+          >
+            2. Anotaciones
+          </Button>
         </div>
-        <Card className="shadow-xl ">
+
+        <div className="flex justify-between items-center">
+          <h1 className="text-xl font-semibold">Lista de Bomberos del Día</h1>
+        </div>
+        <Card className="shadow-xl">
           <CardHeader>
             <CardTitle>{tituloDestino}</CardTitle>
+            {storageKey && (
+              <p className="text-[10px] text-muted-foreground break-all">
+                clave usada: <code>{storageKey}</code>
+              </p>
+            )}
           </CardHeader>
 
           <CardContent className="space-y-6">
-            {/* Controles superiores */}
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  if (confirm("¿Vaciar la lista guardada de este destino?")) {
-                    setRoster([]);
-                  }
-                }}
-              >
-                Vaciar lista
-              </Button>
-              {msg && <span className="text-sm text-red-600">{msg}</span>}
-            </div>
+            {mensaje && (
+              <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+                {mensaje}
+              </div>
+            )}
 
-            {/* Formulario de alta local */}
-            <form onSubmit={addBombero} className="grid grid-cols-1 md:grid-cols-5 gap-3">
-              <div className="space-y-1 md:col-span-1">
+            {/* Formulario */}
+            <form
+              onSubmit={agregarBombero}
+              className="grid grid-cols-1 md:grid-cols-5 gap-3"
+            >
+              <div className="space-y-1 md:col-span-3">
                 <label className="text-sm font-medium">DNI</label>
                 <Input
                   value={dni}
@@ -160,56 +287,83 @@ function AddJR() {
                   placeholder="12345678A"
                 />
               </div>
-              <div className="space-y-1 md:col-span-2">
-                <label className="text-sm font-medium">Nombre</label>
-                <Input value={nombre} onChange={(e) => setNombre(e.target.value)} />
-              </div>
-              <div className="space-y-1 md:col-span-2">
-                <label className="text-sm font-medium">Apellidos</label>
-                <Input value={apellidos} onChange={(e) => setApellidos(e.target.value)} />
-              </div>
-
-              <div className="flex items-center gap-2 md:col-span-3">
-                <input
-                  id="jr"
-                  type="checkbox"
-                  checked={isJR}
-                  onChange={(e) => setIsJR(e.target.checked)}
-                />
-                <label htmlFor="jr" className="text-sm">Jefe de Retén (JR)</label>
-              </div>
-
-              <div className="md:col-span-2 flex items-end">
-                <Button type="submit" className="w-full">Añadir a la lista</Button>
+              <div className="md:col-span-2 flex items-end justify-end gap-2">
+                <Button type="submit" disabled={cargando || listaEstáCargando}>
+                  {cargando ? "Verificando..." : "Añadir"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    if (confirm("¿Vaciar la lista guardada de este destino?")) {
+                      setListaBomberos([]);
+                    }
+                  }}
+                  disabled={listaEstáCargando}
+                >
+                  Vaciar
+                </Button>
               </div>
             </form>
 
-            {/* Lista persistente */}
+            {/* Lista */}
             <div className="space-y-2">
               <div className="text-sm text-muted-foreground">
-                {roster.length === 0
-                  ? "No hay bomberos en la lista guardada para este destino."
-                  : `Bomberos en la lista (${roster.length})`}
+                {listaEstáCargando
+                  ? "Cargando lista…"
+                  : (listaBomberos?.length || 0) === 0
+                  ? "No hay bomberos en la lista guardada."
+                  : `Bomberos añadidos (${listaBomberos?.length || 0})`}
               </div>
 
-              <div className="rounded-xl border bg-background">
-                <div className="grid grid-cols-12 px-3 py-2 text-xs font-medium">
-                  <div className="col-span-3">Nombre</div>
-                  <div className="col-span-5">Apellidos</div>
-                  <div className="col-span-1 text-center">JR</div>
+              {/* móvil */}
+              <div className="md:hidden space-y-3">
+                {(listaBomberos || []).map((b) => (
+                  <div
+                    key={b.dni}
+                    className="rounded-lg border bg-background px-3 py-2 flex justify-between gap-3 items-center"
+                  >
+                    <div>
+                      <div className="text-sm font-semibold">
+                        {b.nombre} {b.apellidos}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {b.dni}
+                      </div>
+                    </div>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => eliminarBombero(b.dni)}
+                    >
+                      Eliminar
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              {/* escritorio */}
+              <div className="hidden md:block rounded-xl border bg-background overflow-x-auto">
+                <div className="grid grid-cols-12 px-3 py-2 text-xs font-medium bg-muted">
+                  <div className="col-span-3">DNI</div>
+                  <div className="col-span-4">Nombre</div>
+                  <div className="col-span-4">Apellidos</div>
                   <div className="col-span-1 text-right">Acción</div>
                 </div>
                 <div className="divide-y">
-                  {roster.map((b) => (
-                    <div key={b.dni} className="grid grid-cols-12 px-3 py-2 text-sm items-center">
-                      <div className="col-span-3">{b.nombre}</div>
-                      <div className="col-span-5">{b.apellidos}</div>
-                      <div className="col-span-1 text-center">{b.is_jefe_reten ? "Sí" : "No"}</div>
+                  {(listaBomberos || []).map((b) => (
+                    <div
+                      key={b.dni}
+                      className="grid grid-cols-12 px-3 py-2 text-sm items-center"
+                    >
+                      <div className="col-span-3">{b.dni}</div>
+                      <div className="col-span-4">{b.nombre}</div>
+                      <div className="col-span-4">{b.apellidos}</div>
                       <div className="col-span-1 text-right">
                         <Button
                           variant="secondary"
                           size="sm"
-                          onClick={() => removeBombero(b.dni)}
+                          onClick={() => eliminarBombero(b.dni)}
                         >
                           Eliminar
                         </Button>
@@ -220,13 +374,13 @@ function AddJR() {
               </div>
             </div>
 
-            {/* Acciones inferiores */}
+            {/* Acciones */}
             <div className="flex justify-end gap-2">
               <Button variant="secondary" onClick={() => router.push("/jr")}>
                 Atrás
               </Button>
-              <Button onClick={() => alert("Guardado en este navegador 👍")}>
-                Aceptar
+              <Button onClick={irANotas} disabled={listaEstáCargando || (listaBomberos?.length || 0) === 0}>
+                Continuar
               </Button>
             </div>
           </CardContent>
@@ -239,7 +393,7 @@ function AddJR() {
 export default function Page() {
   return (
     <Suspense fallback={<div>Cargando…</div>}>
-      <AddJR />
+      <AgregarBomberos />
     </Suspense>
   );
 }

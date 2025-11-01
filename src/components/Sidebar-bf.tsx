@@ -17,7 +17,7 @@ export function SidebarBF({ className }: { className?: string }) {
       className={cn(
         // Misma línea visual que el Navbar: fondo más claro, borde blanco grueso
         "hidden md:block w-64 shrink-0 bg-[--card]/95 text-[--sidebar-foreground] " +
-          "border-r-6 border-white/90 shadow-md backdrop-blur-md " +
+          "border-r-10 border-white-90 shadow-md backdrop-blur-md " +
           "sticky top-0 h-[calc(100vh-56px)]",
         className
       )}

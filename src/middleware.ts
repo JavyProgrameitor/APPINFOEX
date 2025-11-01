@@ -60,7 +60,7 @@ export async function middleware(req: NextRequest) {
 
   // rol
   const { data: rec, error } = await supabase
-    .from("users")
+    .from("usuarios")
     .select("rol")
     .eq("auth_user_id", user.id)
     .maybeSingle();

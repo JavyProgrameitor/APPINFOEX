@@ -6,350 +6,153 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 
-type Tipo = "unidad" | "caseta";
-
-type Zona = string;
-type Municipio = { id: string; nombre: string };
-type Unidad = { id: string; nombre: string };
-type Caseta = { id: string; nombre: string; municipio_id: string };
-
-type Selection = {
-  zona?: Zona;
-  municipioId?: string;
-  tipo?: Tipo;
-  unidadNombre?: string;
-  casetaNombre?: string;
-};
+type DestinoJR =
+  | {
+      tipo: "unidad";
+      zona: string;
+      unidad_id: string;
+      unidad_nombre: string;
+    }
+  | {
+      tipo: "caseta";
+      zona: string;
+      caseta_id: string;
+      caseta_nombre: string;
+      municipio_id: string;
+      municipio_nombre: string;
+    };
 
 export default function StartJR() {
   const router = useRouter();
-  const [authed, setAuthed] = useState<boolean | null>(null);
 
-  // 1) comprobar sesión (ya no usamos supabaseBrowser)
+  const [loading, setLoading] = useState(true);
+  const [destino, setDestino] = useState<DestinoJR | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     (async () => {
-      try {
-        const res = await fetch("/api/me", { credentials: "include" });
-        const json = await res.json();
-        if (!res.ok || !json.email) {
-          router.replace("/");
-          return;
-        }
-        setAuthed(true);
-      } catch {
+      // 1) comprobar sesión + rol
+      const meRes = await fetch("/api/me", { credentials: "include" });
+      if (meRes.status !== 200) {
         router.replace("/");
+        return;
       }
+      const me = await meRes.json();
+      if (me.rol !== "jr") {
+        router.replace("/");
+        return;
+      }
+
+      // 2) pedir destino
+      const destRes = await fetch("/api/jr/destino", { credentials: "include" });
+      const djson = await destRes.json();
+
+      if (!destRes.ok) {
+        setError("No tienes una unidad/caseta asignada. Contacta con administración.");
+        setLoading(false);
+        return;
+      }
+
+      if (djson.tipo === "unidad") {
+        setDestino({
+          tipo: "unidad",
+          zona: djson.zona,
+          unidad_id: djson.unidad_id,
+          unidad_nombre: djson.unidad_nombre,
+        });
+      } else {
+        setDestino({
+          tipo: "caseta",
+          zona: djson.zona,
+          caseta_id: djson.caseta_id,
+          caseta_nombre: djson.caseta_nombre,
+          municipio_id: djson.municipio_id,
+          municipio_nombre: djson.municipio_nombre,
+        });
+      }
+
+      setLoading(false);
     })();
   }, [router]);
 
-  const [sel, setSel] = useState<Selection>({});
-
-  const [zonas, setZonas] = useState<Zona[]>([]);
-  const [municipios, setMunicipios] = useState<Municipio[]>([]);
-  const [unidades, setUnidades] = useState<Unidad[]>([]);
-  const [casetas, setCasetas] = useState<Caseta[]>([]);
-
-  // estilos select
-  const selectBase =
-    "h-10 w-full rounded-xl border-2 bg-background text-foreground px-3 text-sm outline-none ring-offset-background transition-colors " +
-    "focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer";
-  const selectClass = (isSelected: boolean) =>
-    `${selectBase} ${isSelected ? "border-white" : "border-green-600"}`;
-
-  // 2) cargar zonas
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch("/api/zonas");
-        const json = await res.json();
-        if (Array.isArray(json)) {
-          setZonas(json as Zona[]);
-        } else if (Array.isArray(json.zonas)) {
-          setZonas(json.zonas as Zona[]);
-        }
-      } catch {
-        setZonas([]);
-      }
-    })();
-  }, []);
-
-  // 3) cuando cambia zona, cargar municipios y unidades
-  useEffect(() => {
-    if (!sel.zona) {
-      setMunicipios([]);
-      setUnidades([]);
-      setCasetas([]);
-      return;
-    }
-    (async () => {
-      const [mRes, uRes] = await Promise.all([
-        fetch(`/api/municipios?zona=${encodeURIComponent(sel.zona!)}`),
-        fetch(`/api/unidades?zona=${encodeURIComponent(sel.zona!)}`),
-      ]);
-      const mJson = await mRes.json();
-      const uJson = await uRes.json();
-      setMunicipios(Array.isArray(mJson) ? mJson : mJson.municipios ?? []);
-      setUnidades(Array.isArray(uJson) ? uJson : uJson.unidades ?? []);
-    })();
-  }, [sel.zona]);
-
-  // 4) cuando cambia municipio, cargar casetas
-  useEffect(() => {
-    if (!sel.municipioId) {
-      setCasetas([]);
-      return;
-    }
-    (async () => {
-      const res = await fetch(
-        `/api/casetas?municipio_id=${encodeURIComponent(sel.municipioId!)}`
-      );
-      const json = await res.json();
-      setCasetas(Array.isArray(json) ? json : json.casetas ?? []);
-    })();
-  }, [sel.municipioId]);
-
-  const noCasetas =
-    sel.tipo === "caseta" && !!sel.municipioId && casetas.length === 0;
-
-  const ready =
-    !!sel.zona &&
-    !!sel.tipo &&
-    ((sel.tipo === "unidad" && !!sel.unidadNombre) ||
-      (sel.tipo === "caseta" && !!sel.municipioId && !!sel.casetaNombre));
-
-  function goNext() {
-    const zonaNombre = sel.zona;
-    const municipioNombre = municipios.find((m) => m.id === sel.municipioId)?.nombre;
+  const goNext = () => {
+    if (!destino) return;
 
     const params = new URLSearchParams();
-    if (zonaNombre) params.set("zona", zonaNombre);
-    if (municipioNombre) params.set("municipio", municipioNombre || "");
-    if (sel.tipo) params.set("tipo", sel.tipo);
-    if (sel.unidadNombre) params.set("unidad", sel.unidadNombre || "");
-    if (sel.casetaNombre) params.set("caseta", sel.casetaNombre || "");
+    params.set("zona", destino.zona);
+    if (destino.tipo === "unidad") {
+      params.set("tipo", "unidad");
+      params.set("unidad", destino.unidad_nombre);
+      params.set("unidad_id", destino.unidad_id);
+    } else {
+      params.set("tipo", "caseta");
+      params.set("municipio", destino.municipio_nombre);
+      params.set("caseta", destino.caseta_nombre);
+      params.set("caseta_id", destino.caseta_id);
+    }
     router.push(`/jr/add?${params.toString()}`);
-  }
+  };
 
-  if (authed === null) return null;
+  if (loading) return null;
 
   return (
-    <main className="min-h-screen dark:from-slate-950 dark:to-slate-900">
+    <main className="min-h-screen">
       <div className="mx-auto max-w-4xl p-6 md:p-10">
-        <Card className="shadow-xl border-border dark:border-border">
-          <CardHeader className="space-y-2">
-            <CardTitle className="text-2xl md:text-3xl tracking-tight">
-              Selecciona tu destino
-            </CardTitle>
+        <Card className="shadow-xl">
+          <CardHeader>
+            <CardTitle>Selecciona tu destino</CardTitle>
           </CardHeader>
-
-          <CardContent className="space-y-8">
-            {/* Zona */}
-            <div className="space-y-2 md:max-w-lg">
-              <label htmlFor="zona-select" className="text-sm font-medium">
-                Zona
-              </label>
-              <select
-                id="zona-select"
-                className={selectClass(!!sel.zona)}
-                value={sel.zona ?? ""}
-                onChange={(e) => {
-                  const value = e.target.value || undefined;
-                  setSel({
-                    zona: value,
-                    tipo: undefined,
-                    municipioId: undefined,
-                    unidadNombre: undefined,
-                    casetaNombre: undefined,
-                  });
-                }}
-              >
-                <option value="" disabled>
-                  Selecciona zona…
-                </option>
-                {zonas.map((z) => (
-                  <option key={z} value={z}>
-                    {z}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Tipo */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Tipo de puesto</label>
-              <div className="grid grid-cols-2 gap-2 md:max-w-sm">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={`h-10 rounded-xl px-3 text-sm transition-colors 
-                text-white cursor-pointer bg-green-600 hover:bg-green-800
-                disabled:cursor-not-allowed
-                ${sel.tipo === "unidad" ? "ring-2 ring-ring bg-green-600" : ""}`}
-                  onClick={() =>
-                    setSel((prev) => ({
-                      ...prev,
-                      tipo: "unidad",
-                      municipioId: undefined,
-                      casetaNombre: undefined,
-                    }))
-                  }
-                  disabled={!sel.zona}
-                >
-                  Unidad
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={`h-10 rounded-xl px-3 text-sm transition-colors 
-                text-white cursor-pointer bg-green-600 hover:bg-green-800
-                disabled:cursor-not-allowed
-                ${sel.tipo === "caseta" ? "ring-2 ring-ring bg-green-600" : ""}`}
-                  onClick={() =>
-                    setSel((prev) => ({
-                      ...prev,
-                      tipo: "caseta",
-                      unidadNombre: undefined,
-                    }))
-                  }
-                  disabled={!sel.zona}
-                >
-                  Caseta
-                </Button>
-              </div>
-            </div>
-
-            {/* Según tipo */}
-            {sel.tipo === "unidad" && (
-              <div className="space-y-2 md:max-w-lg">
-                <label htmlFor="unidad-select" className="text-sm font-medium">
-                  Unidad
-                </label>
-                <select
-                  id="unidad-select"
-                  className={selectClass(!!sel.unidadNombre)}
-                  value={sel.unidadNombre ?? ""}
-                  onChange={(e) =>
-                    setSel((prev) => ({
-                      ...prev,
-                      unidadNombre: e.target.value || undefined,
-                    }))
-                  }
-                  disabled={!sel.zona}
-                >
-                  <option value="" disabled>
-                    {sel.zona ? "Selecciona unidad…" : "Selecciona zona primero"}
-                  </option>
-                  {unidades.map((u) => (
-                    <option key={u.id} value={u.nombre}>
-                      {u.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {sel.tipo === "caseta" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:max-w-3xl">
-                <div className="space-y-2">
-                  <label
-                    htmlFor="municipio-select"
-                    className="text-sm font-medium"
-                  >
-                    Municipio
-                  </label>
-                  <select
-                    id="municipio-select"
-                    className={selectClass(!!sel.municipioId)}
-                    value={sel.municipioId ?? ""}
-                    onChange={(e) =>
-                      setSel((prev) => ({
-                        ...prev,
-                        municipioId: e.target.value || undefined,
-                        casetaNombre: undefined,
-                      }))
-                    }
-                    disabled={!sel.zona}
-                  >
-                    <option value="" disabled>
-                      {sel.zona ? "Selecciona municipio…" : "Selecciona zona primero"}
-                    </option>
-                    {municipios.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.nombre}
-                      </option>
-                    ))}
-                  </select>
+          <CardContent className="space-y-6">
+            {error ? (
+              <div className="text-red-600 text-sm">{error}</div>
+            ) : destino ? (
+              <>
+                {/* Zona (bloqueada) */}
+                <div className="space-y-1 md:max-w-lg">
+                  <label className="text-sm font-medium">Zona</label>
+                  <input
+                    value={destino.zona}
+                    disabled
+                    className="h-10 w-full rounded-xl border-2 bg-muted px-3 text-sm"
+                  />
                 </div>
 
-                {noCasetas ? (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Caseta</label>
-                    <div className="text-sm font-black text-foreground px-3 py-2 bg-muted-50">
-                      No hay caseta en este municipio.
+                {/* Tipo y destino */}
+                {destino.tipo === "unidad" ? (
+                  <div className="space-y-1 md:max-w-lg">
+                    <label className="text-sm font-medium">Unidad asignada</label>
+                    <input
+                      value={destino.unidad_nombre}
+                      disabled
+                      className="h-10 w-full rounded-xl border-2 bg-muted px-3 text-sm"
+                    />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:max-w-3xl">
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium">Municipio</label>
+                      <input
+                        value={destino.municipio_nombre}
+                        disabled
+                        className="h-10 w-full rounded-xl border-2 bg-muted px-3 text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium">Caseta</label>
+                      <input
+                        value={destino.caseta_nombre}
+                        disabled
+                        className="h-10 w-full rounded-xl border-2 bg-muted px-3 text-sm"
+                      />
                     </div>
                   </div>
-                ) : (
-                  <div className="space-y-2">
-                    <label
-                      htmlFor="caseta-select"
-                      className="text-sm font-medium"
-                    >
-                      Caseta
-                    </label>
-                    <select
-                      id="caseta-select"
-                      className={selectClass(!!sel.casetaNombre)}
-                      value={sel.casetaNombre ?? ""}
-                      onChange={(e) =>
-                        setSel((prev) => ({
-                          ...prev,
-                          casetaNombre: e.target.value || undefined,
-                        }))
-                      }
-                      disabled={!sel.municipioId}
-                    >
-                      <option value="" disabled>
-                        {sel.municipioId
-                          ? "Selecciona caseta…"
-                          : "Selecciona municipio primero"}
-                      </option>
-                      {casetas.map((c) => (
-                        <option key={c.id} value={c.nombre}>
-                          {c.nombre}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
                 )}
-              </div>
-            )}
 
-            {/* Acciones */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-              <div className="text-sm text-muted-foreground">
-                {ready ? (
-                  <span className="text-foreground">Todo listo 🎉</span>
-                ) : (
-                  "Completa los campos para continuar"
-                )}
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setSel({});
-                    setMunicipios([]);
-                    setUnidades([]);
-                    setCasetas([]);
-                  }}
-                >
-                  Limpiar
-                </Button>
-                <Button onClick={goNext} disabled={!ready}>
-                  Continuar
-                </Button>
-              </div>
-            </div>
+                <div className="flex justify-end">
+                  <Button onClick={goNext}>Continuar</Button>
+                </div>
+              </>
+            ) : null}
           </CardContent>
         </Card>
       </div>

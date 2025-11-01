@@ -7,6 +7,9 @@ import { ThemeProvider } from "@/components/ui/Theme-provider";
 export const metadata: Metadata = {
   title: "INFOEX",
   description: "Sistema INFOEX",
+  icons: {
+    icon: "/img/Logo.jpg", // o "/favicon.png" si lo pones
+  },
 };
 
 export default function RootLayout({

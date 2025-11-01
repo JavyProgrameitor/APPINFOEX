@@ -44,7 +44,7 @@ export async function POST(req: Request) {
 
     // 2) Comprobar que el llamador sea ADMIN (lee tu tabla users)
     const { data: rec, error: roleErr } = await supabaseAdmin
-      .from("users")
+      .from("usuarios")
       .select("rol")
       .eq("auth_user_id", user.id)
       .maybeSingle();
@@ -89,7 +89,7 @@ export async function POST(req: Request) {
 
     // 5) Upsert en public.users (sin unidad/caseta: quedarán NULL)
     const { error: upsertErr } = await supabaseAdmin
-      .from("users")
+      .from("usuarios")
       .upsert(
         { auth_user_id, rol, dni, nombre, apellidos },
         { onConflict: "auth_user_id" }

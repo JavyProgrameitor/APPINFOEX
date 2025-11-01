@@ -33,7 +33,6 @@ export default function NavBar() {
   useEffect(() => setMounted(true), []);
   const isLight = mounted ? theme === "light" : null;
 
-  // 👇 marca para saltarnos UNA sola petición justo después del logout
   const justLoggedOutRef = useRef(false);
 
   const fetchMe = useCallback(
@@ -125,9 +124,9 @@ export default function NavBar() {
   };
 
   return (
-    <header className="fixed inset-x-0 top-0 z-40">
-      <div className="mx-auto max-w-6xl px-4">
-        <nav className="mt-3 rounded-2xl border-4 border-white/90 shadow-md backdrop-blur-md bg-[--card]/92 supports-[backdrop-filter]:bg-[--card]/85">
+   
+      <header className="mx-auto max-w-6xl px-4">
+        <nav className="mt-3 rounded-2xl border-10 border-white-90 shadow-md backdrop-blur-md bg-[--card]/92 supports-[backdrop-filter]:bg-[--card]/85">
           <div className="relative h-14 flex items-center justify-between px-4">
             {/* Izquierda */}
             <Link href="/" className="flex items-center gap-3">
@@ -174,7 +173,6 @@ export default function NavBar() {
                 variant="outline"
                 size="sm"
                 onClick={() => mounted && setTheme(isLight ? "dark" : "light")}
-                aria-label="Cambiar tema"
                 suppressHydrationWarning
               >
                 {!mounted ? (
@@ -188,7 +186,6 @@ export default function NavBar() {
             </div>
           </div>
         </nav>
-      </div>
-    </header>
+      </header>
   );
 }
