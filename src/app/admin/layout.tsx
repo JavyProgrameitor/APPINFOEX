@@ -19,7 +19,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </SheetTrigger>
             <SheetContent side="left" className="p-0">
               <SheetHeader className="px-4 py-3 border-b">
-                <SheetTitle className="font-black">Panel de Administradores</SheetTitle>
+                <SheetTitle className="flex justify-center font-black">Panel de Administradores</SheetTitle>
                 </SheetHeader>
              <nav className="flex flex-col items-center justify-center gap-4 py-8">
                 <SheetClose asChild>

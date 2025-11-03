@@ -19,47 +19,95 @@ type Anotacion = {
   codigo: string;
   hora_entrada: string;
   hora_salida: string;
-  horas_extras: number;
 };
+
+type JRContext = {
+  tipo: "unidad" | "caseta";
+  zona: string;
+  municipio?: string;
+  unidad?: string;
+  caseta?: string;
+  unidad_id?: string;
+  caseta_id?: string;
+  ls?: string;
+};
+
+const CTX_KEY = "INFOEX:jr:ctx";
+const CODIGOS_PERMITIDOS = ["JR", "TH", "TC", "V", "AP","B"] as const;
 
 function NoteJR() {
   const router = useRouter();
   const params = useSearchParams();
 
-  const tipo = params.get("tipo");
-  const zonaNombre = params.get("zona") || "";
-  const municipioNombre = params.get("municipio") || "";
-  const unidadNombre = params.get("unidad") || "";
-  const casetaNombre = params.get("caseta") || "";
-  const unidadId = params.get("unidad_id") || "";
-  const casetaId = params.get("caseta_id") || "";
-  const forcedKey = params.get("ls");
+  const urlTipo = params.get("tipo") as "unidad" | "caseta" | null;
+  const urlZona = params.get("zona");
+  const urlMunicipio = params.get("municipio");
+  const urlUnidad = params.get("unidad");
+  const urlCaseta = params.get("caseta");
+  const urlUnidadId = params.get("unidad_id");
+  const urlCasetaId = params.get("caseta_id");
+  const urlLs = params.get("ls");
 
-  // misma clave que en /jr/add
-  const storageKey = useMemo(() => {
-    if (forcedKey) return forcedKey;
-    const parte =
-      tipo === "unidad"
-        ? unidadId || `U:${zonaNombre}/${unidadNombre}`
-        : casetaId || `C:${zonaNombre}/${municipioNombre}/${casetaNombre}`;
-    return `INFOEX:lista:${tipo}:${parte}`;
+  const [ctx, setCtx] = useState<JRContext | null>(null);
+
+  useEffect(() => {
+    if (urlTipo && urlZona) {
+      const nuevo: JRContext = {
+        tipo: urlTipo,
+        zona: urlZona,
+        municipio: urlMunicipio || undefined,
+        unidad: urlUnidad || undefined,
+        caseta: urlCaseta || undefined,
+        unidad_id: urlUnidadId || undefined,
+        caseta_id: urlCasetaId || undefined,
+        ls: urlLs || undefined,
+      };
+      setCtx(nuevo);
+      try {
+        localStorage.setItem(CTX_KEY, JSON.stringify(nuevo));
+      } catch {}
+      return;
+    }
+
+    try {
+      const raw = localStorage.getItem(CTX_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as JRContext;
+        setCtx(saved);
+        return;
+      }
+    } catch {}
+
+    setCtx(null);
   }, [
-    forcedKey,
-    tipo,
-    zonaNombre,
-    municipioNombre,
-    unidadNombre,
-    casetaNombre,
-    unidadId,
-    casetaId,
+    urlTipo,
+    urlZona,
+    urlMunicipio,
+    urlUnidad,
+    urlCaseta,
+    urlUnidadId,
+    urlCasetaId,
+    urlLs,
   ]);
+
+  // claves de storage
+  const { storageKey, anotStorageKey } = useMemo(() => {
+    if (!ctx) return { storageKey: null, anotStorageKey: null };
+    const parte =
+      ctx.tipo === "unidad"
+        ? ctx.unidad_id || `U:${ctx.zona}/${ctx.unidad || ""}`
+        : ctx.caseta_id || `C:${ctx.zona}/${ctx.municipio || ""}/${ctx.caseta || ""}`;
+    return {
+      storageKey: ctx.ls ? ctx.ls : `INFOEX:lista:${ctx.tipo}:${parte}`,
+      anotStorageKey: `INFOEX:anotaciones:${ctx.tipo}:${parte}`,
+    };
+  }, [ctx]);
 
   const [bomberos, setBomberos] = useState<BomberoItem[] | null>(null);
   const [anotaciones, setAnotaciones] = useState<Record<string, Anotacion>>({});
-  const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  // 1) cargar lista
+  // cargar bomberos
   useEffect(() => {
     if (!storageKey) return;
     try {
@@ -79,45 +127,57 @@ function NoteJR() {
     }
   }, [storageKey]);
 
-  // 2) crear anotaciones base cuando tenga bomberos
+  // crear anotaciones base o cargar las guardadas
   useEffect(() => {
     if (!bomberos) return;
+    if (!anotStorageKey) return;
+    // primero intento leer las que ya había
+    try {
+      const rawAnot = localStorage.getItem(anotStorageKey);
+      if (rawAnot) {
+        const parsed = JSON.parse(rawAnot) as Record<string, Anotacion>;
+        setAnotaciones(parsed);
+        return;
+      }
+    } catch {
+      // si falla, sigo abajo y creo de cero
+    }
+
     const hoy = new Date().toISOString().split("T")[0];
     const base: Record<string, Anotacion> = {};
     bomberos.forEach((b) => {
       base[b.dni] = {
         users_id: "",
         fecha: hoy,
-        codigo: "",
+        codigo: "JR",
         hora_entrada: "08:00",
         hora_salida: "15:00",
-        horas_extras: 0,
+    
       };
     });
     setAnotaciones(base);
-  }, [bomberos]);
+  }, [bomberos, anotStorageKey]);
 
-  // 3) resolver users_id real
+  // resolver ids reales
   useEffect(() => {
     const resolver = async () => {
       if (!bomberos || bomberos.length === 0) return;
       const copia: Record<string, Anotacion> = { ...anotaciones };
       for (const b of bomberos) {
         try {
-          const res = await fetch(
-            `/api/usuarios/dni?dni=${encodeURIComponent(b.dni)}`,
-            { credentials: "include" }
-          );
+          const res = await fetch(`/api/usuarios/dni?dni=${encodeURIComponent(b.dni)}`, {
+            credentials: "include",
+          });
           if (res.ok) {
             const user = await res.json();
             if (!copia[b.dni]) {
               copia[b.dni] = {
                 users_id: "",
                 fecha: new Date().toISOString().split("T")[0],
-                codigo: "",
+                codigo: "JR",
                 hora_entrada: "08:00",
                 hora_salida: "15:00",
-                horas_extras: 0,
+              
               };
             }
             copia[b.dni].users_id = user.id;
@@ -127,89 +187,98 @@ function NoteJR() {
         }
       }
       setAnotaciones(copia);
+      // guardar en local
+      if (anotStorageKey) {
+        try {
+          localStorage.setItem(anotStorageKey, JSON.stringify(copia));
+        } catch {}
+      }
     };
-
     resolver();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bomberos]);
 
+  // guardar en local cada vez que cambie
+  useEffect(() => {
+    if (!anotStorageKey) return;
+    try {
+      localStorage.setItem(anotStorageKey, JSON.stringify(anotaciones));
+    } catch {}
+  }, [anotaciones, anotStorageKey]);
+
   const handleChange = (dni: string, field: keyof Anotacion, value: string | number) => {
-    setAnotaciones((prev) => ({
-      ...prev,
-      [dni]: {
+    setAnotaciones((prev) => {
+      const nuevo = {
         ...(prev[dni] || {
           users_id: "",
           fecha: new Date().toISOString().split("T")[0],
-          codigo: "",
+          codigo: "JR",
           hora_entrada: "08:00",
           hora_salida: "15:00",
           horas_extras: 0,
         }),
         [field]: value,
-      },
-    }));
+      };
+      const copia = { ...prev, [dni]: nuevo };
+      return copia;
+    });
   };
 
-  const handleSave = async () => {
-    setMsg(null);
-    setLoading(true);
-
-    try {
-      const payload =
-        bomberos
-          ?.map((b) => anotaciones[b.dni])
-          .filter((a): a is Anotacion => !!a && !!a.users_id) || [];
-
-      if (payload.length === 0) {
-        setMsg("No hay datos válidos para guardar.");
-        setLoading(false);
-        return;
-      }
-
-      const res = await fetch("/api/jr/anotaciones", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const json = await res.json();
-      if (!res.ok) {
-        setMsg(json.error || "Error al guardar las anotaciones.");
-      } else {
-        alert(`Se guardaron ${json.inserted} anotaciones correctamente.`);
-        router.push("/jr");
-      }
-    } catch (err) {
-      setMsg("Error de conexión con el servidor.");
-    } finally {
-      setLoading(false);
+  const irASalidas = () => {
+    if (!ctx) {
+      router.push("/jr");
+      return;
     }
+    const sp = new URLSearchParams({
+      tipo: ctx.tipo,
+      zona: ctx.zona,
+      municipio: ctx.municipio || "",
+      unidad: ctx.unidad || "",
+      caseta: ctx.caseta || "",
+      unidad_id: ctx.unidad_id || "",
+      caseta_id: ctx.caseta_id || "",
+      ls: storageKey || "",
+    });
+    router.push(`/jr/exit?${sp.toString()}`);
   };
 
   const volverABomberos = () => {
-    if (!storageKey) {
+    if (!ctx) {
       router.push("/jr/add");
       return;
     }
     const sp = new URLSearchParams({
-      tipo: tipo || "",
-      zona: zonaNombre,
-      municipio: municipioNombre,
-      unidad: unidadNombre,
-      caseta: casetaNombre,
-      unidad_id: unidadId,
-      caseta_id: casetaId,
-      ls: storageKey,
+      tipo: ctx.tipo,
+      zona: ctx.zona,
+      municipio: ctx.municipio || "",
+      unidad: ctx.unidad || "",
+      caseta: ctx.caseta || "",
+      unidad_id: ctx.unidad_id || "",
+      caseta_id: ctx.caseta_id || "",
+      ls: storageKey || "",
     });
     router.push(`/jr/add?${sp.toString()}`);
   };
 
-  const listaCargandose = bomberos === null;
+  if (ctx === null) {
+    return (
+      <main className="min-h-screen flex items-center justify-center">
+        <div className="text-sm text-muted-foreground">
+          No hay contexto de JR. Ve a la selección.
+          <Button className="ml-2" onClick={() => router.push("/jr")}>
+            Ir a JR
+          </Button>
+        </div>
+      </main>
+    );
+  }
+
+  const listaCargando = bomberos === null;
 
   return (
     <main className="min-h-screen p-6 md:p-10">
       <div className="mx-auto max-w-6xl space-y-4">
-        {/* “paginación” arriba */}
+        {/* paginación */}
         <div className="flex gap-2 mb-2">
           <Button variant="ghost" size="sm" onClick={volverABomberos}>
             1. Bomberos
@@ -217,140 +286,59 @@ function NoteJR() {
           <Button variant="outline" size="sm" className="font-semibold">
             2. Anotaciones
           </Button>
+          <Button variant="ghost" size="sm" onClick={irASalidas}>
+            3. Salidas
+          </Button>
         </div>
 
         <Card className="shadow-xl">
-          <CardHeader>
-            <CardTitle>Anotaciones del día</CardTitle>
-            {storageKey && (
-              <p className="text-[10px] text-muted-foreground break-all">
-                clave usada: <code>{storageKey}</code>
-              </p>
-            )}
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {listaCargandose ? (
-              <p className="text-sm text-muted-foreground">Cargando lista…</p>
-            ) : (bomberos || []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No hay bomberos en la lista. Regresa a <b>/jr/add</b>.
-              </p>
-            ) : (
-              <>
-                {/* móvil: tarjetas */}
-                <div className="md:hidden space-y-4">
-                  {(bomberos || []).map((b) => {
-                    const a = anotaciones[b.dni];
-                    return (
-                      <div key={b.dni} className="rounded-lg border bg-background p-3 space-y-2">
-                        <div className="text-sm font-semibold">
-                          {b.nombre} {b.apellidos}
-                        </div>
-                        <div className="text-xs text-muted-foreground">{b.dni}</div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="text-xs">Fecha</label>
-                            <Input
-                              type="date"
-                              value={a?.fecha || ""}
-                              onChange={(e) =>
-                                handleChange(b.dni, "fecha", e.target.value)
-                              }
-                            />
+            <CardHeader>
+              <CardTitle>Anotaciones del día</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {listaCargando ? (
+                <p className="text-sm text-muted-foreground">Cargando lista…</p>
+              ) : (bomberos || []).length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No hay bomberos. Vuelve <b>Agregar</b>.
+                </p>
+              ) : (
+                <>
+                  {/* móvil */}
+                  <div className="md:hidden space-y-4">
+                    {(bomberos || []).map((b) => {
+                      const a = anotaciones[b.dni];
+                      return (
+                        <div key={b.dni} className="rounded-lg border bg-background p-3 space-y-2">
+                          <div className="text-sm font-semibold">
+                            {b.nombre} {b.apellidos}
                           </div>
-                          <div>
-                            <label className="text-xs">Código</label>
-                            <Input
-                              value={a?.codigo || ""}
-                              onChange={(e) =>
-                                handleChange(b.dni, "codigo", e.target.value)
-                              }
-                            />
-                          </div>
-                          <div>
-                            <label className="text-xs">Entrada</label>
-                            <Input
-                              type="time"
-                              value={a?.hora_entrada || ""}
-                              onChange={(e) =>
-                                handleChange(b.dni, "hora_entrada", e.target.value)
-                              }
-                            />
-                          </div>
-                          <div>
-                            <label className="text-xs">Salida</label>
-                            <Input
-                              type="time"
-                              value={a?.hora_salida || ""}
-                              onChange={(e) =>
-                                handleChange(b.dni, "hora_salida", e.target.value)
-                              }
-                            />
-                          </div>
-                          <div>
-                            <label className="text-xs">Extras</label>
-                            <Input
-                              type="number"
-                              step="0.25"
-                              min="0"
-                              value={a?.horas_extras ?? 0}
-                              onChange={(e) =>
-                                handleChange(
-                                  b.dni,
-                                  "horas_extras",
-                                  e.target.value ? parseFloat(e.target.value) : 0
-                                )
-                              }
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* escritorio */}
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full text-sm border-collapse">
-                    <thead>
-                      <tr className="bg-muted text-left">
-                        <th className="p-2">DNI</th>
-                        <th className="p-2">Nombre</th>
-                        <th className="p-2">Apellidos</th>
-                        <th className="p-2">Fecha</th>
-                        <th className="p-2">Código</th>
-                        <th className="p-2">Entrada</th>
-                        <th className="p-2">Salida</th>
-                        <th className="p-2">Extras</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(bomberos || []).map((b) => {
-                        const a = anotaciones[b.dni];
-                        return (
-                          <tr key={b.dni} className="border-t">
-                            <td className="p-2 whitespace-nowrap">{b.dni}</td>
-                            <td className="p-2 whitespace-nowrap">{b.nombre}</td>
-                            <td className="p-2 whitespace-nowrap">{b.apellidos}</td>
-                            <td className="p-2">
+                          <div className="text-xs text-muted-foreground">{b.dni}</div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-xs">Fecha</label>
                               <Input
                                 type="date"
                                 value={a?.fecha || ""}
-                                onChange={(e) =>
-                                  handleChange(b.dni, "fecha", e.target.value)
-                                }
+                                onChange={(e) => handleChange(b.dni, "fecha", e.target.value)}
                               />
-                            </td>
-                            <td className="p-2">
-                              <Input
-                                type="text"
-                                value={a?.codigo || ""}
-                                onChange={(e) =>
-                                  handleChange(b.dni, "codigo", e.target.value)
-                                }
-                              />
-                            </td>
-                            <td className="p-2">
+                            </div>
+                            <div>
+                              <label className="text-xs">Código</label>
+                              <select
+                                className="w-full border rounded px-2 py-1 text-sm bg-background"
+                                value={a?.codigo || "JR"}
+                                onChange={(e) => handleChange(b.dni, "codigo", e.target.value)}
+                              >
+                                {CODIGOS_PERMITIDOS.map((c) => (
+                                  <option key={c} value={c}>
+                                    {c}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-xs">Entrada</label>
                               <Input
                                 type="time"
                                 value={a?.hora_entrada || ""}
@@ -358,8 +346,9 @@ function NoteJR() {
                                   handleChange(b.dni, "hora_entrada", e.target.value)
                                 }
                               />
-                            </td>
-                            <td className="p-2">
+                            </div>
+                            <div>
+                              <label className="text-xs">Salida</label>
                               <Input
                                 type="time"
                                 value={a?.hora_salida || ""}
@@ -367,43 +356,95 @@ function NoteJR() {
                                   handleChange(b.dni, "hora_salida", e.target.value)
                                 }
                               />
-                            </td>
-                            <td className="p-2">
-                              <Input
-                                type="number"
-                                step="0.25"
-                                min="0"
-                                value={a?.horas_extras ?? 0}
-                                onChange={(e) =>
-                                  handleChange(
-                                    b.dni,
-                                    "horas_extras",
-                                    e.target.value ? parseFloat(e.target.value) : 0
-                                  )
-                                }
-                              />
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
 
-                {msg && <div className="text-red-600 text-sm">{msg}</div>}
+                  {/* escritorio */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-sm border-collapse">
+                      <thead>
+                        <tr className="bg-muted text-left">
+                          <th className="p-2">DNI</th>
+                          <th className="p-2">Nombre</th>
+                          <th className="p-2">Apellidos</th>
+                          <th className="p-2">Fecha</th>
+                          <th className="p-2">Código</th>
+                          <th className="p-2">Entrada</th>
+                          <th className="p-2">Salida</th>
+                          <th className="p-2">Extras (→ Salidas)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(bomberos || []).map((b) => {
+                          const a = anotaciones[b.dni];
+                          return (
+                            <tr key={b.dni} className="border-t">
+                              <td className="p-2 whitespace-nowrap">{b.dni}</td>
+                              <td className="p-2 whitespace-nowrap">{b.nombre}</td>
+                              <td className="p-2 whitespace-nowrap">{b.apellidos}</td>
+                              <td className="p-2">
+                                <Input
+                                  type="date"
+                                  value={a?.fecha || ""}
+                                  onChange={(e) => handleChange(b.dni, "fecha", e.target.value)}
+                                />
+                              </td>
+                              <td className="p-2">
+                                <select
+                                  className="border rounded px-2 py-1 text-sm bg-background"
+                                  value={a?.codigo || "JR"}
+                                  onChange={(e) => handleChange(b.dni, "codigo", e.target.value)}
+                                >
+                                  {CODIGOS_PERMITIDOS.map((c) => (
+                                    <option key={c} value={c}>
+                                      {c}
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
+                              <td className="p-2">
+                                <Input
+                                  type="time"
+                                  value={a?.hora_entrada || ""}
+                                  onChange={(e) =>
+                                    handleChange(b.dni, "hora_entrada", e.target.value)
+                                  }
+                                />
+                              </td>
+                              <td className="p-2">
+                                <Input
+                                  type="time"
+                                  value={a?.hora_salida || ""}
+                                  onChange={(e) =>
+                                    handleChange(b.dni, "hora_salida", e.target.value)
+                                  }
+                                />
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
 
-                <div className="flex justify-end gap-2">
-                  <Button variant="secondary" onClick={volverABomberos}>
-                    Atrás
-                  </Button>
-                  <Button onClick={handleSave} disabled={loading}>
-                    {loading ? "Guardando..." : "Guardar todas"}
-                  </Button>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+                  {msg && <div className="text-red-600 text-sm">{msg}</div>}
+
+                  <div className="flex justify-end gap-2">
+                    <Button variant="secondary" onClick={volverABomberos}>
+                      Atrás
+                    </Button>
+                    <Button onClick={irASalidas}>
+                      Siguiente: Salidas
+                    </Button>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
       </div>
     </main>
   );

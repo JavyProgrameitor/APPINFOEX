@@ -1,5 +1,12 @@
 import { SidebarJR } from "../../components/Sidebar-jr";
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/Sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetHeader,
+  SheetTitle,
+  SheetClose,
+} from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
 import { Menu } from "lucide-react";
 import Link from "next/link";
@@ -18,25 +25,42 @@ export default function JRLayout({ children }: { children: React.ReactNode }) {
             </SheetTrigger>
             <SheetContent side="left" className="p-0">
               <SheetHeader className="px-4 py-3 border-b">
-                <SheetTitle className="font-black">Panel de Jefes de Retén</SheetTitle>
+                <SheetTitle className="flex justify-center font-black">
+                  Panel de Jefes de Servicio
+                </SheetTitle>
               </SheetHeader>
-              <nav className="space-y-1 p-4">
+              <nav className="flex flex-col items-center justify-center gap-4 py-8">
                 <SheetClose asChild>
-                  <Link href="/jr/add"
-                        className="w-10/12 text-center rounded-xl px-5 py-3 text-sm font-medium
+                  <Link
+                    href="/jr/add"
+                    className="w-10/12 text-center rounded-xl px-5 py-3 text-sm font-medium
                                border-2 border-primary/60 bg-primary/10 hover:bg-primary/20
                                dark:border-primary/40 dark:bg-primary/10 dark:hover:bg-primary/30
-                               transition-all duration-200 shadow-sm hover:shadow-md">
+                               transition-all duration-200 shadow-sm hover:shadow-md"
+                  >
                     Agregar Bomberos
                   </Link>
                 </SheetClose>
-                   <SheetClose asChild>
-                  <Link href="/jr/note"
-                        className="w-10/12 text-center rounded-xl px-5 py-3 text-sm font-medium
+                <SheetClose asChild>
+                  <Link
+                    href="/jr/note"
+                    className="w-10/12 text-center rounded-xl px-5 py-3 text-sm font-medium
                                border-2 border-primary/60 bg-primary/10 hover:bg-primary/20
                                dark:border-primary/40 dark:bg-primary/10 dark:hover:bg-primary/30
-                               transition-all duration-200 shadow-sm hover:shadow-md">
+                               transition-all duration-200 shadow-sm hover:shadow-md"
+                  >
                     Anotaciones Diarias
+                  </Link>
+                </SheetClose>
+                <SheetClose asChild>
+                  <Link
+                    href="/jr/note"
+                    className="w-10/12 text-center rounded-xl px-5 py-3 text-sm font-medium
+                               border-2 border-primary/60 bg-primary/10 hover:bg-primary/20
+                               dark:border-primary/40 dark:bg-primary/10 dark:hover:bg-primary/30
+                               transition-all duration-200 shadow-sm hover:shadow-md"
+                  >
+                    Salidas Diarias
                   </Link>
                 </SheetClose>
               </nav>
