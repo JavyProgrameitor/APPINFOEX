@@ -7,10 +7,20 @@ import { Input } from "@/components/ui/Input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/Alert";
 import { useToast } from "@/components/ui/Use-toast";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/Select";
 
 type Rol = "admin" | "bf" | "jr";
 type AsignacionTipo = "unidad" | "caseta";
-type Opcion = { id: string; nombre: string };
+
+type Unidad = { id: string; nombre: string; zona: string };
+type Municipio = { id: string; nombre: string; zona: string };
+type Caseta = { id: string; nombre: string; municipio_id: string };
 
 export default function AdminUsersPage() {
   const { toast } = useToast();
@@ -24,37 +34,76 @@ export default function AdminUsersPage() {
     apellidos: "",
   });
 
-  // NUEVO: asignación por unidad/caseta
+  // NUEVO: flujo por zona -> (unidad|caseta)
+  const [zona, setZona] = useState<string>("");
   const [asignacionTipo, setAsignacionTipo] = useState<AsignacionTipo | "">("");
   const [unidadId, setUnidadId] = useState<string>("");
   const [casetaId, setCasetaId] = useState<string>("");
 
   // Opciones desde BBDD
-  const [unidades, setUnidades] = useState<Opcion[]>([]);
-  const [casetas, setCasetas] = useState<Opcion[]>([]);
+  const [unidades, setUnidades] = useState<Unidad[]>([]);
+  const [municipios, setMunicipios] = useState<Municipio[]>([]);
+  const [casetas, setCasetas] = useState<Caseta[]>([]);
 
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState<{ type: "success" | "error"; msg: string } | null>(null);
 
-  // Cargar unidades/casetas
+  // Cargar unidades, municipios y casetas
   useEffect(() => {
     const supa = getSupabaseBrowser();
     (async () => {
-      const [{ data: u }, { data: c }] = await Promise.all([
-        supa.from("unidades").select("id,nombre").order("nombre"),
-        supa.from("casetas").select("id,nombre").order("nombre"),
+      const [{ data: u }, { data: m }, { data: c }] = await Promise.all([
+        supa.from("unidades").select("id,nombre,zona").order("nombre"),
+        supa.from("municipios").select("id,nombre,zona").order("nombre"),
+        supa.from("casetas").select("id,nombre,municipio_id").order("nombre"),
       ]);
-      setUnidades((u as Opcion[]) || []);
-      setCasetas((c as Opcion[]) || []);
+      setUnidades((u as Unidad[]) || []);
+      setMunicipios((m as Municipio[]) || []);
+      setCasetas((c as Caseta[]) || []);
     })();
   }, []);
 
-  // Validación de selección
+  // Zonas disponibles (de unidades y municipios)
+  const zonas = useMemo(() => {
+    const z = new Set<string>();
+    for (const u of unidades) z.add(u.zona);
+    for (const m of municipios) z.add(m.zona);
+    return Array.from(z).sort();
+  }, [unidades, municipios]);
+
+  // Lookups
+  const municipioById = useMemo(() => new Map(municipios.map(m => [m.id, m])), [municipios]);
+
+  // Filtrado por zona
+  const unidadesEnZona = useMemo(
+    () => unidades.filter(u => (zona ? u.zona === zona : true)),
+    [unidades, zona]
+  );
+
+  const casetasEnZona = useMemo(
+    () =>
+      casetas.filter(c => {
+        if (!zona) return true;
+        const mun = municipioById.get(c.municipio_id);
+        return mun?.zona === zona;
+      }),
+    [casetas, zona, municipioById]
+  );
+
+  // Validación de selección (ahora requiere zona)
   const seleccionValida = useMemo(() => {
+    if (!zona) return false;
     if (asignacionTipo === "unidad") return !!unidadId;
     if (asignacionTipo === "caseta") return !!casetaId;
     return false;
-  }, [asignacionTipo, unidadId, casetaId]);
+  }, [zona, asignacionTipo, unidadId, casetaId]);
+
+  // Reset dependientes
+  useEffect(() => {
+    // Cambiar zona limpia selección de unidad/caseta
+    setUnidadId("");
+    setCasetaId("");
+  }, [zona]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -62,6 +111,9 @@ export default function AdminUsersPage() {
     setAlert(null);
 
     try {
+      if (!zona) {
+        throw new Error("Debes seleccionar una Zona.");
+      }
       if (!asignacionTipo) {
         throw new Error("Debes seleccionar “Asignar por” (Unidad o Caseta).");
       }
@@ -79,7 +131,7 @@ export default function AdminUsersPage() {
       } = await supa.auth.getSession();
       const token = session?.access_token;
 
-      const res = await fetch("/api/admin/create-user", {
+      const res = await fetch("/api/admin/crear-usuarios", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -92,6 +144,7 @@ export default function AdminUsersPage() {
           dni: form.dni?.trim() || undefined,
           nombre: form.nombre?.trim() || undefined,
           apellidos: form.apellidos?.trim() || undefined,
+          // La zona no se inserta en usuarios; va implícita por la unidad/caseta elegida
           unidad_id: asignacionTipo === "unidad" ? unidadId : undefined,
           caseta_id: asignacionTipo === "caseta" ? casetaId : undefined,
         }),
@@ -105,6 +158,7 @@ export default function AdminUsersPage() {
 
       // Reset
       setForm({ email: "", password: "", rol: "bf", dni: "", nombre: "", apellidos: "" });
+      setZona("");
       setAsignacionTipo("");
       setUnidadId("");
       setCasetaId("");
@@ -154,17 +208,22 @@ export default function AdminUsersPage() {
               <p className="text-xs mt-1">Mínimo 6 caracteres.</p>
             </div>
 
+            {/* Rol */}
             <div>
               <label className="block text-sm mb-1">Usuario tipo</label>
-              <select
-                className="w-full border rounded-md h-10 px-2 bg-background"
+              <Select
                 value={form.rol}
-                onChange={(e) => setForm({ ...form, rol: e.target.value as Rol })}
+                onValueChange={(v) => setForm({ ...form, rol: v as Rol })}
               >
-                <option value="admin">admin</option>
-                <option value="bf">bf</option>
-                <option value="jr">jr</option>
-              </select>
+                <SelectTrigger className="w-full rounded-sm">
+                  <SelectValue placeholder="Selecciona un rol" />
+                </SelectTrigger>
+                <SelectContent className="rounded-sm">
+                  <SelectItem value="admin" className="text-center">Administrador</SelectItem>
+                  <SelectItem value="bf" className="text-center">Bombero Forestal</SelectItem>
+                  <SelectItem value="jr" className="text-center">Jefe de Servicio</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid md:grid-cols-2 gap-3">
@@ -188,64 +247,104 @@ export default function AdminUsersPage() {
               </div>
             </div>
 
+            {/* Zona */}
+            <div>
+              <label className="block text-sm mb-1">Zona</label>
+              <Select
+                value={zona}
+                onValueChange={(v) => setZona(v)}
+              >
+                <SelectTrigger className="w-full rounded-sm">
+                  <SelectValue placeholder="Elige una zona" />
+                </SelectTrigger>
+                <SelectContent className="rounded-sm max-h-64">
+                  {zonas.map((z) => (
+                    <SelectItem key={z} value={z} className="text-center">
+                      {z}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Asignación por Unidad o Caseta */}
             <div className="grid md:grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm mb-1">Asignar por</label>
-                <select
-                  className="w-full border rounded-md h-10 px-2 bg-background"
+                <Select
                   value={asignacionTipo}
-                  onChange={(e) => {
-                    const v = e.target.value as AsignacionTipo | "";
-                    setAsignacionTipo(v);
+                  onValueChange={(v) => {
+                    const value = v as AsignacionTipo | "";
+                    setAsignacionTipo(value);
                     setUnidadId("");
                     setCasetaId("");
                   }}
+                  // Si no hay zona, bloquea el cambio de asignación
+                  disabled={!zona}
                 >
-                  <option value="">— Selecciona —</option>
-                  <option value="unidad">Unidad</option>
-                  <option value="caseta">Caseta</option>
-                </select>
+                  <SelectTrigger className="w-full rounded-sm">
+                    <SelectValue placeholder={zona ? "— Selecciona —" : "Primero elige zona"} />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-sm">
+                    <SelectItem value="unidad" className="text-center">Unidad</SelectItem>
+                    <SelectItem value="caseta" className="text-center">Caseta</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {asignacionTipo === "unidad" && (
                 <div>
                   <label className="block text-sm mb-1">Unidad</label>
-                  <select
-                    className="w-full border rounded-md h-10 px-2 bg-background"
+                  <Select
                     value={unidadId}
-                    onChange={(e) => setUnidadId(e.target.value)}
+                    onValueChange={(v) => setUnidadId(v)}
+                    disabled={!zona}
                   >
-                    <option value="">— Selecciona unidad —</option>
-                    {unidades.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.nombre}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="w-full rounded-sm">
+                      <SelectValue placeholder={zona ? "— Selecciona unidad —" : "Primero elige zona"} />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-sm max-h-64">
+                      {unidadesEnZona.map((u) => (
+                        <SelectItem key={u.id} value={u.id} className="text-center">
+                          {u.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
 
               {asignacionTipo === "caseta" && (
                 <div>
                   <label className="block text-sm mb-1">Caseta</label>
-                  <select
-                    className="w-full border rounded-md h-10 px-2 bg-background"
+                  <Select
                     value={casetaId}
-                    onChange={(e) => setCasetaId(e.target.value)}
+                    onValueChange={(v) => setCasetaId(v)}
+                    disabled={!zona}
                   >
-                    <option value="">— Selecciona caseta —</option>
-                    {casetas.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nombre}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="w-full rounded-sm">
+                      <SelectValue placeholder={zona ? "— Selecciona caseta —" : "Primero elige zona"} />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-sm max-h-64">
+                      {casetasEnZona.map((c) => (
+                        <SelectItem key={c.id} value={c.id} className="text-center">
+                          {c.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
             </div>
 
-            {!seleccionValida && asignacionTipo && (
+            {/* Mensajes de ayuda/validación */}
+            {!zona && (
+              <p className="text-xs text-red-600">Debes seleccionar una Zona.</p>
+            )}
+            {zona && !asignacionTipo && (
+              <p className="text-xs text-red-600">Selecciona si asignas por Unidad o Caseta.</p>
+            )}
+            {zona && asignacionTipo && !seleccionValida && (
               <p className="text-xs text-red-600">
                 {asignacionTipo === "unidad"
                   ? "Debes seleccionar una Unidad."

@@ -8,7 +8,7 @@ import { FileText, Home, Users } from "lucide-react";
 
 const links = [
   { href: "/admin", label: "Escritorio", icon: Home },
-  { href: "/admin/forms", label: "Ver usuarios", icon: FileText },
+  { href: "/admin/list", label: "Ver usuarios", icon: FileText },
   { href: "/admin/users", label: "Agregar usuarios", icon: Users },
 ];
 

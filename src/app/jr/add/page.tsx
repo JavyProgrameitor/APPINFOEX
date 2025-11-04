@@ -175,23 +175,6 @@ function AgregarBomberos() {
       }
 
       const dbUser = await res.json();
-      /*
-        /**Casetero se agrega el solo y entra como jr 
-      const esContextoCaseta = ctx.tipo === "caseta" && Boolean(ctx.caseta_id);
-      const esMismoCasetero = esContextoCaseta && dbUser.caseta_id && dbUser.caseta_id === ctx.caseta_id;
-
-      if (dbUser.rol !== "bf" && !esMismoCasetero) {
-        setMensaje(
-          "Solo puedes añadir Bomberos Forestales (bf) o al casetero de esta caseta."
-        );
-        return;
-      }
-      /*
-      if (dbUser.rol !== "bf") {
-        setMensaje("Solo puedes añadir Bomberos Forestales (bf).");
-        return;
-      }
-        */
 
       if (ctx.tipo === "unidad" && ctx.unidad_id) {
         if (dbUser.unidad_id !== ctx.unidad_id) {
@@ -229,9 +212,9 @@ function AgregarBomberos() {
     return (
       <main className="min-h-screen flex items-center justify-center">
         <div className="text-sm text-muted-foreground">
-          No hay contexto de JR. Ve a la pantalla de selección.
+          No hay unidad o caseta definida
           <Button className="ml-2" onClick={() => router.push("/jr")}>
-            Ir a JR
+            Ir a Inicio
           </Button>
         </div>
       </main>

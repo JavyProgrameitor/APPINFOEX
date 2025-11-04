@@ -35,7 +35,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </SheetClose>
                 <SheetClose asChild>
                   <Link
-                    href="/admin/forms"
+                    href="/admin/list"
                     className="w-10/12 text-center rounded-xl px-5 py-3 text-sm font-medium
                                border-2 border-primary/60 bg-primary/10 hover:bg-primary/20
                                dark:border-primary/40 dark:bg-primary/10 dark:hover:bg-primary/30

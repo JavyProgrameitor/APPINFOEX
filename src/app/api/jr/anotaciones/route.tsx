@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-const CODIGOS_PERMITIDOS = ["JR", "TH", "TC", "V", "AP"] as const;
+const CODIGOS_PERMITIDOS = ["JR", "TH", "TC", "V", "AP","B"] as const;
 const TIPOS_SALIDA_PERMITIDOS = ["incendio", "trabajo"] as const;
 
 type AnotacionPayload = {

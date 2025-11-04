@@ -32,7 +32,7 @@ type JRContext = {
 };
 
 const CTX_KEY = "INFOEX:jr:ctx";
-const CODIGOS_PERMITIDOS = ["JR", "TH", "TC", "V", "AP"] as const;
+const CODIGOS_PERMITIDOS = ["JR", "TH", "TC", "V", "AP","B"] as const;
 
 function NoteJR() {
   const router = useRouter();
@@ -359,7 +359,7 @@ function NoteJR() {
                             />
                           </div>
                           <div>
-                            <label className="text-xs">Código</label>
+                            <label className="text-xs">Código de trabajo</label>
                             <select
                               className="w-full border rounded px-2 py-1 text-sm bg-background"
                               value={a?.codigo || "JR"}
