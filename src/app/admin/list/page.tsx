@@ -29,7 +29,7 @@ interface Anotacion { id: string; fecha: string; hora_entrada: string; hora_sali
 type Scope = 'unidad' | 'caseta';
 
 export default function AdminListBFPage() {
-  const supa = getSupabaseBrowser();
+ 
 
   // Datos base
   const [unidades, setUnidades] = useState<Unidad[]>([]);
@@ -78,6 +78,8 @@ export default function AdminListBFPage() {
     (async () => {
       setLoading(true);
       try {
+         if (typeof window === 'undefined') return;
+          const supa = getSupabaseBrowser();
         const [{ data: u }, { data: m }, { data: c }, { data: bf }] = await Promise.all([
           supa.from('unidades').select('id,nombre,zona').order('nombre'),
           supa.from('municipios').select('id,nombre,zona').order('nombre'),
@@ -112,6 +114,8 @@ export default function AdminListBFPage() {
     (async () => {
       setLoading(true);
       try {
+         if (typeof window === 'undefined') return;
+      const supa = getSupabaseBrowser();
         const { data } = await supa
           .from('usuarios')
           .select('id,dni,nombre,apellidos,unidad_id,caseta_id,creado_en,rol')
@@ -170,6 +174,8 @@ export default function AdminListBFPage() {
     setAnotaciones(null);
     setLoadingAnot(true);
     try {
+       if (typeof window === 'undefined') return;
+      const supa = getSupabaseBrowser();
       const { data } = await supa
         .from('anotaciones')
         .select('id,fecha,hora_entrada,hora_salida,horas_extras')
