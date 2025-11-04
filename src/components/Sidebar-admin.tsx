@@ -8,8 +8,8 @@ import { FileText, Home, Users } from "lucide-react";
 
 const links = [
   { href: "/admin", label: "Escritorio", icon: Home },
-  { href: "/admin/forms", label: "Formulario", icon: FileText },
-  { href: "/admin/users", label: "Agregar-Usuarios", icon: Users },
+  { href: "/admin/forms", label: "Ver usuarios", icon: FileText },
+  { href: "/admin/users", label: "Agregar usuarios", icon: Users },
 ];
 
 export function SidebarAdmin({ className }: { className?: string }) {

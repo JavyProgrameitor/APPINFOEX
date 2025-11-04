@@ -2,24 +2,24 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-const CODIGOS_PERMITIDOS = ["JR", "TH", "TC", "V", "AP","B"] as const;
+const CODIGOS_PERMITIDOS = ["JR", "TH", "TC", "V", "AP"] as const;
 const TIPOS_SALIDA_PERMITIDOS = ["incendio", "trabajo"] as const;
 
 type AnotacionPayload = {
   users_id: string;
   fecha: string; // YYYY-MM-DD
   codigo: string;
-  hora_entrada: string;
-  hora_salida: string;
+  hora_entrada: string; // HH:mm
+  hora_salida: string;  // HH:mm
+  horas_extras: number; // en anotaciones
 };
 
-type SalidaPayload = {
-  anotacion_index: number; // índice dentro del array de anotaciones insertadas
-  tipo: string;
-  hora_salida: string;
-  hora_entrada: string;
+type SalidaResumen = {
+  tipo: string;             // "incendio" | "trabajo"
+  hora_salida: string;      // HH:mm
+  hora_entrada: string;     // HH:mm
   lugar: string;
-  horas_extras?: number;
+  num_intervienen: number | string;  // puede venir como string
 };
 
 export async function POST(req: Request) {
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     const supabase = await createClient();
     const body = await req.json();
 
-    // ---- CASO 1: formato antiguo: array plano de anotaciones
+    // ---- CASO LEGACY: array plano de anotaciones
     if (Array.isArray(body)) {
       if (body.length === 0) {
         return NextResponse.json(
@@ -40,7 +40,6 @@ export async function POST(req: Request) {
         if (!item.users_id || !item.fecha) {
           throw new Error("Faltan campos obligatorios en los datos.");
         }
-
         const codigoRecibido = (item.codigo || "").toString().trim().toUpperCase();
         const codigoValido = CODIGOS_PERMITIDOS.includes(
           codigoRecibido as (typeof CODIGOS_PERMITIDOS)[number]
@@ -54,9 +53,10 @@ export async function POST(req: Request) {
           codigo: codigoValido,
           hora_entrada: item.hora_entrada ?? "08:00",
           hora_salida: item.hora_salida ?? "15:00",
-          // aunque seguirá existiendo en la tabla, lo mandamos a 0 porque
-          // las horas extras se gestionan en salidas
-          //horas_extras: 0,
+          horas_extras:
+            typeof item.horas_extras === "number"
+              ? item.horas_extras
+              : Number(item.horas_extras) || 0,
         };
       });
 
@@ -72,10 +72,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // ---- CASO 2: formato nuevo: { anotaciones: [...], salidas: [...] }
+    // ---- FORMATO NUEVO: { anotaciones, salidas }
     const { anotaciones, salidas } = body as {
       anotaciones: AnotacionPayload[];
-      salidas: SalidaPayload[];
+      salidas?: SalidaResumen[];
     };
 
     if (!Array.isArray(anotaciones) || anotaciones.length === 0) {
@@ -103,78 +103,79 @@ export async function POST(req: Request) {
         codigo: codigoValido,
         hora_entrada: item.hora_entrada ?? "08:00",
         hora_salida: item.hora_salida ?? "15:00",
-       // horas_extras: 0,
+        horas_extras:
+          typeof item.horas_extras === "number"
+            ? item.horas_extras
+            : Number(item.horas_extras) || 0,
       };
     });
 
-    // 2) insertamos anotaciones y pedimos que nos devuelva los ids
-    const { data: insertedAnotaciones, error: anotError } = await supabase
+    // 2) insert anotaciones con retorno de IDs
+    const { data: insertedAnot, error: anotErr } = await supabase
       .from("anotaciones")
       .insert(anotacionesLimpias)
-      .select(); // 👈 para poder enlazar las salidas
+      .select();
 
-    if (anotError) {
-      console.error("Error al insertar anotaciones:", anotError.message);
-      return NextResponse.json({ error: anotError.message }, { status: 500 });
+    if (anotErr) {
+      console.error("Error al insertar anotaciones:", anotErr.message);
+      return NextResponse.json({ error: anotErr.message }, { status: 500 });
     }
 
-    // si no hay salidas → terminamos
-    if (!Array.isArray(salidas) || salidas.length === 0) {
-      return NextResponse.json(
-        {
-          ok: true,
-          inserted_anotaciones: insertedAnotaciones?.length ?? 0,
-          inserted_salidas: 0,
-        },
-        { status: 200 }
-      );
-    }
+    // 3) si vienen salidas: 1 fila por salida (anclada a la PRIMERA anotación insertada)
+    let insertedSalidasCount = 0;
 
-    // 3) limpiar salidas y enlazarlas
-    const salidasLimpias = salidas
-      .map((s) => {
-        // proteger índice
-        const anot = insertedAnotaciones?.[s.anotacion_index];
-        if (!anot) return null;
+    if (Array.isArray(salidas) && salidas.length > 0) {
+      const anchor = insertedAnot?.[0];
+      if (!anchor) {
+        return NextResponse.json(
+          { error: "No se pudo resolver una anotación para anclar las salidas." },
+          { status: 500 }
+        );
+      }
 
-        const tipoRecibido = (s.tipo || "").toString().trim().toLowerCase();
-        const tipoValido = TIPOS_SALIDA_PERMITIDOS.includes(
-          tipoRecibido as (typeof TIPOS_SALIDA_PERMITIDOS)[number]
-        )
-          ? tipoRecibido
-          : "incendio"; // por defecto
+      const rows = salidas
+        .map((s) => {
+          const tipoRecibido = (s.tipo || "").toString().trim().toLowerCase();
+          const tipoValido = (TIPOS_SALIDA_PERMITIDOS as readonly string[]).includes(tipoRecibido)
+            ? tipoRecibido
+            : "trabajo";
 
-        return {
-          anotacion_id: anot.id,
-          tipo: tipoValido,
-          hora_salida: s.hora_salida ?? anot.hora_salida ?? "15:00",
-          hora_entrada: s.hora_entrada ?? anot.hora_entrada ?? "08:00",
-          lugar: s.lugar ?? "",
-          horas_extras: typeof s.horas_extras === "number" ? s.horas_extras : 0,
-        };
-      })
-      .filter(Boolean) as Array<{
-      anotacion_id: string;
-      tipo: string;
-      hora_salida: string;
-      hora_entrada: string;
-      lugar: string;
-      horas_extras: number;
-    }>;
+          const n = Math.max(0, parseInt(String(s.num_intervienen ?? "0"), 10) || 0);
+          if (n <= 0) return null; // << descartar
 
-    if (salidasLimpias.length > 0) {
-      const { error: salError } = await supabase.from("salidas").insert(salidasLimpias);
-      if (salError) {
-        console.error("Error al insertar salidas:", salError.message);
-        return NextResponse.json({ error: salError.message }, { status: 500 });
+          return {
+            anotacion_id: anchor.id,
+            tipo: tipoValido,
+            hora_salida: s.hora_salida || "15:00",
+            hora_entrada: s.hora_entrada || "08:00",
+            lugar: s.lugar || "",
+            num_intervienen: n,
+          };
+        })
+        .filter(Boolean) as Array<{
+          anotacion_id: string;
+          tipo: string;
+          hora_salida: string;
+          hora_entrada: string;
+          lugar: string;
+          num_intervienen: number;
+        }>;
+
+      if (rows.length > 0) {
+        const { error: salErr } = await supabase.from("salidas").insert(rows);
+        if (salErr) {
+          console.error("Error al insertar salidas:", salErr.message);
+          return NextResponse.json({ error: salErr.message }, { status: 500 });
+        }
+        insertedSalidasCount = rows.length;
       }
     }
 
     return NextResponse.json(
       {
         ok: true,
-        inserted_anotaciones: insertedAnotaciones?.length ?? 0,
-        inserted_salidas: salidasLimpias.length,
+        inserted_anotaciones: insertedAnot?.length ?? 0,
+        inserted_salidas: insertedSalidasCount,
       },
       { status: 200 }
     );

@@ -9,9 +9,11 @@ type Body = {
   dni?: string;
   nombre?: string;
   apellidos?: string;
+  unidad_id?: string; // NUEVO
+  caseta_id?: string; // NUEVO
 };
 
-// Cliente “admin” (service role) para operaciones privilegiadas
+// Cliente “admin” (service role)
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -22,15 +24,15 @@ const clean = (v?: string) => (v && v.trim().length ? v.trim() : null);
 
 export async function POST(req: Request) {
   try {
-    // 1) Autenticación del llamador SIN cookies (Authorization header)
-    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization") || "";
+    // 1) Auth del llamador vía Authorization header (sin cookies)
+    const authHeader =
+      req.headers.get("authorization") || req.headers.get("Authorization") || "";
     if (!authHeader.startsWith("Bearer ")) {
       return NextResponse.json({ error: "Falta Authorization Bearer" }, { status: 401 });
     }
     const bearer = authHeader; // "Bearer <token>"
 
-    // Creamos un cliente “como el usuario” usando ANON + Authorization header
-    // (No usa cookies en absoluto.)
+    // Cliente “como usuario”
     const supaUser = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -42,7 +44,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
 
-    // 2) Comprobar que el llamador sea ADMIN (lee tu tabla users)
+    // 2) Comprobar rol admin del llamador
     const { data: rec, error: roleErr } = await supabaseAdmin
       .from("usuarios")
       .select("rol")
@@ -53,9 +55,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }
 
-    // 3) Parse body y validaciones
+    // 3) Parse + validaciones
     const body = (await req.json()) as Body;
-    const { email, password, rol } = body;
+    const { email, password, rol, unidad_id, caseta_id } = body;
     const dni = clean(body.dni);
     const nombre = clean(body.nombre) ?? "";
     const apellidos = clean(body.apellidos) ?? "";
@@ -70,13 +72,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Rol inválido" }, { status: 400 });
     }
 
-    // 4) Crear en auth.users con contraseña directa
+    // Debe venir exactamente una asignación
+    if ((!!unidad_id && !!caseta_id) || (!unidad_id && !caseta_id)) {
+      return NextResponse.json(
+        { error: "Debes indicar exactamente una: unidad_id o caseta_id" },
+        { status: 400 }
+      );
+    }
+
+    // 4) Crear usuario en auth
     const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
       app_metadata: { role: rol },
-      user_metadata: { rol, dni, nombre, apellidos },
+      user_metadata: {
+        rol,
+        dni,
+        nombre,
+        apellidos,
+        unidad_id: unidad_id ?? null,
+        caseta_id: caseta_id ?? null,
+      },
     });
     if (createErr || !created?.user) {
       return NextResponse.json(
@@ -87,11 +104,19 @@ export async function POST(req: Request) {
 
     const auth_user_id = created.user.id;
 
-    // 5) Upsert en public.users (sin unidad/caseta: quedarán NULL)
+    // 5) Upsert en public.usuarios con unidad/caseta
     const { error: upsertErr } = await supabaseAdmin
       .from("usuarios")
       .upsert(
-        { auth_user_id, rol, dni, nombre, apellidos },
+        {
+          auth_user_id,
+          rol,
+          dni,
+          nombre,
+          apellidos,
+          unidad_id: unidad_id ?? null,
+          caseta_id: caseta_id ?? null,
+        },
         { onConflict: "auth_user_id" }
       );
 
