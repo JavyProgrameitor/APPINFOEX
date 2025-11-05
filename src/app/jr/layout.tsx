@@ -10,7 +10,6 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Menu } from "lucide-react";
 import Link from "next/link";
-import Footer from "@/components/Footer";
 
 export default function JRLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -74,7 +73,6 @@ export default function JRLayout({ children }: { children: React.ReactNode }) {
         <div className="flex-1">{children}</div>
       </div>
       <div>
-        <Footer />
       </div>
     </>
   );

@@ -125,17 +125,17 @@ export default function NavBar() {
 
   return (
    
-      <header className="mx-auto max-w-6xl px-4">
-        <nav className="mt-3 rounded-2xl border-10 border-white-90 shadow-md backdrop-blur-md bg-[--card]/92 supports-[backdrop-filter]:bg-[--card]/85">
-          <div className="relative h-14 flex items-center justify-between px-4">
+      <header className="mx-auto max-w-6xl px-2">
+        <nav className="mt-1 rounded-2xl border-8 border-white-90 shadow-md backdrop-blur-md bg-[--card]/92 supports-[backdrop-filter]:bg-[--card]/85">
+          <div className="relative h-20 flex items-center justify-between">
             {/* Izquierda */}
-            <Link href="/" className="flex items-center gap-3">
+            <Link href="/" className="flex items-center">
               <Image
-                src="/img/Logo.jpg"
+                src="/img/logoGreen.svg"
                 alt="INFOEX"
-                width={36}
-                height={36}
-                className="rounded-lg object-cover"
+                width={80}
+                height={56}
+                className="rounded-lg object-cover "
                 priority
               />
             </Link>
@@ -152,7 +152,7 @@ export default function NavBar() {
             </span>
 
             {/* Derecha */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mr-2" >
               {isRoleRoute && !loading && email && (
                 <>
                   <span className="hidden sm:flex text-xs sm:text-sm items-center gap-2 px-3 py-1 rounded-xl border border-white/40 bg-white/10">

@@ -4,12 +4,13 @@ import "./globals.css";
 import NavBar from "@/components/Navbar";
 import { ThemeProvider } from "@/components/ui/Theme-provider";
 import { ToasterProvider } from "@/components/ui/Use-toast";
+import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "INFOEX",
-  description: "Sistema INFOEX",
+  title: "APP Control-diario",
+  description: "Control diario servicios ",
   icons: {
-    icon: "/img/Logo.jpg", // o "/favicon.png" si lo pones
+    icon: "/img/logoGreen.svg",
   },
 };
 
@@ -24,8 +25,9 @@ export default function RootLayout({
         <ThemeProvider>
           <NavBar />
           <ToasterProvider>
-            <div className="pt-20">{children}</div>
+            <div>{children}</div>
           </ToasterProvider>
+          <Footer />
         </ThemeProvider>
       </body>
     </html>

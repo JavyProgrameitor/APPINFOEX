@@ -46,7 +46,7 @@
 
   /* Radios */
   --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-md: calc(var(--radius) - 1px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 }
@@ -182,4 +182,4 @@ select:focus {
   border-color: var(--ring);
   box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring), transparent 70%);
 }
-option { color: initial; } /* opciones heredarán correctamente en ambos temas */
+option { color: initial; } 

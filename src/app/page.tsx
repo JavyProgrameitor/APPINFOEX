@@ -9,7 +9,7 @@ import "./globals.css";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import Footer from "@/components/Footer";
+
 
 type Rol = "admin" | "jr" | "bf";
 
@@ -110,7 +110,7 @@ export default function AuthPage() {
   return (
     <>
       <main className="min-h-screen flex items-center justify-center">
-        <Card className="w-full max-w-sm shadow-2xl">
+        <Card className="w-full max-w-lg shadow-2xl">
           <CardContent>
             <form onSubmit={onSubmit} className="space-y-3">
               <div className="space-y-1">
@@ -144,7 +144,6 @@ export default function AuthPage() {
           </CardContent>
         </Card>
       </main>
-      <Footer />
     </>
   );
 }

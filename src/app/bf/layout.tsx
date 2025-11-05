@@ -40,9 +40,6 @@ export default function BFLayout({ children }: { children: React.ReactNode }) {
         <SidebarBF />
         <div className="flex-1">{children}</div>
       </div>
-      <div>
-        <Footer />
-      </div>
     </>
   );
 }

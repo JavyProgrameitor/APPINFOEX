@@ -23,13 +23,13 @@ interface UsuarioBF {
   unidad_id: string | null;
   caseta_id: string | null;
   creado_en: string;
+  rol: 'bf' | 'jr' | 'admin';
 }
 interface Anotacion { id: string; fecha: string; hora_entrada: string; hora_salida: string; horas_extras: number }
 
 type Scope = 'unidad' | 'caseta';
 
 export default function AdminListBFPage() {
- 
 
   // Datos base
   const [unidades, setUnidades] = useState<Unidad[]>([]);
@@ -73,27 +73,28 @@ export default function AdminListBFPage() {
     }),
   [casetas, zona, municipioById]);
 
-  // Carga inicial
+  // Carga inicial — llamadas a Supabase solo en cliente
   useEffect(() => {
     (async () => {
+      if (typeof window === 'undefined') return;
+      const supa = getSupabaseBrowser();
       setLoading(true);
       try {
-         if (typeof window === 'undefined') return;
-          const supa = getSupabaseBrowser();
-        const [{ data: u }, { data: m }, { data: c }, { data: bf }] = await Promise.all([
+        const [{ data: u }, { data: m }, { data: c }, { data: per }] = await Promise.all([
           supa.from('unidades').select('id,nombre,zona').order('nombre'),
           supa.from('municipios').select('id,nombre,zona').order('nombre'),
           supa.from('casetas').select('id,nombre,municipio_id').order('nombre'),
+          // ✅ Traer BF y JR
           supa
             .from('usuarios')
             .select('id,dni,nombre,apellidos,unidad_id,caseta_id,creado_en,rol')
-            .eq('rol', 'bf')
+            .in('rol', ['bf', 'jr'])
             .order('apellidos'),
         ]);
         setUnidades((u as Unidad[]) || []);
         setMunicipios((m as Municipio[]) || []);
         setCasetas((c as Caseta[]) || []);
-        setUsuarios(((bf as any[]) || []).map(v => ({
+        setUsuarios(((per as any[]) || []).map(v => ({
           id: v.id,
           dni: v.dni ?? null,
           nombre: v.nombre,
@@ -101,25 +102,25 @@ export default function AdminListBFPage() {
           unidad_id: v.unidad_id ?? null,
           caseta_id: v.caseta_id ?? null,
           creado_en: v.creado_en,
+          rol: v.rol,
         })));
       } finally {
         setLoading(false);
       }
     })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function refresh() {
     // recarga rápida de usuarios (por si cambian asignaciones)
     (async () => {
+      if (typeof window === 'undefined') return;
+      const supa = getSupabaseBrowser();
       setLoading(true);
       try {
-         if (typeof window === 'undefined') return;
-      const supa = getSupabaseBrowser();
         const { data } = await supa
           .from('usuarios')
           .select('id,dni,nombre,apellidos,unidad_id,caseta_id,creado_en,rol')
-          .eq('rol', 'bf')
+          .in('rol', ['bf', 'jr'])
           .order('apellidos');
         setUsuarios(((data as any[]) || []).map(v => ({
           id: v.id,
@@ -129,6 +130,7 @@ export default function AdminListBFPage() {
           unidad_id: v.unidad_id ?? null,
           caseta_id: v.caseta_id ?? null,
           creado_en: v.creado_en,
+          rol: v.rol,
         })));
       } finally {
         setLoading(false);
@@ -167,14 +169,14 @@ export default function AdminListBFPage() {
   useEffect(() => { setUnidadId(''); setCasetaId(''); }, [zona]);
   useEffect(() => { setUnidadId(''); setCasetaId(''); }, [scope]);
 
-  // Abrir detalle
+  // Abrir detalle — consulta sólo en cliente
   async function openDetalle(u: UsuarioBF) {
     setSelected(u);
     setOpen(true);
     setAnotaciones(null);
     setLoadingAnot(true);
     try {
-       if (typeof window === 'undefined') return;
+      if (typeof window === 'undefined') return;
       const supa = getSupabaseBrowser();
       const { data } = await supa
         .from('anotaciones')
@@ -191,7 +193,7 @@ export default function AdminListBFPage() {
   return (
     <div className="p-4 md:p-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
-        <h1 className="text-xl md:text-2xl font-semibold">Listado por Zona · Bomberos Forestales</h1>
+        <h1 className="text-xl md:text-2xl font-semibold">Listado por Zona: Jefe Servicio-- Bombero.F</h1>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="icon" onClick={refresh} aria-label="Recargar">
             <RefreshCcw className="h-4 w-4" />
@@ -199,10 +201,10 @@ export default function AdminListBFPage() {
 
           {/* Select de Zona */}
           <Select value={zona} onValueChange={setZona}>
-            <SelectTrigger className="min-w-[10rem] rounded-md">
+            <SelectTrigger className="min-w-[10rem] rounded-sm">
               <SelectValue placeholder="Elegir zona" />
             </SelectTrigger>
-            <SelectContent className="rounded-md">
+            <SelectContent className="rounded-xs">
               {zonas.map(z => (
                 <SelectItem key={z} value={z} className="text-center">
                   {z}
@@ -212,11 +214,11 @@ export default function AdminListBFPage() {
           </Select>
 
           {/* Toggle de ámbito */}
-          <div className="inline-flex rounded-md border overflow-hidden">
+          <div className="inline-flex rounded-sm border overflow-hidden">
             <Button
               type="button"
               variant={scope === 'unidad' ? 'default' : 'ghost'}
-              className={`rounded-none ${scope==='unidad' ? '' : 'bg-transparent'}`}
+              className={`rounded-sm ${scope==='unidad' ? '' : 'bg-transparent'}`}
               onClick={() => setScope('unidad')}
             >
               Unidades
@@ -224,7 +226,7 @@ export default function AdminListBFPage() {
             <Button
               type="button"
               variant={scope === 'caseta' ? 'default' : 'ghost'}
-              className={`rounded-none border-l ${scope==='caseta' ? '' : 'bg-transparent'}`}
+              className={`rounded-sm border-l ${scope==='caseta' ? '' : 'bg-transparent'}`}
               onClick={() => setScope('caseta')}
             >
               Casetas
@@ -234,10 +236,10 @@ export default function AdminListBFPage() {
           {/* Select de Unidad/Caseta dentro de la zona */}
           {scope === 'unidad' ? (
             <Select value={unidadId} onValueChange={setUnidadId} disabled={!zona}>
-              <SelectTrigger className="min-w-[14rem] rounded-md">
+              <SelectTrigger className="min-w-[14rem] rounded-sm">
                 <SelectValue placeholder={zona ? 'Elegir unidad…' : 'Primero elige zona'} />
               </SelectTrigger>
-              <SelectContent className="rounded-md max-h-64">
+              <SelectContent className="rounded-xs max-h-64">
                 {unidadesEnZona.map(u => (
                   <SelectItem key={u.id} value={u.id} className="text-center">
                     {u.nombre}
@@ -247,10 +249,10 @@ export default function AdminListBFPage() {
             </Select>
           ) : (
             <Select value={casetaId} onValueChange={setCasetaId} disabled={!zona}>
-              <SelectTrigger className="min-w-[14rem] rounded-md">
+              <SelectTrigger className="min-w-[14rem] rounded-sm">
                 <SelectValue placeholder={zona ? 'Elegir caseta…' : 'Primero elige zona'} />
               </SelectTrigger>
-              <SelectContent className="rounded-md max-h-64">
+              <SelectContent className="rounded-sm max-h-64">
                 {casetasEnZona.map(c => (
                   <SelectItem key={c.id} value={c.id} className="text-center">
                     {c.nombre}
@@ -265,7 +267,7 @@ export default function AdminListBFPage() {
       <Card>
         <CardHeader className="gap-2">
           <CardTitle className="flex items-center gap-2 text-base md:text-lg">
-            <User className="h-5 w-5" /> Bomberos ({filtrados.length})
+            <User className="h-5 w-5" /> Personal ({filtrados.length})
           </CardTitle>
           <div className="flex flex-col md:flex-row gap-2 md:items-center">
             <div className="relative w-full md:max-w-sm">
@@ -274,7 +276,7 @@ export default function AdminListBFPage() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Buscar por DNI o nombre…"
-                className="pl-8 rounded-md"
+                className="pl-8 rounded-sm"
               />
             </div>
             <div className="text-sm text-muted-foreground">
@@ -307,10 +309,16 @@ export default function AdminListBFPage() {
                     onClick={() => openDetalle(u)}
                   >
                     <div className="p-3">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2">
                         <div className="font-semibold text-sm truncate">{u.apellidos}, {u.nombre}</div>
-                        <div className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                          {unidad?.zona || (caseta ? municipioById.get(caseta.municipio_id)?.zona : '—')}
+                        <div className="flex items-center gap-1">
+                          <div className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                            {unidad?.zona || (caseta ? municipioById.get(caseta.municipio_id)?.zona : '—')}
+                          </div>
+                          {/* Chip de rol */}
+                          <div className="text-[10px] px-2 py-0.5 rounded-full border bg-background">
+                            {u.rol === 'jr' ? 'JR' : 'BF'}
+                          </div>
                         </div>
                       </div>
                       <div className="mt-1 text-sm font-mono tracking-tight">
@@ -343,6 +351,9 @@ export default function AdminListBFPage() {
             <div className="p-4 space-y-4">
               <div>
                 <div className="text-xl font-semibold">{selected.apellidos}, {selected.nombre}</div>
+                <div className="text-xs text-muted-foreground">
+                  Usuario : <span className="font-medium">{selected.rol === 'jr' ? 'Jefe de Servicio' : 'Bombero Forestal'}</span>
+                </div>
                 <div className="text-xs text-muted-foreground">Creado el {new Date(selected.creado_en).toLocaleDateString()}</div>
               </div>
               <div className="rounded-xl border p-3">

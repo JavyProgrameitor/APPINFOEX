@@ -1,12 +1,21 @@
 import Link from "next/link";
 import { SidebarAdmin } from "../../components/Sidebar-admin";
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/Sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetHeader,
+  SheetTitle,
+  SheetClose,
+} from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
 import { Menu } from "lucide-react";
-import Footer from "@/components/Footer";
 
-
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <>
       <div className="md:hidden border-b bg-background">
@@ -19,10 +28,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </SheetTrigger>
             <SheetContent side="left" className="p-0">
               <SheetHeader className="px-4 py-3 border-b">
-                <SheetTitle className="flex justify-center font-black">Panel del Administrador</SheetTitle>
-                </SheetHeader>
-             <nav className="flex flex-col items-center justify-center gap-4 py-8">
-              <SheetClose asChild>
+                <SheetTitle className="flex justify-center font-black">
+                  Panel del Administrador
+                </SheetTitle>
+              </SheetHeader>
+              <nav className="flex flex-col items-center justify-center gap-4 py-8">
+                <SheetClose asChild>
                   <Link
                     href="/admin"
                     className="w-10/12 text-center rounded-xl px-5 py-3 text-sm font-medium
@@ -52,7 +63,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                dark:border-primary/40 dark:bg-primary/10 dark:hover:bg-primary/30
                                transition-all duration-200 shadow-sm hover:shadow-md"
                   >
-                   Agregar usuarios
+                    Agregar usuarios
                   </Link>
                 </SheetClose>
               </nav>
@@ -64,9 +75,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="flex min-h-[calc(100vh-56px)]">
         <SidebarAdmin />
         <div className="flex-1">{children}</div>
-      </div>
-      <div>
-      <Footer />
       </div>
     </>
   );
