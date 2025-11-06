@@ -32,7 +32,13 @@ type JRContext = {
 };
 
 const CTX_KEY = "INFOEX:jr:ctx";
-const CODIGOS_PERMITIDOS = ["JR", "TH", "TC", "V", "AP","B"] as const;
+const CODIGOS_PERMITIDOS = ["JR", "TH", "TC", "V", "AP", "B"] as const;
+
+function legacyListaKey(ctx: JRContext | null): string | null {
+  if (!ctx) return null;
+  const base = ctx.tipo === "unidad" ? `unidad:${ctx.unidad_id}` : `caseta:${ctx.caseta_id}`;
+  return `jr.bomberos.${ctx.zona}.${base}`;
+}
 
 function NoteJR() {
   const router = useRouter();
@@ -48,34 +54,74 @@ function NoteJR() {
   const urlCasetaId = params.get("caseta_id");
   const urlLs = params.get("ls");
 
-  const [ctx, setCtx] = useState<JRContext | null>(null);
+  // undefined = cargando; null = sin contexto; objeto = OK
+  const [ctx, setCtx] = useState<JRContext | null | undefined>(undefined);
 
+  // Resolver contexto: URL -> localStorage -> /api/jr/destino
   useEffect(() => {
-    if (urlTipo && urlZona) {
-      const nuevo: JRContext = {
-        tipo: urlTipo,
-        zona: urlZona,
-        municipio: urlMunicipio || undefined,
-        unidad: urlUnidad || undefined,
-        caseta: urlCaseta || undefined,
-        unidad_id: urlUnidadId || undefined,
-        caseta_id: urlCasetaId || undefined,
-        ls: urlLs || undefined,
-      };
-      setCtx(nuevo);
-      try {
-        localStorage.setItem(CTX_KEY, JSON.stringify(nuevo));
-      } catch {}
-      return;
-    }
-    try {
-      const raw = localStorage.getItem(CTX_KEY);
-      if (raw) {
-        setCtx(JSON.parse(raw) as JRContext);
+    const resolve = async () => {
+      // 1) URL
+      if (urlTipo && urlZona) {
+        const nuevo: JRContext = {
+          tipo: urlTipo,
+          zona: urlZona,
+          municipio: urlMunicipio || undefined,
+          unidad: urlUnidad || undefined,
+          caseta: urlCaseta || undefined,
+          unidad_id: urlUnidadId || undefined,
+          caseta_id: urlCasetaId || undefined,
+          ls: urlLs || undefined,
+        };
+        setCtx(nuevo);
+        try {
+          localStorage.setItem(CTX_KEY, JSON.stringify(nuevo));
+        } catch {}
         return;
       }
-    } catch {}
-    setCtx(null);
+
+      // 2) localStorage
+      try {
+        const raw = localStorage.getItem(CTX_KEY);
+        if (raw) {
+          const stored = JSON.parse(raw) as JRContext;
+          setCtx(stored);
+          return;
+        }
+      } catch {}
+
+      // 3) backend (último recurso)
+      try {
+        const res = await fetch("/api/jr/destino", { credentials: "include" });
+        if (res.ok) {
+          const djson = await res.json();
+          const fallback: JRContext =
+            djson.tipo === "unidad"
+              ? {
+                  tipo: "unidad",
+                  zona: djson.zona,
+                  unidad: djson.unidad_nombre,
+                  unidad_id: djson.unidad_id,
+                }
+              : {
+                  tipo: "caseta",
+                  zona: djson.zona,
+                  municipio: djson.municipio_nombre,
+                  caseta: djson.caseta_nombre,
+                  caseta_id: djson.caseta_id,
+                };
+          setCtx(fallback);
+          try {
+            localStorage.setItem(CTX_KEY, JSON.stringify(fallback));
+          } catch {}
+          return;
+        }
+      } catch {}
+
+      // Sin contexto
+      setCtx(null);
+    };
+
+    resolve();
   }, [
     urlTipo,
     urlZona,
@@ -87,16 +133,16 @@ function NoteJR() {
     urlLs,
   ]);
 
-  const { storageKey, anotStorageKey } = useMemo(() => {
-    if (!ctx) return { storageKey: null, anotStorageKey: null };
+  const { storageKey, anotStorageKey, legacyKey } = useMemo(() => {
+    if (!ctx) return { storageKey: null, anotStorageKey: null, legacyKey: null };
     const parte =
       ctx.tipo === "unidad"
         ? ctx.unidad_id || `U:${ctx.zona}/${ctx.unidad || ""}`
-        : ctx.caseta_id ||
-          `C:${ctx.zona}/${ctx.municipio || ""}/${ctx.caseta || ""}`;
+        : ctx.caseta_id || `C:${ctx.zona}/${ctx.municipio || ""}/${ctx.caseta || ""}`;
     return {
       storageKey: ctx.ls ? ctx.ls : `INFOEX:lista:${ctx.tipo}:${parte}`,
       anotStorageKey: `INFOEX:anotaciones:${ctx.tipo}:${parte}`,
+      legacyKey: legacyListaKey(ctx),
     };
   }, [ctx]);
 
@@ -105,16 +151,33 @@ function NoteJR() {
   const [msg, setMsg] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Cargar lista de bomberos desde localStorage (clave calculada) con fallback legacy
   useEffect(() => {
     if (!storageKey) return;
     try {
       const raw = localStorage.getItem(storageKey);
-      setBomberos(raw ? (JSON.parse(raw) as BomberoItem[]) : []);
+      if (raw) {
+        setBomberos(JSON.parse(raw) as BomberoItem[]);
+        return;
+      }
+      // fallback: intentar legacy
+      if (legacyKey) {
+        const legacyRaw = localStorage.getItem(legacyKey);
+        if (legacyRaw) {
+          const arr = JSON.parse(legacyRaw) as BomberoItem[];
+          setBomberos(arr);
+          // migrar inmediatamente a la nueva clave
+          localStorage.setItem(storageKey, legacyRaw);
+          return;
+        }
+      }
+      setBomberos([]);
     } catch {
       setBomberos([]);
     }
-  }, [storageKey]);
+  }, [storageKey, legacyKey]);
 
+  // Inicializar/recuperar anotaciones
   useEffect(() => {
     if (!bomberos) return;
     if (!anotStorageKey) return;
@@ -142,6 +205,7 @@ function NoteJR() {
     setAnotaciones(base);
   }, [bomberos, anotStorageKey]);
 
+  // Resolver users_id por DNI
   useEffect(() => {
     const go = async () => {
       if (!bomberos || bomberos.length === 0) return;
@@ -174,10 +238,11 @@ function NoteJR() {
           localStorage.setItem(anotStorageKey, JSON.stringify(copia));
       } catch {}
     };
-    go();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+    go();
   }, [bomberos]);
 
+  // Persistir anotaciones en localStorage
   useEffect(() => {
     try {
       if (anotStorageKey)
@@ -230,7 +295,6 @@ function NoteJR() {
       const json = await res.json();
       if (!res.ok) {
         setMsg(json.error || "Error al guardar las anotaciones.");
-        // toast destructivo
         toast({
           title: "No se pudo guardar",
           description: json.error || "Inténtalo de nuevo.",
@@ -286,6 +350,16 @@ function NoteJR() {
     router.push(`/jr/add?${sp.toString()}`);
   };
 
+  // Estado: cargando contexto
+  if (ctx === undefined) {
+    return (
+      <main className="min-h-screen flex items-center justify-center">
+        <div className="text-sm text-muted-foreground">Cargando contexto…</div>
+      </main>
+    );
+  }
+
+  // Estado: sin contexto tras probar URL -> LS -> backend
   if (ctx === null) {
     return (
       <main className="min-h-screen flex items-center justify-center">
@@ -325,9 +399,9 @@ function NoteJR() {
               <p className="text-sm text-muted-foreground">Cargando lista…</p>
             ) : (bomberos || []).length === 0 ? (
               <div className="text-sm text-muted-foreground">
-                No hay unidad o caseta seleccionada
-                <Button className="ml-2" onClick={() => router.push("/jr")}>
-                  Ir a Inicio
+                No hay componentes seleccionados en esta unidad/caseta.
+                <Button className="ml-2" onClick={volverABomberos}>
+                  Seleccionar bomberos
                 </Button>
               </div>
             ) : (
@@ -403,9 +477,7 @@ function NoteJR() {
                             />
                           </div>
                           <div>
-                            <label className="text-xs">
-                              Horas extras (día)
-                            </label>
+                            <label className="text-xs">Horas extras (día)</label>
                             <Input
                               type="number"
                               inputMode="decimal"
@@ -451,9 +523,7 @@ function NoteJR() {
                         return (
                           <tr key={b.dni} className="border-t">
                             <td className="p-2 whitespace-nowrap">{b.dni}</td>
-                            <td className="p-2 whitespace-nowrap">
-                              {b.nombre}
-                            </td>
+                            <td className="p-2 whitespace-nowrap">{b.nombre}</td>
                             <td className="p-2 whitespace-nowrap">
                               {b.apellidos}
                             </td>

@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 
+const CTX_KEY = "INFOEX:jr:ctx";
+
 type DestinoJR =
   | {
       tipo: "unidad";
@@ -29,6 +31,7 @@ export default function StartJR() {
   const [destino, setDestino] = useState<DestinoJR | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Carga de sesión + destino (sin auto-redirect)
   useEffect(() => {
     (async () => {
       // 1) comprobar sesión + rol
@@ -75,6 +78,29 @@ export default function StartJR() {
     })();
   }, [router]);
 
+  // Guardar contexto en localStorage cuando esté listo (NO navegamos)
+  useEffect(() => {
+    if (loading || !destino) return;
+    const ctx =
+      destino.tipo === "unidad"
+        ? {
+            tipo: "unidad" as const,
+            zona: destino.zona,
+            unidad: destino.unidad_nombre,
+            unidad_id: destino.unidad_id,
+          }
+        : {
+            tipo: "caseta" as const,
+            zona: destino.zona,
+            municipio: destino.municipio_nombre,
+            caseta: destino.caseta_nombre,
+            caseta_id: destino.caseta_id,
+          };
+    try {
+      localStorage.setItem(CTX_KEY, JSON.stringify(ctx));
+    } catch {}
+  }, [loading, destino]);
+
   const goNext = () => {
     if (!destino) return;
 
@@ -100,7 +126,7 @@ export default function StartJR() {
       <div className="mx-auto max-w-4xl p-6 md:p-10">
         <Card className="shadow-xl">
           <CardHeader>
-            <CardTitle>Selecciona tu destino</CardTitle>
+            <CardTitle>DESTINO ASIGNADO: </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {error ? (

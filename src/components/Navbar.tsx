@@ -135,7 +135,7 @@ export default function NavBar() {
                 alt="INFOEX"
                 width={80}
                 height={56}
-                className="rounded-lg object-cover "
+                className="rounded-lg object-cover"
                 priority
               />
             </Link>
