@@ -251,7 +251,7 @@ function ExitJR() {
             {/* MÓVIL */}
             <div className="md:hidden space-y-4">
               {salidas.map((s, idx) => (
-                <div key={idx} className="rounded-lg border bg-background p-3 space-y-2">
+                <div key={idx} className="rounded-xs border bg-background p-3 space-y-2">
                   <div>
                     <label className="text-xs">Tipo</label>
                     <select className="w-full border rounded px-2 py-1 text-sm bg-background" value={s.tipo} onChange={(e) => changeSalida(idx, "tipo", e.target.value as "Incendio" | "Trabajo")}>

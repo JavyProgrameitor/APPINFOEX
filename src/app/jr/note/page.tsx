@@ -339,7 +339,7 @@ function NoteJR() {
                     return (
                       <div
                         key={b.dni}
-                        className="rounded-lg border bg-background p-3 space-y-2"
+                        className="rounded-xs border bg-background p-3 space-y-2"
                       >
                         <div className="text-sm font-semibold">
                           {b.nombre} {b.apellidos}

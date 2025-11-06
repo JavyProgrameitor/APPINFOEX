@@ -218,7 +218,7 @@ export default function AdminUsersPage() {
                 <SelectTrigger className="w-full rounded-sm">
                   <SelectValue placeholder="Selecciona un rol" />
                 </SelectTrigger>
-                <SelectContent className="rounded-sm">
+                <SelectContent className="rounded-xs">
                   <SelectItem value="admin" className="text-center">Administrador</SelectItem>
                   <SelectItem value="bf" className="text-center">Bombero Forestal</SelectItem>
                   <SelectItem value="jr" className="text-center">Jefe de Servicio</SelectItem>
@@ -257,7 +257,7 @@ export default function AdminUsersPage() {
                 <SelectTrigger className="w-full rounded-sm">
                   <SelectValue placeholder="Elige una zona" />
                 </SelectTrigger>
-                <SelectContent className="rounded-sm max-h-64">
+                <SelectContent className="rounded-xs max-h-64">
                   {zonas.map((z) => (
                     <SelectItem key={z} value={z} className="text-center">
                       {z}
@@ -285,7 +285,7 @@ export default function AdminUsersPage() {
                   <SelectTrigger className="w-full rounded-sm">
                     <SelectValue placeholder={zona ? "— Selecciona —" : "Primero elige zona"} />
                   </SelectTrigger>
-                  <SelectContent className="rounded-sm">
+                  <SelectContent className="rounded-xs">
                     <SelectItem value="unidad" className="text-center">Unidad</SelectItem>
                     <SelectItem value="caseta" className="text-center">Caseta</SelectItem>
                   </SelectContent>
@@ -303,7 +303,7 @@ export default function AdminUsersPage() {
                     <SelectTrigger className="w-full rounded-sm">
                       <SelectValue placeholder={zona ? "— Selecciona unidad —" : "Primero elige zona"} />
                     </SelectTrigger>
-                    <SelectContent className="rounded-sm max-h-64">
+                    <SelectContent className="rounded-xs max-h-64">
                       {unidadesEnZona.map((u) => (
                         <SelectItem key={u.id} value={u.id} className="text-center">
                           {u.nombre}
@@ -325,7 +325,7 @@ export default function AdminUsersPage() {
                     <SelectTrigger className="w-full rounded-sm">
                       <SelectValue placeholder={zona ? "— Selecciona caseta —" : "Primero elige zona"} />
                     </SelectTrigger>
-                    <SelectContent className="rounded-sm max-h-64">
+                    <SelectContent className="rounded-xs max-h-64">
                       {casetasEnZona.map((c) => (
                         <SelectItem key={c.id} value={c.id} className="text-center">
                           {c.nombre}
