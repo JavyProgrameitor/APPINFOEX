@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Verifica que el mensaje tiene un emoji al principio
+if ! grep -Eq '^([[:space:]]*)([🧹💄✨🐛♻️📝🚀🔥🔧🧪📖])' "$1"; then
+  echo "❌ El mensaje de commit debe comenzar con un emoji tipo conventional commits."
+  echo "💡 Usa: npm run commit"
+  exit 1
+fi
