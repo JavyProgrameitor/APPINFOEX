@@ -1,5 +1,5 @@
-import Link from "next/link";
-import { SidebarAdmin } from "../../components/Sidebar-admin";
+import Link from 'next/link'
+import { SidebarAdmin } from '../../components/Sidebar-admin'
 import {
   Sheet,
   SheetContent,
@@ -7,15 +7,11 @@ import {
   SheetHeader,
   SheetTitle,
   SheetClose,
-} from "@/components/ui/Sheet";
-import { Button } from "@/components/ui/Button";
-import { Menu } from "lucide-react";
+} from '@/components/ui/Sheet'
+import { Button } from '@/components/ui/Button'
+import { Menu } from 'lucide-react'
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <div className="md:hidden border-b bg-background">
@@ -77,5 +73,5 @@ export default function AdminLayout({
         <div className="flex-1">{children}</div>
       </div>
     </>
-  );
+  )
 }

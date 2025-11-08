@@ -1,4 +1,4 @@
-import { SidebarJR } from "../../components/Sidebar-jr";
+import { SidebarJR } from '../../components/Sidebar-jr'
 import {
   Sheet,
   SheetContent,
@@ -6,10 +6,10 @@ import {
   SheetHeader,
   SheetTitle,
   SheetClose,
-} from "@/components/ui/Sheet";
-import { Button } from "@/components/ui/Button";
-import { Menu } from "lucide-react";
-import Link from "next/link";
+} from '@/components/ui/Sheet'
+import { Button } from '@/components/ui/Button'
+import { Menu } from 'lucide-react'
+import Link from 'next/link'
 
 export default function JRLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -72,8 +72,7 @@ export default function JRLayout({ children }: { children: React.ReactNode }) {
         <SidebarJR />
         <div className="flex-1">{children}</div>
       </div>
-      <div>
-      </div>
+      <div></div>
     </>
-  );
+  )
 }

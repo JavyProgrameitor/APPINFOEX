@@ -1,45 +1,64 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+// eslint.config.mjs
+import js from '@eslint/js'
+import tseslint from 'typescript-eslint'
+import react from 'eslint-plugin-react'
+import reactHooks from 'eslint-plugin-react-hooks'
+import jsxA11y from 'eslint-plugin-jsx-a11y'
+import unusedImports from 'eslint-plugin-unused-imports'
+import prettier from 'eslint-plugin-prettier'
+import globals from 'globals'
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+export default tseslint.config(
+  { ignores: ['node_modules', 'dist', '.next', 'build'] },
 
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
-const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
-
-  // Ignorados
   {
-    ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts"],
-  },
-
-  // Desactiva reglas de estilo en conflicto, delega el formato en Prettier
-  ...compat.extends("prettier"),
-
-  // Reglas de estilo que SÍ queremos que ESLint haga cumplir (además de Prettier)
-  {
-    files: ["**/*.{ts,tsx,js,jsx}"],
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    languageOptions: {
+      parser: tseslint.parser,
+      ecmaVersion: 2023,
+      sourceType: 'module',
+      parserOptions: {
+        // Si necesitas reglas type-aware:
+        // project: './tsconfig.json',
+      },
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
+    },
     plugins: {
-      "@typescript-eslint": tsPlugin,
+      '@typescript-eslint': tseslint.plugin,
+      react,
+      'react-hooks': reactHooks,
+      'jsx-a11y': jsxA11y,
+      'unused-imports': unusedImports,
+      prettier,
     },
+    settings: { react: { version: 'detect' } },
     rules: {
-      // SIN punto y coma (TS): usa la regla del plugin y apaga la base
-      "semi": "off",
-      "@typescript-eslint/semi": ["error", "never"],
+      // Estilo: comillas simples + sin ;
+      'prettier/prettier': ['error', { singleQuote: true, semi: false }],
 
-      // SIEMPRE comillas simples (evita doblarlas cuando haga falta)
-      "quotes": "off",
-      "@typescript-eslint/quotes": ["error", "single", { "avoidEscape": true }],
+      // Base JS recomendada
+      ...js.configs.recommended.rules,
 
-      // Errores de import/order o similares los puedes añadir si los necesitas
-      // "import/order": ["error", { "alphabetize": { "order": "asc", "caseInsensitive": true } }]
+      // React 17+ (JSX automático): sin importar React
+      'react/react-in-jsx-scope': 'off',
+      'react/jsx-uses-react': 'off',
+      // Evita 'React is not defined'
+      'no-undef': 'off',
+
+      // Permitir catch {} vacíos (tu patrón)
+      'no-empty': ['warn', { allowEmptyCatch: true }],
+
+      // Limpiar imports no usados
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      'unused-imports/no-unused-imports': 'error',
+
+      // Hooks
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
     },
   },
-];
-
-
-export default eslintConfig;
+)

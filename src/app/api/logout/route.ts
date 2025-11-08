@@ -1,13 +1,13 @@
 // src/app/api/logout/route.ts
-import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
+import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
+import { createServerClient } from '@supabase/ssr'
 
 export async function POST() {
-  const cookieStore = await cookies();
+  const cookieStore = await cookies()
 
   // la respuesta que vamos a devolver
-  const res = NextResponse.json({ ok: true });
+  const res = NextResponse.json({ ok: true })
 
   // creamos un supabase client que ESCRIBE en ESTA respuesta
   const supabase = createServerClient(
@@ -19,18 +19,18 @@ export async function POST() {
           return cookieStore.getAll().map((c) => ({
             name: c.name,
             value: c.value,
-          }));
+          }))
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
-            res.cookies.set(name, value, options);
-          });
+            res.cookies.set(name, value, options)
+          })
         },
       },
-    }
-  );
+    },
+  )
 
-  await supabase.auth.signOut();
+  await supabase.auth.signOut()
 
-  return res;
+  return res
 }

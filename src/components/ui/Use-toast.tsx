@@ -1,32 +1,33 @@
-"use client";
+'use client'
 
-import * as React from "react";
-import * as RT from "@radix-ui/react-toast";
-import { X } from "lucide-react";
+import * as React from 'react'
+import * as RT from '@radix-ui/react-toast'
+import { X } from 'lucide-react'
 
-type ToastVariant = "default" | "destructive";
+type ToastVariant = 'default' | 'destructive'
 
 type ToastInput = {
-  title?: string;
-  description?: string;
-  duration?: number; // ms
-  variant?: ToastVariant;
-};
+  title?: string
+  description?: string
+  duration?: number // ms
+  variant?: ToastVariant
+}
 
-type ToastItem = ToastInput & { id: string; open: boolean };
+type ToastItem = ToastInput & { id: string; open: boolean }
 
-const ToastContext = React.createContext<{ toast: (t: ToastInput) => void } | null>(null);
+const ToastContext = React.createContext<{ toast: (t: ToastInput) => void } | null>(null)
 
 export function ToasterProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = React.useState<ToastItem[]>([]);
+  const [items, setItems] = React.useState<ToastItem[]>([])
 
   const toast = React.useCallback((t: ToastInput) => {
-    const id = crypto.randomUUID();
-    setItems((prev) => [...prev, { id, open: true, ...t }]);
-  }, []);
+    const id = crypto.randomUUID()
+    setItems((prev) => [...prev, { id, open: true, ...t }])
+  }, [])
 
-  const close = (id: string) => setItems((prev) => prev.map(i => i.id === id ? ({ ...i, open: false }) : i));
-  const remove = (id: string) => setItems((prev) => prev.filter(i => i.id !== id));
+  const close = (id: string) =>
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, open: false } : i)))
+  const remove = (id: string) => setItems((prev) => prev.filter((i) => i.id !== id))
 
   return (
     <ToastContext.Provider value={{ toast }}>
@@ -40,9 +41,9 @@ export function ToasterProvider({ children }: { children: React.ReactNode }) {
             onOpenChange={(o) => (o ? null : remove(t.id))}
             duration={t.duration ?? 4000}
             className={[
-              "pointer-events-auto w-[360px] rounded-2xl border shadow-lg p-3 mb-3 bg-background/95 backdrop-blur",
-              t.variant === "destructive" ? "border-red-500/40" : "border-border",
-            ].join(" ")}
+              'pointer-events-auto w-[360px] rounded-2xl border shadow-lg p-3 mb-3 bg-background/95 backdrop-blur',
+              t.variant === 'destructive' ? 'border-red-500/40' : 'border-border',
+            ].join(' ')}
           >
             <div className="flex items-start gap-3">
               <div className="flex-1">
@@ -64,16 +65,14 @@ export function ToasterProvider({ children }: { children: React.ReactNode }) {
           </RT.Root>
         ))}
 
-        <RT.Viewport
-          className="fixed bottom-4 right-4 z-[100] flex w-[360px] max-w-[100vw] flex-col outline-none"
-        />
+        <RT.Viewport className="fixed bottom-4 right-4 z-[100] flex w-[360px] max-w-[100vw] flex-col outline-none" />
       </RT.Provider>
     </ToastContext.Provider>
-  );
+  )
 }
 
 export function useToast() {
-  const ctx = React.useContext(ToastContext);
-  if (!ctx) throw new Error("useToast must be used within <ToasterProvider />");
-  return ctx;
+  const ctx = React.useContext(ToastContext)
+  if (!ctx) throw new Error('useToast must be used within <ToasterProvider />')
+  return ctx
 }

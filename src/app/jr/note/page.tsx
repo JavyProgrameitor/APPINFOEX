@@ -78,12 +78,17 @@ function NoteJR() {
           ls: urlLs || undefined,
         }
         setCtx(nuevo)
-        try { localStorage.setItem(CTX_KEY, JSON.stringify(nuevo)) } catch {}
+        try {
+          localStorage.setItem(CTX_KEY, JSON.stringify(nuevo))
+        } catch {}
         return
       }
       try {
         const raw = localStorage.getItem(CTX_KEY)
-        if (raw) { setCtx(JSON.parse(raw) as JRContext); return }
+        if (raw) {
+          setCtx(JSON.parse(raw) as JRContext)
+          return
+        }
       } catch {}
       try {
         const res = await fetch('/api/jr/destino', { credentials: 'include' })
@@ -91,10 +96,23 @@ function NoteJR() {
           const djson = await res.json()
           const fallback: JRContext =
             djson.tipo === 'unidad'
-              ? { tipo: 'unidad', zona: djson.zona, unidad: djson.unidad_nombre, unidad_id: djson.unidad_id }
-              : { tipo: 'caseta', zona: djson.zona, municipio: djson.municipio_nombre, caseta: djson.caseta_nombre, caseta_id: djson.caseta_id }
+              ? {
+                  tipo: 'unidad',
+                  zona: djson.zona,
+                  unidad: djson.unidad_nombre,
+                  unidad_id: djson.unidad_id,
+                }
+              : {
+                  tipo: 'caseta',
+                  zona: djson.zona,
+                  municipio: djson.municipio_nombre,
+                  caseta: djson.caseta_nombre,
+                  caseta_id: djson.caseta_id,
+                }
           setCtx(fallback)
-          try { localStorage.setItem(CTX_KEY, JSON.stringify(fallback)) } catch {}
+          try {
+            localStorage.setItem(CTX_KEY, JSON.stringify(fallback))
+          } catch {}
           return
         }
       } catch {}
@@ -131,7 +149,10 @@ function NoteJR() {
     if (!storageKey) return
     try {
       const raw = localStorage.getItem(storageKey)
-      if (raw) { setBomberos(JSON.parse(raw) as BomberoItem[]); return }
+      if (raw) {
+        setBomberos(JSON.parse(raw) as BomberoItem[])
+        return
+      }
       if (legacyKey) {
         const legacyRaw = localStorage.getItem(legacyKey)
         if (legacyRaw) {
@@ -142,7 +163,9 @@ function NoteJR() {
         }
       }
       setBomberos([])
-    } catch { setBomberos([]) }
+    } catch {
+      setBomberos([])
+    }
   }, [storageKey, legacyKey])
 
   // Fecha del día (informativa y única)
@@ -160,7 +183,10 @@ function NoteJR() {
     if (!anotStorageKey) return
     try {
       const raw = localStorage.getItem(anotStorageKey)
-      if (raw) { setAnotaciones(JSON.parse(raw)); return }
+      if (raw) {
+        setAnotaciones(JSON.parse(raw))
+        return
+      }
     } catch {}
     const hoy = new Date().toISOString().split('T')[0]
     const base: Record<string, Anotacion> = {}
@@ -185,7 +211,9 @@ function NoteJR() {
       const updates: Record<string, { users_id: string }> = {}
       for (const b of bomberos) {
         try {
-          const res = await fetch(`/api/usuarios/dni?dni=${encodeURIComponent(b.dni)}`, { credentials: 'include' })
+          const res = await fetch(`/api/usuarios/dni?dni=${encodeURIComponent(b.dni)}`, {
+            credentials: 'include',
+          })
           if (res.ok) {
             const user = await res.json()
             updates[b.dni] = { users_id: user.id }
@@ -194,7 +222,7 @@ function NoteJR() {
       }
       if (cancelled) return
       const today = new Date().toISOString().split('T')[0]
-      setAnotaciones(prev => {
+      setAnotaciones((prev) => {
         const next = { ...prev }
         for (const b of bomberos) {
           if (!next[b.dni]) {
@@ -214,17 +242,21 @@ function NoteJR() {
         return next
       })
     })()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [bomberos])
 
   // Persistir anotaciones en localStorage
   useEffect(() => {
-    try { if (anotStorageKey) localStorage.setItem(anotStorageKey, JSON.stringify(anotaciones)) } catch {}
+    try {
+      if (anotStorageKey) localStorage.setItem(anotStorageKey, JSON.stringify(anotaciones))
+    } catch {}
   }, [anotaciones, anotStorageKey])
 
   const handleChange = (dni: string, field: keyof Anotacion, value: string | number) => {
     if (field === 'fecha') return
-    setAnotaciones(prev => ({
+    setAnotaciones((prev) => ({
       ...prev,
       [dni]: {
         ...(prev[dni] || {
@@ -251,7 +283,7 @@ function NoteJR() {
   }
 
   async function replaceViaDeleteThenPost(payload: Anotacion[]) {
-    const users = payload.map(p => p.users_id)
+    const users = payload.map((p) => p.users_id)
     await fetch(`/api/jr/anotaciones?fecha=${encodeURIComponent(fechaDia)}`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
@@ -274,7 +306,10 @@ function NoteJR() {
         codigo: a.codigo || 'JR',
         hora_entrada: a.hora_entrada || '08:00',
         hora_salida: a.hora_salida || '15:00',
-        horas_extras: typeof a.horas_extras === 'number' ? a.horas_extras : parseFloat(String(a.horas_extras || 0)) || 0,
+        horas_extras:
+          typeof a.horas_extras === 'number'
+            ? a.horas_extras
+            : parseFloat(String(a.horas_extras || 0)) || 0,
       })
     })
     const payload = Array.from(porUsuario.values())
@@ -290,7 +325,10 @@ function NoteJR() {
 
   // 2) Confirmar modal → reemplazar
   const onConfirmReplace = async () => {
-    if (!payloadRef.current) { setConfirmOpen(false); return }
+    if (!payloadRef.current) {
+      setConfirmOpen(false)
+      return
+    }
     setConfirmLoading(true)
     setSaving(true)
     try {
@@ -359,18 +397,20 @@ function NoteJR() {
 
   if (ctx === undefined) {
     return (
-      <main className='min-h-dvh w-full grid place-items-center p-4'>
-        <div className='text-sm text-muted-foreground'>Cargando contexto…</div>
+      <main className="min-h-dvh w-full grid place-items-center p-4">
+        <div className="text-sm text-muted-foreground">Cargando contexto…</div>
       </main>
     )
   }
 
   if (ctx === null) {
     return (
-      <main className='min-h-dvh w-full grid place-items-center p-4'>
-        <div className='text-sm text-muted-foreground'>
+      <main className="min-h-dvh w-full grid place-items-center p-4">
+        <div className="text-sm text-muted-foreground">
           No hay unidad o caseta seleccionada
-          <Button className='ml-2' onClick={() => router.push('/jr')}>Ir a Inicio</Button>
+          <Button className="ml-2" onClick={() => router.push('/jr')}>
+            Ir a Inicio
+          </Button>
         </div>
       </main>
     )
@@ -379,38 +419,46 @@ function NoteJR() {
   const listaCargando = bomberos === null
 
   return (
-    <main className='min-h-dvh w-full p-4'>
-      <div className='mx-auto max-w-6xl space-y-4'>
-        <div className='flex gap-2 mb-2'>
-          <Button variant='ghost' className='font-bold border-2 border-lime-50' onClick={volverABomberos}>
+    <main className="min-h-dvh w-full p-4">
+      <div className="mx-auto max-w-6xl space-y-4">
+        <div className="flex gap-2 mb-2">
+          <Button
+            variant="ghost"
+            className="font-bold border-2 border-lime-50"
+            onClick={volverABomberos}
+          >
             Bomberos
           </Button>
-          <Button variant='ghost' className='font-bold border-2 border-lime-50'>
+          <Button variant="ghost" className="font-bold border-2 border-lime-50">
             Diario
           </Button>
-          <Button variant='ghost' className='font-bold border-2 border-lime-50' onClick={irASalidas}>
+          <Button
+            variant="ghost"
+            className="font-bold border-2 border-lime-50"
+            onClick={irASalidas}
+          >
             Salidas
           </Button>
         </div>
 
-        <Card className='shadow-xl rounded-2xl'>
+        <Card className="shadow-xl rounded-2xl">
           <CardHeader>
-            <CardTitle className='font-black text-2xl'>Anotaciones del día</CardTitle>
+            <CardTitle className="font-black text-2xl">Anotaciones del día</CardTitle>
           </CardHeader>
-          <CardContent className='space-y-4'>
+          <CardContent className="space-y-4">
             {listaCargando ? (
-              <p className='text-xl font-semibold text-muted-foreground'>Cargando lista…</p>
+              <p className="text-xl font-semibold text-muted-foreground">Cargando lista…</p>
             ) : (bomberos || []).length === 0 ? (
-              <div className='text-xl font-semibold text-muted-foreground'>
+              <div className="text-xl font-semibold text-muted-foreground">
                 No hay componentes seleccionados en esta unidad/caseta.
-                <Button className='ml-2' onClick={volverABomberos}>
+                <Button className="ml-2" onClick={volverABomberos}>
                   Seleccionar bomberos
                 </Button>
               </div>
             ) : (
               <>
-                <div className='overflow-x-auto rounded-2xl'>
-                  <div className='hidden md:grid grid-cols-[minmax(110px,150px)_minmax(140px,1fr)_minmax(160px,1fr)_minmax(150px,170px)_minmax(110px,130px)_minmax(120px,140px)_minmax(120px,140px)_minmax(120px,150px)] gap-2 bg-muted text-left text-sm font-bold px-2 py-2'>
+                <div className="overflow-x-auto rounded-2xl">
+                  <div className="hidden md:grid grid-cols-[minmax(110px,150px)_minmax(140px,1fr)_minmax(160px,1fr)_minmax(150px,170px)_minmax(110px,130px)_minmax(120px,140px)_minmax(120px,140px)_minmax(120px,150px)] gap-2 bg-muted text-left text-sm font-bold px-2 py-2">
                     <div>DNI</div>
                     <div>Nombre</div>
                     <div>Apellidos</div>
@@ -421,84 +469,117 @@ function NoteJR() {
                     <div>Horas extras</div>
                   </div>
 
-                  <div className='divide-y'>
+                  <div className="divide-y">
                     {(bomberos || []).map((b) => {
                       const a = anotaciones[b.dni]
                       const fechaMostrar = a?.fecha || fechaDia
                       return (
                         <div
                           key={b.dni}
-                          className='grid gap-2 px-2 py-3 grid-cols-1
+                          className="grid gap-2 px-2 py-3 grid-cols-1
                                      md:grid-cols-[minmax(110px,150px)_minmax(140px,1fr)_minmax(160px,1fr)_minmax(150px,170px)_minmax(110px,130px)_minmax(120px,140px)_minmax(120px,140px)_minmax(120px,150px)]
-                                     md:items-center'
+                                     md:items-center"
                         >
-                          <div className='space-y-1'>
-                            <label className='md:hidden text-sm font-semibold text-muted-foreground'>DNI</label>
-                            <div className='text-2xl font-bold md:text-sm md:font-normal'>{b.dni}</div>
+                          <div className="space-y-1">
+                            <label className="md:hidden text-sm font-semibold text-muted-foreground">
+                              DNI
+                            </label>
+                            <div className="text-2xl font-bold md:text-sm md:font-normal">
+                              {b.dni}
+                            </div>
                           </div>
 
-                          <div className='space-y-1'>
-                            <label className='md:hidden text-sm font-semibold text-muted-foreground'>Nombre</label>
-                            <div className='text-2xl font-black md:text-sm md:font-normal'>{b.nombre}</div>
+                          <div className="space-y-1">
+                            <label className="md:hidden text-sm font-semibold text-muted-foreground">
+                              Nombre
+                            </label>
+                            <div className="text-2xl font-black md:text-sm md:font-normal">
+                              {b.nombre}
+                            </div>
                           </div>
 
-                          <div className='space-y-1'>
-                            <label className='md:hidden text-sm font-semibold text-muted-foreground'>Apellidos</label>
-                            <div className='text-xl font-bold md:text-sm md:font-normal'>{b.apellidos}</div>
+                          <div className="space-y-1">
+                            <label className="md:hidden text-sm font-semibold text-muted-foreground">
+                              Apellidos
+                            </label>
+                            <div className="text-xl font-bold md:text-sm md:font-normal">
+                              {b.apellidos}
+                            </div>
                           </div>
 
-                          <div className='space-y-1'>
-                            <label className='md:hidden text-sm font-semibold text-muted-foreground'>Fecha</label>
-                            <div className='px-2 py-1 border rounded bg-background text-xl font-bold md:text-sm md:font-normal' aria-label='Fecha del día'>
+                          <div className="space-y-1">
+                            <label className="md:hidden text-sm font-semibold text-muted-foreground">
+                              Fecha
+                            </label>
+                            <div
+                              className="px-2 py-1 border rounded bg-background text-xl font-bold md:text-sm md:font-normal"
+                              aria-label="Fecha del día"
+                            >
                               {fechaMostrar}
                             </div>
                           </div>
 
-                          <div className='space-y-1'>
-                            <label className='md:hidden text-sm font-semibold text-muted-foreground'>Código de trabajo</label>
+                          <div className="space-y-1">
+                            <label className="md:hidden text-sm font-semibold text-muted-foreground">
+                              Código de trabajo
+                            </label>
                             <select
-                              className='w-full border rounded px-2 py-1 text-sm bg-background'
+                              className="w-full border rounded px-2 py-1 text-sm bg-background"
                               value={a?.codigo || 'JR'}
                               onChange={(e) => handleChange(b.dni, 'codigo', e.target.value)}
-                              aria-label='Código de trabajo'
+                              aria-label="Código de trabajo"
                             >
                               {CODIGOS_PERMITIDOS.map((c) => (
-                                <option key={c} value={c}>{c}</option>
+                                <option key={c} value={c}>
+                                  {c}
+                                </option>
                               ))}
                             </select>
                           </div>
 
-                          <div className='space-y-1'>
-                            <label className='md:hidden text-sm font-semibold text-muted-foreground'>Entrada</label>
+                          <div className="space-y-1">
+                            <label className="md:hidden text-sm font-semibold text-muted-foreground">
+                              Entrada
+                            </label>
                             <Input
-                              type='time'
+                              type="time"
                               value={a?.hora_entrada || ''}
                               onChange={(e) => handleChange(b.dni, 'hora_entrada', e.target.value)}
-                              aria-label='Hora de entrada'
+                              aria-label="Hora de entrada"
                             />
                           </div>
 
-                          <div className='space-y-1'>
-                            <label className='md:hidden text-sm font-semibold text-muted-foreground'>Salida</label>
+                          <div className="space-y-1">
+                            <label className="md:hidden text-sm font-semibold text-muted-foreground">
+                              Salida
+                            </label>
                             <Input
-                              type='time'
+                              type="time"
                               value={a?.hora_salida || ''}
                               onChange={(e) => handleChange(b.dni, 'hora_salida', e.target.value)}
-                              aria-label='Hora de salida'
+                              aria-label="Hora de salida"
                             />
                           </div>
 
-                          <div className='space-y-1'>
-                            <label className='md:hidden text-sm font-semibold text-muted-foreground'>Horas extras</label>
+                          <div className="space-y-1">
+                            <label className="md:hidden text-sm font-semibold text-muted-foreground">
+                              Horas extras
+                            </label>
                             <Input
-                              type='number'
-                              inputMode='decimal'
-                              step='0.25'
-                              min='0'
-                              className='w-24 text-right'
+                              type="number"
+                              inputMode="decimal"
+                              step="0.25"
+                              min="0"
+                              className="w-24 text-right"
                               value={a?.horas_extras ?? 0}
-                              onChange={(e) => handleChange(b.dni, 'horas_extras', e.target.value ? parseFloat(e.target.value) : 0)}
-                              aria-label='Horas extras'
+                              onChange={(e) =>
+                                handleChange(
+                                  b.dni,
+                                  'horas_extras',
+                                  e.target.value ? parseFloat(e.target.value) : 0,
+                                )
+                              }
+                              aria-label="Horas extras"
                             />
                           </div>
                         </div>
@@ -508,20 +589,28 @@ function NoteJR() {
                 </div>
 
                 {msg && (
-                  <Alert variant='destructive'>
-                    <AlertTitle className='font-bold text-lg'>Error</AlertTitle>
-                    <AlertDescription className='text-base'>{msg}</AlertDescription>
+                  <Alert variant="destructive">
+                    <AlertTitle className="font-bold text-lg">Error</AlertTitle>
+                    <AlertDescription className="text-base">{msg}</AlertDescription>
                   </Alert>
                 )}
 
-                <div className='flex justify-end gap-2'>
-                  <Button variant='secondary' className='font-bold border-2 border-lime-50' onClick={volverABomberos}>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="secondary"
+                    className="font-bold border-2 border-lime-50"
+                    onClick={volverABomberos}
+                  >
                     Atrás
                   </Button>
-                  <Button className='font-bold border-2 border-lime-50' onClick={guardarAnotacionesAhora} disabled={saving}>
+                  <Button
+                    className="font-bold border-2 border-lime-50"
+                    onClick={guardarAnotacionesAhora}
+                    disabled={saving}
+                  >
                     {saving ? 'Guardando…' : 'Guardar diario '}
                   </Button>
-                  <Button className='font-bold border-2 border-lime-50' onClick={irASalidas}>
+                  <Button className="font-bold border-2 border-lime-50" onClick={irASalidas}>
                     Siguiente: Salidas
                   </Button>
                 </div>
@@ -535,24 +624,25 @@ function NoteJR() {
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitleUI className='font-black'>Reemplazar anotación del día</DialogTitleUI>
-            <DialogDescription className='text-base'>
-              Se guardará el diario de <b>{fechaDia}</b> sobrescribiendo la anotación existente (si la hubiera) para los usuarios seleccionados.
+            <DialogTitleUI className="font-black">Reemplazar anotación del día</DialogTitleUI>
+            <DialogDescription className="text-base">
+              Se guardará el diario de <b>{fechaDia}</b> sobrescribiendo la anotación existente (si
+              la hubiera) para los usuarios seleccionados.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className='gap-2 sm:gap-2'>
+          <DialogFooter className="gap-2 sm:gap-2">
             <Button
-              type='button'
-              variant='secondary'
+              type="button"
+              variant="secondary"
               onClick={() => setConfirmOpen(false)}
               disabled={confirmLoading}
             >
               Cancelar
             </Button>
             <Button
-              type='button'
-              variant='destructive'
-              className='font-bold border-2 border-lime-50'
+              type="button"
+              variant="destructive"
+              className="font-bold border-2 border-lime-50"
               onClick={onConfirmReplace}
               disabled={confirmLoading}
             >
