@@ -48,6 +48,14 @@ function legacyListaKey(ctx: JRContext | null): string | null {
   return `jr.bomberos.${ctx.zona}.${base}`
 }
 
+// Defaults para comparar cambios (diferenciación visual)
+const DEFAULTS = {
+  codigo: 'JR',
+  hora_entrada: '08:00',
+  hora_salida: '15:00',
+  horas_extras: 0,
+} as const
+
 function NoteJR() {
   const router = useRouter()
   const params = useSearchParams()
@@ -136,6 +144,7 @@ function NoteJR() {
 
   const [bomberos, setBomberos] = useState<BomberoItem[] | null>(null)
   const [anotaciones, setAnotaciones] = useState<Record<string, Anotacion>>({})
+  const [uiHorasExtras, setUiHorasExtras] = useState<Record<string, string>>({})
   const [msg, setMsg] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
@@ -168,7 +177,7 @@ function NoteJR() {
     }
   }, [storageKey, legacyKey])
 
-  // Fecha del día (informativa y única)
+  // Fecha del día (única, mostrada arriba)
   const fechaDia: string = useMemo(() => {
     for (const dni in anotaciones) {
       const f = anotaciones[dni]?.fecha
@@ -184,26 +193,36 @@ function NoteJR() {
     try {
       const raw = localStorage.getItem(anotStorageKey)
       if (raw) {
-        setAnotaciones(JSON.parse(raw))
+        const parsed = JSON.parse(raw) as Record<string, Anotacion>
+        setAnotaciones(parsed)
+        // hidratar UI de horas extras
+        const ui: Record<string, string> = {}
+        Object.keys(parsed).forEach((dni) => {
+          ui[dni] = String(parsed[dni]?.horas_extras ?? DEFAULTS.horas_extras)
+        })
+        setUiHorasExtras(ui)
         return
       }
     } catch {}
     const hoy = new Date().toISOString().split('T')[0]
     const base: Record<string, Anotacion> = {}
+    const ui: Record<string, string> = {}
     bomberos.forEach((b) => {
       base[b.dni] = {
         users_id: '',
         fecha: hoy,
-        codigo: 'JR',
-        hora_entrada: '08:00',
-        hora_salida: '15:00',
-        horas_extras: 0,
+        codigo: DEFAULTS.codigo,
+        hora_entrada: DEFAULTS.hora_entrada,
+        hora_salida: DEFAULTS.hora_salida,
+        horas_extras: DEFAULTS.horas_extras,
       }
+      ui[b.dni] = String(DEFAULTS.horas_extras)
     })
     setAnotaciones(base)
+    setUiHorasExtras(ui)
   }, [bomberos, anotStorageKey])
 
-  // Resolver users_id por DNI
+  // Resolver users_id por DNI (refactor sin uiHorasExtras)
   useEffect(() => {
     if (!bomberos || bomberos.length === 0) return
     let cancelled = false
@@ -224,21 +243,25 @@ function NoteJR() {
       const today = new Date().toISOString().split('T')[0]
       setAnotaciones((prev) => {
         const next = { ...prev }
+        const uiNext: Record<string, string> = {}
         for (const b of bomberos) {
           if (!next[b.dni]) {
             next[b.dni] = {
               users_id: '',
               fecha: today,
-              codigo: 'JR',
-              hora_entrada: '08:00',
-              hora_salida: '15:00',
-              horas_extras: 0,
+              codigo: DEFAULTS.codigo,
+              hora_entrada: DEFAULTS.hora_entrada,
+              hora_salida: DEFAULTS.hora_salida,
+              horas_extras: DEFAULTS.horas_extras,
             }
           } else {
             next[b.dni].fecha = today
           }
           if (updates[b.dni]?.users_id) next[b.dni].users_id = updates[b.dni].users_id
+          // Rehidrato el UI directamente de "next" → sin depender de uiHorasExtras externo
+          uiNext[b.dni] = String(next[b.dni].horas_extras ?? DEFAULTS.horas_extras)
         }
+        setUiHorasExtras(uiNext)
         return next
       })
     })()
@@ -255,21 +278,46 @@ function NoteJR() {
   }, [anotaciones, anotStorageKey])
 
   const handleChange = (dni: string, field: keyof Anotacion, value: string | number) => {
-    if (field === 'fecha') return
+    if (field === 'fecha') return // la fecha es global (arriba)
     setAnotaciones((prev) => ({
       ...prev,
       [dni]: {
         ...(prev[dni] || {
           users_id: '',
           fecha: fechaDia,
-          codigo: 'JR',
-          hora_entrada: '08:00',
-          hora_salida: '15:00',
-          horas_extras: 0,
+          codigo: DEFAULTS.codigo,
+          hora_entrada: DEFAULTS.hora_entrada,
+          hora_salida: DEFAULTS.hora_salida,
+          horas_extras: DEFAULTS.horas_extras,
         }),
         [field]: value,
       },
     }))
+  }
+
+  // --- Horas extras: permitir escribir sin "0" y también flechas ---
+  const onHorasChange = (dni: string, raw: string) => {
+    setUiHorasExtras((prev) => ({ ...prev, [dni]: raw }))
+  }
+  const onHorasBlur = (dni: string) => {
+    const raw = uiHorasExtras[dni]
+    const num = raw === '' ? 0 : parseFloat(raw.replace(',', '.'))
+    const safe = isFinite(num) ? Math.max(0, num) : 0
+    setAnotaciones((prev) => ({
+      ...prev,
+      [dni]: { ...(prev[dni] as Anotacion), horas_extras: safe },
+    }))
+    setUiHorasExtras((prev) => ({ ...prev, [dni]: String(safe) }))
+  }
+  const onHorasStep = (dni: string, newVal: string) => {
+    setUiHorasExtras((prev) => ({ ...prev, [dni]: newVal }))
+    const num = parseFloat(newVal)
+    if (isFinite(num)) {
+      setAnotaciones((prev) => ({
+        ...prev,
+        [dni]: { ...(prev[dni] as Anotacion), horas_extras: num },
+      }))
+    }
   }
 
   // helpers de reemplazo seguro
@@ -295,21 +343,24 @@ function NoteJR() {
   // 1) Preparar payload y abrir modal
   const guardarAnotacionesAhora = async () => {
     setMsg(null)
-    // Construir payload (sin guardar aún)
     const porUsuario = new Map<string, Anotacion>()
     ;(bomberos || []).forEach((b) => {
       const a = anotaciones[b.dni]
       if (!a || !a.users_id) return
+      const ui = uiHorasExtras[b.dni]
+      const hx =
+        ui === ''
+          ? 0
+          : isFinite(parseFloat((ui || '').replace(',', '.')))
+            ? parseFloat((ui || '').replace(',', '.'))
+            : 0
       porUsuario.set(a.users_id, {
         users_id: a.users_id,
-        fecha: fechaDia,
-        codigo: a.codigo || 'JR',
-        hora_entrada: a.hora_entrada || '08:00',
-        hora_salida: a.hora_salida || '15:00',
-        horas_extras:
-          typeof a.horas_extras === 'number'
-            ? a.horas_extras
-            : parseFloat(String(a.horas_extras || 0)) || 0,
+        fecha: fechaDia, // única
+        codigo: a.codigo || DEFAULTS.codigo,
+        hora_entrada: a.hora_entrada || DEFAULTS.hora_entrada,
+        hora_salida: a.hora_salida || DEFAULTS.hora_salida,
+        horas_extras: Math.max(0, hx),
       })
     })
     const payload = Array.from(porUsuario.values())
@@ -418,6 +469,17 @@ function NoteJR() {
 
   const listaCargando = bomberos === null
 
+  // Helper: detectar si una fila está "tocada" para resaltarla
+  const isTouched = (a?: Anotacion) => {
+    if (!a) return false
+    return (
+      a.codigo !== DEFAULTS.codigo ||
+      a.hora_entrada !== DEFAULTS.hora_entrada ||
+      a.hora_salida !== DEFAULTS.hora_salida ||
+      Number(a.horas_extras || 0) !== DEFAULTS.horas_extras
+    )
+  }
+
   return (
     <main className="min-h-dvh w-full p-4">
       <div className="mx-auto max-w-6xl space-y-4">
@@ -442,9 +504,16 @@ function NoteJR() {
         </div>
 
         <Card className="shadow-xl rounded-2xl">
-          <CardHeader>
+          <CardHeader className="space-y-2">
             <CardTitle className="font-black text-2xl">Anotaciones del día</CardTitle>
+            {/* Fecha única arriba */}
+            <div className="inline-flex items-center gap-2 text-sm">
+              <span className="px-2 py-1 rounded-lg bg-muted text-foreground/90">
+                Fecha:&nbsp;<b>{fechaDia}</b>
+              </span>
+            </div>
           </CardHeader>
+
           <CardContent className="space-y-4">
             {listaCargando ? (
               <p className="text-xl font-semibold text-muted-foreground">Cargando lista…</p>
@@ -458,74 +527,73 @@ function NoteJR() {
             ) : (
               <>
                 <div className="overflow-x-auto rounded-2xl">
-                  <div className="hidden md:grid grid-cols-[minmax(110px,150px)_minmax(140px,1fr)_minmax(160px,1fr)_minmax(150px,170px)_minmax(110px,130px)_minmax(120px,140px)_minmax(120px,140px)_minmax(120px,150px)] gap-2 bg-muted text-left text-sm font-bold px-2 py-2">
+                  {/* Cabecera (añadimos Horas extras) */}
+                  <div className="hidden md:grid grid-cols-[minmax(110px,150px)_minmax(140px,1fr)_minmax(160px,1fr)_minmax(110px,130px)_minmax(120px,140px)_minmax(120px,150px)_minmax(120px,150px)] gap-2 bg-muted text-left text-sm font-bold px-2 py-2 rounded-xl">
                     <div>DNI</div>
                     <div>Nombre</div>
                     <div>Apellidos</div>
-                    <div>Fecha</div>
                     <div>Código</div>
                     <div>Entrada</div>
                     <div>Salida</div>
                     <div>Horas extras</div>
                   </div>
 
-                  <div className="divide-y">
+                  <div className="space-y-2 mt-2">
                     {(bomberos || []).map((b) => {
                       const a = anotaciones[b.dni]
-                      const fechaMostrar = a?.fecha || fechaDia
+                      const touched = isTouched(a)
+                      const uiHX =
+                        uiHorasExtras[b.dni] ?? String(a?.horas_extras ?? DEFAULTS.horas_extras)
+
                       return (
                         <div
                           key={b.dni}
-                          className="grid gap-2 px-2 py-3 grid-cols-1
-                                     md:grid-cols-[minmax(110px,150px)_minmax(140px,1fr)_minmax(160px,1fr)_minmax(150px,170px)_minmax(110px,130px)_minmax(120px,140px)_minmax(120px,140px)_minmax(120px,150px)]
-                                     md:items-center"
+                          className={[
+                            'grid gap-2 px-2 py-3 rounded-xl border transition',
+                            'md:grid-cols-[minmax(110px,150px)_minmax(140px,1fr)_minmax(160px,1fr)_minmax(110px,130px)_minmax(120px,140px)_minmax(120px,150px)_minmax(120px,150px)] md:items-center',
+                            touched
+                              ? 'bg-muted/50 dark:bg-muted/30 border-primary/50 ring-1 ring-primary/25'
+                              : 'bg-background hover:bg-muted/40 dark:hover:bg-muted/20 border-border hover:border-primary/30 focus-within:ring-1 focus-within:ring-primary/30',
+                          ].join(' ')}
                         >
+                          {/* DNI */}
                           <div className="space-y-1">
                             <label className="md:hidden text-sm font-semibold text-muted-foreground">
                               DNI
                             </label>
-                            <div className="text-2xl font-bold md:text-sm md:font-normal">
+                            <div className="text-2xl font-bold md:text-sm md:font-medium">
                               {b.dni}
                             </div>
                           </div>
 
+                          {/* Nombre */}
                           <div className="space-y-1">
                             <label className="md:hidden text-sm font-semibold text-muted-foreground">
                               Nombre
                             </label>
-                            <div className="text-2xl font-black md:text-sm md:font-normal">
+                            <div className="text-xl font-semibold md:text-sm md:font-medium">
                               {b.nombre}
                             </div>
                           </div>
 
+                          {/* Apellidos */}
                           <div className="space-y-1">
                             <label className="md:hidden text-sm font-semibold text-muted-foreground">
                               Apellidos
                             </label>
-                            <div className="text-xl font-bold md:text-sm md:font-normal">
+                            <div className="text-lg font-medium md:text-sm md:font-medium">
                               {b.apellidos}
                             </div>
                           </div>
 
-                          <div className="space-y-1">
-                            <label className="md:hidden text-sm font-semibold text-muted-foreground">
-                              Fecha
-                            </label>
-                            <div
-                              className="px-2 py-1 border rounded bg-background text-xl font-bold md:text-sm md:font-normal"
-                              aria-label="Fecha del día"
-                            >
-                              {fechaMostrar}
-                            </div>
-                          </div>
-
+                          {/* Código */}
                           <div className="space-y-1">
                             <label className="md:hidden text-sm font-semibold text-muted-foreground">
                               Código de trabajo
                             </label>
                             <select
                               className="w-full border rounded px-2 py-1 text-sm bg-background"
-                              value={a?.codigo || 'JR'}
+                              value={a?.codigo ?? DEFAULTS.codigo}
                               onChange={(e) => handleChange(b.dni, 'codigo', e.target.value)}
                               aria-label="Código de trabajo"
                             >
@@ -537,48 +605,57 @@ function NoteJR() {
                             </select>
                           </div>
 
+                          {/* Entrada */}
                           <div className="space-y-1">
                             <label className="md:hidden text-sm font-semibold text-muted-foreground">
                               Entrada
                             </label>
                             <Input
                               type="time"
-                              value={a?.hora_entrada || ''}
+                              value={a?.hora_entrada ?? DEFAULTS.hora_entrada}
                               onChange={(e) => handleChange(b.dni, 'hora_entrada', e.target.value)}
                               aria-label="Hora de entrada"
                             />
                           </div>
 
+                          {/* Salida */}
                           <div className="space-y-1">
                             <label className="md:hidden text-sm font-semibold text-muted-foreground">
                               Salida
                             </label>
                             <Input
                               type="time"
-                              value={a?.hora_salida || ''}
+                              value={a?.hora_salida ?? DEFAULTS.hora_salida}
                               onChange={(e) => handleChange(b.dni, 'hora_salida', e.target.value)}
                               aria-label="Hora de salida"
                             />
                           </div>
 
+                          {/* Horas extras (columna propia en desktop) */}
                           <div className="space-y-1">
-                            <label className="md:hidden text-sm font-semibold text-muted-foreground">
-                              Horas extras
+                            <label className="text-sm font-semibold text-muted-foreground">
+                              <span className="md:inline">Horas extras</span>
                             </label>
-                            <Input
+                            <input
                               type="number"
                               inputMode="decimal"
-                              step="0.25"
-                              min="0"
-                              className="w-24 text-right"
-                              value={a?.horas_extras ?? 0}
-                              onChange={(e) =>
-                                handleChange(
-                                  b.dni,
-                                  'horas_extras',
-                                  e.target.value ? parseFloat(e.target.value) : 0,
-                                )
-                              }
+                              step={0.25}
+                              min={0}
+                              className="w-24 md:w-28 rounded border px-2 py-1 text-right text-sm bg-background [appearance:auto] m-2"
+                              value={uiHX}
+                              onChange={(e) => {
+                                const v = e.target.value
+                                if (
+                                  v !== '' &&
+                                  e.nativeEvent instanceof InputEvent &&
+                                  e.nativeEvent.inputType === 'insertReplacementText'
+                                ) {
+                                  onHorasStep(b.dni, v)
+                                } else {
+                                  onHorasChange(b.dni, v)
+                                }
+                              }}
+                              onBlur={() => onHorasBlur(b.dni)}
                               aria-label="Horas extras"
                             />
                           </div>
@@ -620,7 +697,7 @@ function NoteJR() {
         </Card>
       </div>
 
-      {/* Modal de confirmación (shadcn/radix) */}
+      {/* Modal de confirmación */}
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent>
           <DialogHeader>
