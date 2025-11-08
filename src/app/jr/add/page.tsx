@@ -88,7 +88,7 @@ function AgregarBomberos() {
       setCtx(nuevo);
       try {
         localStorage.setItem(CTX_KEY, JSON.stringify(nuevo));
-      } catch {}
+      } catch { }
       return;
     }
 
@@ -96,7 +96,7 @@ function AgregarBomberos() {
     try {
       const raw = localStorage.getItem(CTX_KEY);
       if (raw) setCtx(JSON.parse(raw));
-    } catch {}
+    } catch { }
   }, [urlTipo, urlZona, urlMunicipio, urlUnidad, urlCaseta, urlUnidadId, urlCasetaId, urlLs]);
 
   const storageKey = useMemo(() => computeListaKey(ctx), [ctx]);
@@ -104,7 +104,7 @@ function AgregarBomberos() {
 
   // 2) Cargar selección previa (si existe) para esta clave (con migración desde la legacy)
   const [seleccion, setSeleccion] = useState<Record<string, boolean>>({});
-  const [listaInicial, setListaInicial] = useState<Bombero[] | null>(null);
+  const [, setListaInicial] = useState<Bombero[] | null>(null);
 
   useEffect(() => {
     if (!storageKey) return;
@@ -165,6 +165,7 @@ function AgregarBomberos() {
         for (const u of json.unidades as { id: string; nombre: string }[]) {
           unidadesById[u.id] = u.nombre;
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const lista = (json.usuarios as any[]).map((u) => ({
           dni: u.dni,
           nombre: u.nombre,
@@ -195,7 +196,7 @@ function AgregarBomberos() {
       .map((m) => ({ dni: m.dni, nombre: m.nombre, apellidos: m.apellidos }));
     try {
       localStorage.setItem(storageKey, JSON.stringify(seleccionados));
-    } catch {}
+    } catch { }
   }, [seleccion, storageKey, loadedKey, miembros]);
 
   const toggle = (dni: string) => {
@@ -206,7 +207,7 @@ function AgregarBomberos() {
     setSeleccion({});
     try {
       if (storageKey) localStorage.removeItem(storageKey);
-    } catch {}
+    } catch { }
   };
 
   const goNext = () => {
@@ -226,60 +227,61 @@ function AgregarBomberos() {
   }
 
   return (
-    <main className="p-4">
-      <div className="max-w-3xl mx-auto">
-        <Card>
-          <CardHeader>
-            <CardTitle>Seleccionar componentes (A y B) de la zona</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {!ctx ? (
-              <div>Cargando contexto…</div>
-            ) : cargando ? (
-              <div>Cargando miembros…</div>
-            ) : (
-              <>
-                {mensaje ? <div className="text-red-600 text-sm">{mensaje}</div> : null}
+    <>
+    <main className=" grid place-items-center p-4 ">
+      <Card className=" w-full max-w-3xl rounded-2xl">
+        <CardHeader>
+          <CardTitle>Seleccionar componentes (A y B) de la zona</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {!ctx ? (
+            <div>Cargando contexto…</div>
+          ) : cargando ? (
+            <div>Cargando miembros…</div>
+          ) : (
+            <>
+              {mensaje ? <div className="text-red-600 text-sm">{mensaje}</div> : null}
 
-                {grupos.length === 0 ? (
-                  <div>No hay miembros para esta zona.</div>
-                ) : (
-                  grupos.map((g) => (
-                    <div key={g.unidad_id} className="border rounded-xs p-3">
-                      <div className="font-semibold mb-2">{g.unidad_nombre}</div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {g.miembros.map((m) => (
-                          <label key={m.dni} className="flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={!!seleccion[m.dni]}
-                              onChange={() => toggle(m.dni)}
-                            />
-                            <span>
-                              {m.nombre} {m.apellidos}
-                            </span>
-                            <span className="text-xs text-gray-500 ml-auto">{m.dni}</span>
-                          </label>
-                        ))}
-                      </div>
+              {grupos.length === 0 ? (
+                <div>No hay miembros para esta zona.</div>
+              ) : (
+                grupos.map((g) => (
+                  <div key={g.unidad_id} className="p-3">
+                    <div className="font-bold mb-2 mr-4 text-2xl">{g.unidad_nombre}</div>
+                    <div className="text-xl grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {g.miembros.map((m) => (
+                        <label key={m.dni} className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={!!seleccion[m.dni]}
+                            onChange={() => toggle(m.dni)}
+                          />
+                          <span>
+                            {m.nombre} {m.apellidos}
+                          </span>
+                          <span className="text-sm text-gray-400 ml-2"><label>DNI : </label>{m.dni}</span>
+                        </label>
+                      ))}
                     </div>
-                  ))
-                )}
+                  </div>
+                ))
+              )}
 
-                <div className="flex items-center gap-2">
-                  <Button type="button" onClick={goNext}>
-                    Continuar
-                  </Button>
-                  <Button type="button" variant="outline" onClick={limpiar}>
-                    Limpiar selección
-                  </Button>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+              <div className="flex items-center gap-2">
+                <Button type="button" onClick={goNext}>
+                  Continuar
+                </Button>
+                <Button type="button" variant="outline" onClick={limpiar}>
+                  Limpiar selección
+                </Button>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
     </main>
+  </>
+
   );
 }
 
@@ -289,4 +291,5 @@ export default function Page() {
       <AgregarBomberos />
     </Suspense>
   );
+  
 }

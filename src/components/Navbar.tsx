@@ -125,7 +125,7 @@ export default function NavBar() {
 
   return (
    
-      <header className="mx-auto max-w-6xl px-2">
+      <header className="px-24">
         <nav className="mt-1 rounded-2xl border-8 border-white-90 shadow-md backdrop-blur-md bg-[--card]/92 supports-[backdrop-filter]:bg-[--card]/85">
           <div className="relative h-20 flex items-center justify-between">
             {/* Izquierda */}

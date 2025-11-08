@@ -68,7 +68,7 @@ export default function JRLayout({ children }: { children: React.ReactNode }) {
           <div className="ml-2 font-bold">Menú</div>
         </div>
       </div>
-      <div className="flex min-h-[calc(100vh-56px)]">
+      <div className="flex min-h-full">
         <SidebarJR />
         <div className="flex-1">{children}</div>
       </div>

@@ -45,10 +45,9 @@
   --color-card: var(--card);
 
   /* Radios */
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 1px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm: calc(var(--radius) + 2px);
+  --radius-md: calc(var(--radius) + 5px);
+  --radius-xl: calc(var(--radius) + 10px);
 }
 
 /* ===============================
@@ -56,38 +55,38 @@
    =============================== */
 :root {
   /* Botones tipo pill por defecto */
-  --radius: 9999px;
+  --radius: 10px;
 
   /* Base (negro tipo Saaspo) */
   --background: #0b0f14;        /* negro profundo, sin ser puro */
   --foreground: #f8fafc;        /* casi blanco */
 
   /* Superficies */
-  --card: #0f1621;              /* un tono por encima del fondo */
+  --card: #3f4247;              /* un tono por encima del fondo #0f1621 */
   --card-foreground: #f8fafc;
   --popover: #0f1621;
   --popover-foreground: #f8fafc;
 
   /* Marca / Accentos */
-  --primary: #22c55e;           /* verde vivo para CTA */
+  --primary: #55D400;           /* verde vivo para CTA */
   --primary-foreground: #052e16;
   --secondary: #0b0f14;         /* apoya el look dark */
   --secondary-foreground: #f8fafc;
 
   /* UI neutrales */
-  --muted: #22c55e;             /* gris/azulado muy oscuro para hovers */
+  --muted: #55D400;             /* gris/azulado muy oscuro para hovers */
   --muted-foreground: #cbd5e1;  /* slate-300 */
   --border: #17202c;            /* línea sutil */
   --input: #17202c;
-  --ring: #22c55e;              /* foco en verde */
+  --ring: #55D400;              /* foco en verde */
 
   /* Detalles mínimos en rojo (errores/alertas) */
   --destructive: #ef4444;
-  --accent: #22c55e;
+  --accent: #55D400;
   --accent-foreground: #052e16;
 
   /* Charts (opcionales, gama verde/neutral) */
-  --chart-1: #22c55e;
+  --chart-1: #55D400;
   --chart-2: #16a34a;
   --chart-3: #10b981;
   --chart-4: #84cc16;
@@ -96,12 +95,12 @@
   /* Sidebar */
   --sidebar: #0b0f14;
   --sidebar-foreground: #f8fafc;
-  --sidebar-primary: #22c55e;
+  --sidebar-primary: #55D400;
   --sidebar-primary-foreground: #052e16;
   --sidebar-accent: #0f1826;
   --sidebar-accent-foreground: #f8fafc;
   --sidebar-border: #1967ce;
-  --sidebar-ring: #22c55e;
+  --sidebar-ring: #55D400;
 }
 
 /* ===============================
@@ -117,7 +116,7 @@
   --popover: #ffffff;
   --popover-foreground: #0b0f14;
 
-  --primary: #16a34a;          
+  --primary: #55D400;          
   --primary-foreground: #ffffff;
   --secondary: #0b0f14;
   --secondary-foreground: #ffffff;
@@ -126,13 +125,13 @@
   --muted-foreground: #4b5563;
   --border: #e5e7eb;
   --input: #e5e7eb;
-  --ring: #16a34a;
+  --ring: #55D400;
 
   --destructive: #ef4444;
-  --accent: #22c55e;
+  --accent: #55D400;
   --accent-foreground: #052e16;
 
-  --chart-1: #16a34a;
+  --chart-1: #55D400;
   --chart-2: #22c55e;
   --chart-3: #10b981;
   --chart-4: #84cc16;
@@ -140,12 +139,12 @@
 
   --sidebar: #ffffff;
   --sidebar-foreground: #0b0f14;
-  --sidebar-primary: #16a34a;
+  --sidebar-primary: #55D400;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #f3f4f6;
   --sidebar-accent-foreground: #0b0f14;
   --sidebar-border: #e5e7eb;
-  --sidebar-ring: #16a34a;
+  --sidebar-ring: #55D400;
   
 }
 

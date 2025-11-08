@@ -36,7 +36,7 @@ export default function BFLayout({ children }: { children: React.ReactNode }) {
           <div className="ml-2 font-medium">Menú</div>
         </div>
       </div>
-      <div className="flex min-h-[calc(100vh-56px)]">
+      <div className="flex min-h-full">
         <SidebarBF />
         <div className="flex-1">{children}</div>
       </div>

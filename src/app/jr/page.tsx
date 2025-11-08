@@ -34,7 +34,6 @@ export default function StartJR() {
   // Carga de sesión + destino (sin auto-redirect)
   useEffect(() => {
     (async () => {
-      // 1) comprobar sesión + rol
       const meRes = await fetch("/api/me", { credentials: "include" });
       if (meRes.status !== 200) {
         router.replace("/");
@@ -46,7 +45,6 @@ export default function StartJR() {
         return;
       }
 
-      // 2) pedir destino
       const destRes = await fetch("/api/jr/destino", { credentials: "include" });
       const djson = await destRes.json();
 
@@ -122,59 +120,42 @@ export default function StartJR() {
   if (loading) return null;
 
   return (
-    <main className="min-h-screen">
-      <div className="mx-auto max-w-4xl p-6 md:p-10">
-        <Card className="shadow-xl">
-          <CardHeader>
-            <CardTitle>DESTINO ASIGNADO: </CardTitle>
+    <main className="h-120 w-full flex items-center justify-center p-4">
+      <div className="mx-auto w-full max-w-3xl">
+        <Card className="shadow-xl rounded-xl">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">DESTINO ASIGNADO</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+
+          <CardContent className="space-y-6 text-center">
             {error ? (
-              <div className="text-red-600 text-sm">{error}</div>
+              <div className="text-red-600 text-base">{error}</div>
             ) : destino ? (
               <>
-                {/* Zona (bloqueada) */}
-                <div className="space-y-1 md:max-w-lg">
-                  <label className="text-sm font-medium">Zona</label>
-                  <input
-                    value={destino.zona}
-                    disabled
-                    className="h-10 w-full rounded-xl border-2 bg-muted px-3 text-sm"
-                  />
+                <div className="space-y-1">
+                  <p className="text-lg font-extralight">Zona</p>
+                  <p className="text-xl font-bold">{destino.zona}</p>
                 </div>
 
-                {/* Tipo y destino */}
                 {destino.tipo === "unidad" ? (
-                  <div className="space-y-1 md:max-w-lg">
-                    <label className="text-sm font-medium">Unidad asignada</label>
-                    <input
-                      value={destino.unidad_nombre}
-                      disabled
-                      className="h-10 w-full rounded-xl border-2 bg-muted px-3 text-sm"
-                    />
+                  <div className="space-y-1">
+                    <p className="text-lg text-muted-foreground">Unidad asignada</p>
+                    <p className="text-xl font-bold">{destino.unidad_nombre}</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:max-w-3xl">
+                  <>
                     <div className="space-y-1">
-                      <label className="text-sm font-medium">Municipio</label>
-                      <input
-                        value={destino.municipio_nombre}
-                        disabled
-                        className="h-10 w-full rounded-xl border-2 bg-muted px-3 text-sm"
-                      />
+                      <p className="text-sm text-muted-foreground">Municipio</p>
+                      <p className="text-xl font-bold">{destino.municipio_nombre}</p>
                     </div>
                     <div className="space-y-1">
-                      <label className="text-sm font-medium">Caseta</label>
-                      <input
-                        value={destino.caseta_nombre}
-                        disabled
-                        className="h-10 w-full rounded-xl border-2 bg-muted px-3 text-sm"
-                      />
+                      <p className="text-sm text-muted-foreground">Caseta</p>
+                      <p className="text-xl font-bold">{destino.caseta_nombre}</p>
                     </div>
-                  </div>
+                  </>
                 )}
 
-                <div className="flex justify-end">
+                <div className="flex justify-center pt-2">
                   <Button onClick={goNext}>Continuar</Button>
                 </div>
               </>

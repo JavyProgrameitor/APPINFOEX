@@ -72,7 +72,7 @@ export default function AdminLayout({
           <div className="ml-3 font-bold text-primary text-sm">Menu</div>
         </div>
       </div>
-      <div className="flex min-h-[calc(100vh-56px)]">
+      <div className="flex min-h-full">
         <SidebarAdmin />
         <div className="flex-1">{children}</div>
       </div>

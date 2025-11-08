@@ -6,7 +6,17 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint","lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "prepare": "husky install"
+  },
+    "lint-staged": {
+    "**/*.{ts,tsx,js,jsx}": [
+      "eslint --max-warnings=0 --fix"
+    ],
+    "**/*.{json,md,css,scss,html,mdx}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.12",
@@ -35,10 +45,17 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@typescript-eslint/eslint-plugin": "^8.46.3",
+    "@typescript-eslint/parser": "^8.46.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "eslint": "^9",
+    "eslint": "^9.39.1",
     "eslint-config-next": "15.5.5",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.6",
     "lucide-react": "^0.545.0",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^4",
