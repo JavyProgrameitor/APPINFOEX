@@ -72,7 +72,6 @@ function computeKeys(ctx: JRContext | null) {
     storageKey: ctx.ls ? ctx.ls : `INFOEX:lista:${ctx.tipo}:${parte}`,
     anotStorageKey: `INFOEX:anotaciones:${ctx.tipo}:${parte}`,
     metaStorageKey: `INFOEX:meta:${ctx.tipo}:${parte}`,
-    // Borrador local de salidas (para no perder al navegar)
     salidasDraftKey: `INFOEX:salidas_draft:${ctx.tipo}:${parte}`,
   }
 }
@@ -82,7 +81,6 @@ function ExitJR() {
   const params = useSearchParams()
   const { toast } = useToast()
 
-  // Cargar contexto
   const [ctx, setCtx] = useState<JRContext | null>(null)
   useEffect(() => {
     const urlTipo = params.get('tipo') as 'unidad' | 'caseta' | null
@@ -131,7 +129,6 @@ function ExitJR() {
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
 
-  // Lista (para calcular total bomberos y users_ids/fecha)
   useEffect(() => {
     if (!storageKey) return
     try {
@@ -143,7 +140,6 @@ function ExitJR() {
     } catch {}
   }, [storageKey])
 
-  // Anotaciones (para recuperar users_id y fecha)
   useEffect(() => {
     if (!anotStorageKey) return
     try {
@@ -152,7 +148,7 @@ function ExitJR() {
     } catch {}
   }, [anotStorageKey])
 
-  // Borrador local de salidas: cargar si existe
+  // Cargar borrador local
   useEffect(() => {
     if (!salidasDraftKey) return
     try {
@@ -164,7 +160,7 @@ function ExitJR() {
     } catch {}
   }, [salidasDraftKey])
 
-  // Borrador local de salidas: guardar en cada cambio (para no perder al navegar)
+  // Guardar borrador en cada cambio
   useEffect(() => {
     if (!salidasDraftKey) return
     try {
@@ -245,7 +241,6 @@ function ExitJR() {
           variant: 'destructive',
         })
       } else {
-        // Borrar borrador tras guardar correctamente
         try {
           if (salidasDraftKey) localStorage.removeItem(salidasDraftKey)
         } catch {}
@@ -324,8 +319,8 @@ function ExitJR() {
 
           <CardContent className="space-y-3 rounded-2xl">
             <div className="overflow-x-auto rounded-2xl">
-              {/* Cabecera md+ — LUGAR flexible para no empujar al resto */}
-              <div className="hidden md:grid grid-cols-[minmax(110px,160px)_minmax(110px,160px)_minmax(110px,160px)_minmax(0,1fr)_minmax(110px,170px)_minmax(90px,120px)] gap-2 bg-muted text-left text-sm font-bold px-2 py-2 rounded-xl">
+              {/* Cabecera solo en escritorio (lg+) */}
+              <div className="hidden lg:grid grid-cols-[minmax(110px,160px)_minmax(110px,160px)_minmax(110px,160px)_minmax(0,1fr)_minmax(110px,170px)_minmax(90px,120px)] gap-2 bg-muted text-left text-sm font-bold px-2 py-2 rounded-xl">
                 <div>Tipo</div>
                 <div>Hora salida</div>
                 <div>Hora entrada</div>
@@ -334,7 +329,6 @@ function ExitJR() {
                 <div></div>
               </div>
 
-              {/* Filas con realce igual que en note */}
               <div className="space-y-2 mt-2">
                 {salidas.map((s, idx) => {
                   const touched = isTouched(s)
@@ -343,7 +337,7 @@ function ExitJR() {
                       key={idx}
                       className={[
                         'grid gap-2 px-2 py-3 rounded-xl border transition',
-                        'md:grid-cols-[minmax(110px,160px)_minmax(110px,160px)_minmax(110px,160px)_minmax(0,1fr)_minmax(110px,170px)_minmax(90px,120px)] md:items-center',
+                        'lg:grid-cols-[minmax(110px,160px)_minmax(110px,160px)_minmax(110px,160px)_minmax(0,1fr)_minmax(110px,170px)_minmax(90px,120px)] lg:items-center',
                         touched
                           ? 'bg-muted/50 dark:bg-muted/30 border-primary/50 ring-1 ring-primary/25'
                           : 'bg-background hover:bg-muted/40 dark:hover:bg-muted/20 border-border hover:border-primary/30 focus-within:ring-1 focus-within:ring-primary/30',
@@ -351,7 +345,9 @@ function ExitJR() {
                     >
                       {/* Tipo */}
                       <div className="space-y-1 min-w-0">
-                        <label className="text-sm font-semibold text-muted-foreground">Tipo</label>
+                        <label className="lg:hidden text-sm font-semibold text-muted-foreground">
+                          Tipo
+                        </label>
                         <select
                           className="w-full border rounded px-2 py-1 text-sm bg-background h-9"
                           value={s.tipo}
@@ -370,12 +366,12 @@ function ExitJR() {
 
                       {/* Hora salida */}
                       <div className="space-y-1 min-w-0">
-                        <label className="text-sm font-semibold text-muted-foreground">
+                        <label className="lg:hidden text-sm font-semibold text-muted-foreground">
                           Hora salida
                         </label>
                         <Input
                           type="time"
-                          className="h-9 text-sm w-full md:w-28"
+                          className="h-9 text-sm w-full lg:w-28"
                           value={s.hora_salida}
                           onChange={(e) => changeSalida(idx, 'hora_salida', e.target.value)}
                           aria-label="Hora de salida"
@@ -384,21 +380,23 @@ function ExitJR() {
 
                       {/* Hora entrada */}
                       <div className="space-y-1 min-w-0">
-                        <label className="text-sm font-semibold text-muted-foreground">
+                        <label className="lg:hidden text-sm font-semibold text-muted-foreground">
                           Hora entrada
                         </label>
                         <Input
                           type="time"
-                          className="h-9 text-sm w-full md:w-28"
+                          className="h-9 text-sm w-full lg:w-28"
                           value={s.hora_entrada}
                           onChange={(e) => changeSalida(idx, 'hora_entrada', e.target.value)}
                           aria-label="Hora de entrada"
                         />
                       </div>
 
-                      {/* Lugar — flexible (no envuelve al nº) */}
-                      <div className="space-y-1 min-w-0 md:justify-self-stretch">
-                        <label className="text-sm font-semibold text-muted-foreground">Zona</label>
+                      {/* Lugar */}
+                      <div className="space-y-1 min-w-0 lg:justify-self-stretch">
+                        <label className="lg:hidden text-sm font-semibold text-muted-foreground">
+                          Zona
+                        </label>
                         <Input
                           placeholder="Describe el lugar…"
                           className="w-full min-w-0 h-9 text-sm"
@@ -408,16 +406,16 @@ function ExitJR() {
                         />
                       </div>
 
-                      {/* Nº intervinientes — CONTROLADO para que se guarde al vuelo */}
+                      {/* Nº intervinientes */}
                       <div className="space-y-1 min-w-0">
-                        <label className="text-sm font-semibold text-muted-foreground">
+                        <label className="lg:hidden text-sm font-semibold text-muted-foreground">
                           Bomberos hoy {totalBomberos}
                         </label>
                         <input
                           type="tel"
                           inputMode="numeric"
                           pattern="[0-9]*"
-                          className="w-28 md:w-24 text-right border rounded px-2 py-1 text-sm bg-background h-9"
+                          className="w-28 lg:w-24 text-right border rounded px-2 py-1 text-sm bg-background h-9"
                           value={String(s.num_intervienen)}
                           onChange={(e) => {
                             const raw = e.currentTarget.value.replace(/\D+/g, '')
@@ -430,7 +428,7 @@ function ExitJR() {
                       </div>
 
                       {/* Acción */}
-                      <div className="flex md:justify-end">
+                      <div className="flex lg:justify-end">
                         <Button variant="secondary" onClick={() => removeSalida(idx)}>
                           Eliminar
                         </Button>
@@ -448,7 +446,7 @@ function ExitJR() {
               </Alert>
             )}
 
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
               <Button className="font-bold border-2 border-lime-50" onClick={addSalida}>
                 Añadir salida
               </Button>
@@ -478,7 +476,7 @@ function ExitJR() {
 
         {metaStorageKey ? (
           <small className="text-xs text-muted-foreground">
-            Última subida en este dispositivo:{' '}
+            Última subida en este dispositivo{' '}
             {(() => {
               try {
                 const raw =

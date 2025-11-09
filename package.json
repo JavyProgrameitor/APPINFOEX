@@ -23,7 +23,10 @@
   },
   "config": {
     "commitizen": {
-      "path": "cz-emoji"
+      "path": "cz-emoji",
+      "cz-emoji": {
+        "useEmoji": "true"
+      }
     }
   },
   "dependencies": {

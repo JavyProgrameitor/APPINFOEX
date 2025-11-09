@@ -1,7 +1,8 @@
-
-
 # Verifica que el mensaje tiene un emoji al principio
-if ! grep -Eq '^([[:space:]]*)([🧹💄✨🐛♻️📝🚀🔥🔧🧪📖✅❌])' "$1"; then
+
+
+# Verifica que el mensaje tiene un emoji (unicode o :shortcode:) al principio
+if ! grep -Eq '^([[:space:]]*)([🧹💄✨🐛♻️📝🚀🔥🔧🧪📖✅❌]|:[a-z0-9_+-]+:)' "$1"; then
   echo "❌ El mensaje de commit debe comenzar con un emoji tipo conventional commits."
   echo "💡 Usa: npm run commit"
   exit 1

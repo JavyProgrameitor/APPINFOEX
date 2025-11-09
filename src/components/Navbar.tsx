@@ -20,14 +20,12 @@ export default function NavBar() {
   const router = useRouter()
   const pathname = usePathname()
 
-  // rutas que requieren sesión (para redirigir en 401 y mostrar info)
   const isRoleRoute = useMemo(
     () =>
       pathname?.startsWith('/admin') || pathname?.startsWith('/bf') || pathname?.startsWith('/jr'),
     [pathname],
   )
 
-  // tema
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
@@ -41,7 +39,6 @@ export default function NavBar() {
         justLoggedOutRef.current = false
         return
       }
-
       setLoading(true)
       try {
         const res = await fetch('/api/me', { method: 'GET', credentials: 'include' })
@@ -67,18 +64,15 @@ export default function NavBar() {
     [router, pathname],
   )
 
-  // 1) al montar
   useEffect(() => {
     fetchMe({ redirectOn401: true })
   }, [fetchMe])
 
-  // 2) al cambiar ruta → revisa sesión y cierra panel móvil
   useEffect(() => {
     fetchMe({ redirectOn401: isRoleRoute })
     setOpen(false)
   }, [fetchMe, isRoleRoute, pathname])
 
-  // 3) cuando la pestaña vuelve a estar visible
   useEffect(() => {
     const onVis = () => {
       if (document.visibilityState === 'visible') {
@@ -92,9 +86,7 @@ export default function NavBar() {
   const onLogout = async () => {
     try {
       await fetch('/api/logout', { method: 'POST', credentials: 'include' })
-    } catch {
-      /* ignore */
-    }
+    } catch {}
     justLoggedOutRef.current = true
     setEmail(null)
     setRol(null)
@@ -109,25 +101,42 @@ export default function NavBar() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-8 bg-[--card]/90 backdrop-blur supports-[backdrop-filter]:bg-[--card]/80">
-      <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Barra superior en grid para centrar el título */}
-        <div className="h-16 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-          {/* Columna izquierda (espaciador para centrar) */}
-          <div className="hidden md:block" />
+    <header className="sticky top-0 z-50 w-full border-b bg-[--card]/90 backdrop-blur supports-[backdrop-filter]:bg-[--card]/80">
+      <nav className="mx-auto max-w-6xl px-3 sm:px-4">
+        {/* 3 columnas reales: izquierda (hamburguesa), centro (título), derecha (acciones) */}
+        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 h-14">
+          {/* Izquierda: hamburguesa (solo móvil) */}
+          <div className="flex md:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
+              onClick={() => setOpen((v) => !v)}
+            >
+              {open ? <X size={18} /> : <Menu size={18} />}
+            </Button>
+          </div>
 
-          {/* Centro: Logo + título centrados */}
-          <Link href="/" className="justify-self-center flex items-center gap-2">
-            <Image
-              src="/img/logoGreen.svg"
-              alt="INFOEX"
-              width={32}
-              height={32}
-              className="rounded-lg object-cover"
-              priority
-            />
-            <span className="text-sm font-bold whitespace-nowrap">APP CONTROL-DIARIO</span>
-          </Link>
+          {/* Centro: logo + título centrados y truncados (no solapa nunca) */}
+          <div className="min-w-0 justify-self-center">
+            <Link href="/" className="flex items-center gap-2 max-w-full">
+              <Image
+                src="/img/logoGreen.svg"
+                alt="INFOEX"
+                width={28}
+                height={28}
+                className="rounded-lg object-cover shrink-0"
+                priority
+              />
+              <span
+                className="truncate font-black leading-tight
+                           text-base sm:text-lg md:text-xl"
+                title="APP CONTROL-DIARIO"
+              >
+                APP CONTROL-DIARIO
+              </span>
+            </Link>
+          </div>
 
           {/* Derecha: acciones desktop */}
           <div className="hidden md:flex items-center gap-2 justify-self-end">
@@ -135,9 +144,9 @@ export default function NavBar() {
               <span className="flex text-sm items-center gap-2 px-3 py-1 rounded-xl border border-white/40 bg-white/10">
                 <span className="inline-flex items-center gap-1">
                   <span className="rounded-full w-2 h-2 bg-card" />
-                  <span className="font-medium">{roleLabel(rol)}</span>
+                  <span className="font-semibold">{roleLabel(rol)}</span>
                 </span>
-                <span className="text-primary opacity-70">✓</span>
+                <span className="text-primary/70">✓</span>
                 <span className="opacity-80">{email}</span>
               </span>
             )}
@@ -164,21 +173,9 @@ export default function NavBar() {
               )}
             </Button>
           </div>
-
-          {/* Botón hamburguesa (móvil) en la derecha */}
-          <div className="md:hidden justify-self-end">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
-              onClick={() => setOpen((v) => !v)}
-            >
-              {open ? <X size={18} /> : <Menu size={18} />}
-            </Button>
-          </div>
         </div>
 
-        {/* Panel móvil colapsable (sin enlaces de navegación) */}
+        {/* Panel móvil colapsable */}
         <div
           className={[
             'md:hidden overflow-hidden transition-[max-height,opacity] duration-200 ease-out',
@@ -187,15 +184,14 @@ export default function NavBar() {
           aria-hidden={!open}
         >
           <div className="border-t py-2">
-            {/* Info y acciones en móvil */}
             <div className="flex items-center justify-between gap-2">
               {isRoleRoute && !loading && email && (
                 <span className="text-xs inline-flex items-center gap-2 px-3 py-1 rounded-lg border border-white/40 bg-white/10">
                   <span className="inline-flex items-center gap-1">
                     <span className="rounded-full w-2 h-2 bg-card" />
-                    <span className="font-medium">{roleLabel(rol)}</span>
+                    <span className="font-semibold">{roleLabel(rol)}</span>
                   </span>
-                  <span className="text-primary opacity-70">✓</span>
+                  <span className="text-primary/70">✓</span>
                   <span className="opacity-80">{email}</span>
                 </span>
               )}
