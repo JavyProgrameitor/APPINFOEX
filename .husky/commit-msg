@@ -1,5 +1,4 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+
 
 # Verifica que el mensaje tiene un emoji al principio
 if ! grep -Eq '^([[:space:]]*)([🧹💄✨🐛♻️📝🚀🔥🔧🧪📖✅❌])' "$1"; then

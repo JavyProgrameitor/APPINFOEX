@@ -20,6 +20,7 @@ export default function NavBar() {
   const router = useRouter()
   const pathname = usePathname()
 
+  // rutas que requieren sesión (para redirigir en 401 y mostrar info)
   const isRoleRoute = useMemo(
     () =>
       pathname?.startsWith('/admin') || pathname?.startsWith('/bf') || pathname?.startsWith('/jr'),
@@ -43,11 +44,7 @@ export default function NavBar() {
 
       setLoading(true)
       try {
-        const res = await fetch('/api/me', {
-          method: 'GET',
-          credentials: 'include',
-        })
-
+        const res = await fetch('/api/me', { method: 'GET', credentials: 'include' })
         if (res.status === 200) {
           const json = await res.json()
           setEmail(json.email)
@@ -55,9 +52,7 @@ export default function NavBar() {
         } else if (res.status === 401) {
           setEmail(null)
           setRol(null)
-          if (opts?.redirectOn401 && pathname !== '/') {
-            router.replace('/')
-          }
+          if (opts?.redirectOn401 && pathname !== '/') router.replace('/')
         } else {
           setEmail(null)
           setRol(null)
@@ -96,12 +91,9 @@ export default function NavBar() {
 
   const onLogout = async () => {
     try {
-      await fetch('/api/logout', {
-        method: 'POST',
-        credentials: 'include',
-      })
+      await fetch('/api/logout', { method: 'POST', credentials: 'include' })
     } catch {
-      // ignore
+      /* ignore */
     }
     justLoggedOutRef.current = true
     setEmail(null)
@@ -116,35 +108,16 @@ export default function NavBar() {
     return 'Bombero Forestal'
   }
 
-  // Enlaces según rol (además de Inicio)
-  const links = useMemo(() => {
-    const base = [{ href: '/', label: 'Inicio' }]
-    if (rol === 'admin') {
-      return [
-        ...base,
-        { href: '/admin', label: 'Administración' },
-        { href: '/jr', label: 'Junta de Retén' },
-        { href: '/bf', label: 'Bombeo Fijo' },
-      ]
-    }
-    if (rol === 'jr') {
-      return [...base, { href: '/jr', label: 'Junta de Retén' }]
-    }
-    if (rol === 'bf') {
-      return [...base, { href: '/bf', label: 'Bombeo Fijo' }]
-    }
-    return base
-  }, [rol])
-
-  const isActive = (href: string) => pathname === href || pathname?.startsWith(href + '/')
-
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-[--card]/90 backdrop-blur supports-[backdrop-filter]:bg-[--card]/80">
+    <header className="sticky top-0 z-50 w-full border-8 bg-[--card]/90 backdrop-blur supports-[backdrop-filter]:bg-[--card]/80">
       <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Barra superior */}
-        <div className="h-16 flex items-center gap-3">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 shrink-0">
+        {/* Barra superior en grid para centrar el título */}
+        <div className="h-16 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          {/* Columna izquierda (espaciador para centrar) */}
+          <div className="hidden md:block" />
+
+          {/* Centro: Logo + título centrados */}
+          <Link href="/" className="justify-self-center flex items-center gap-2">
             <Image
               src="/img/logoGreen.svg"
               alt="INFOEX"
@@ -156,28 +129,8 @@ export default function NavBar() {
             <span className="text-sm font-bold whitespace-nowrap">APP CONTROL-DIARIO</span>
           </Link>
 
-          {/* Menú de enlaces (desktop) */}
-          <div className="hidden md:flex items-center gap-1 ml-4">
-            {links.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={[
-                  'px-3 py-2 rounded-xl text-sm transition',
-                  'hover:bg-[--muted] hover:text-[--foreground]',
-                  isActive(l.href) ? 'bg-[--muted] font-medium' : 'text-[--muted-foreground]',
-                ].join(' ')}
-              >
-                {l.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* Empujador */}
-          <div className="ml-auto" />
-
-          {/* Acciones (desktop) */}
-          <div className="hidden md:flex items-center gap-2">
+          {/* Derecha: acciones desktop */}
+          <div className="hidden md:flex items-center gap-2 justify-self-end">
             {isRoleRoute && !loading && email && (
               <span className="flex text-sm items-center gap-2 px-3 py-1 rounded-xl border border-white/40 bg-white/10">
                 <span className="inline-flex items-center gap-1">
@@ -212,19 +165,20 @@ export default function NavBar() {
             </Button>
           </div>
 
-          {/* Botón hamburguesa (móvil) */}
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
-            className="md:hidden"
-            onClick={() => setOpen((v) => !v)}
-          >
-            {open ? <X size={18} /> : <Menu size={18} />}
-          </Button>
+          {/* Botón hamburguesa (móvil) en la derecha */}
+          <div className="md:hidden justify-self-end">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
+              onClick={() => setOpen((v) => !v)}
+            >
+              {open ? <X size={18} /> : <Menu size={18} />}
+            </Button>
+          </div>
         </div>
 
-        {/* Panel móvil colapsable */}
+        {/* Panel móvil colapsable (sin enlaces de navegación) */}
         <div
           className={[
             'md:hidden overflow-hidden transition-[max-height,opacity] duration-200 ease-out',
@@ -233,25 +187,8 @@ export default function NavBar() {
           aria-hidden={!open}
         >
           <div className="border-t py-2">
-            {/* Enlaces */}
-            <div className="flex flex-col">
-              {links.map((l) => (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  className={[
-                    'px-2 py-2 rounded-lg text-sm',
-                    'hover:bg-[--muted] hover:text-[--foreground]',
-                    isActive(l.href) ? 'bg-[--muted] font-medium' : 'text-[--muted-foreground]',
-                  ].join(' ')}
-                >
-                  {l.label}
-                </Link>
-              ))}
-            </div>
-
             {/* Info y acciones en móvil */}
-            <div className="mt-2 flex items-center justify-between gap-2">
+            <div className="flex items-center justify-between gap-2">
               {isRoleRoute && !loading && email && (
                 <span className="text-xs inline-flex items-center gap-2 px-3 py-1 rounded-lg border border-white/40 bg-white/10">
                   <span className="inline-flex items-center gap-1">
@@ -269,7 +206,6 @@ export default function NavBar() {
                     Salir
                   </Button>
                 )}
-
                 <Button
                   variant="outline"
                   size="icon"

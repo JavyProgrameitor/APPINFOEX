@@ -42,13 +42,7 @@ type JRContext = {
 const CTX_KEY = 'INFOEX:jr:ctx'
 const CODIGOS_PERMITIDOS = ['JR', 'TH', 'TC', 'V', 'AP', 'B'] as const
 
-function legacyListaKey(ctx: JRContext | null): string | null {
-  if (!ctx) return null
-  const base = ctx.tipo === 'unidad' ? `unidad:${ctx.unidad_id}` : `caseta:${ctx.caseta_id}`
-  return `jr.bomberos.${ctx.zona}.${base}`
-}
-
-// Defaults para comparar cambios (diferenciación visual)
+// Defaults para comparar cambios (resaltado visual)
 const DEFAULTS = {
   codigo: 'JR',
   hora_entrada: '08:00',
@@ -56,11 +50,33 @@ const DEFAULTS = {
   horas_extras: 0,
 } as const
 
+function legacyListaKey(ctx: JRContext | null): string | null {
+  if (!ctx) return null
+  const base = ctx.tipo === 'unidad' ? `unidad:${ctx.unidad_id}` : `caseta:${ctx.caseta_id}`
+  return `jr.bomberos.${ctx.zona}.${base}`
+}
+
+function computeKeys(ctx: JRContext | null) {
+  if (!ctx) return { storageKey: null, anotStorageKey: null, legacyKey: null, anotDraftKey: null }
+  const parte =
+    ctx.tipo === 'unidad'
+      ? ctx.unidad_id || `U:${ctx.zona}/${ctx.unidad || ''}`
+      : ctx.caseta_id || `C:${ctx.zona}/${ctx.municipio || ''}/${ctx.caseta || ''}`
+  return {
+    storageKey: ctx.ls ? ctx.ls : `INFOEX:lista:${ctx.tipo}:${parte}`,
+    anotStorageKey: `INFOEX:anotaciones:${ctx.tipo}:${parte}`,
+    legacyKey: legacyListaKey(ctx),
+    // NUEVO: borrador local para no perder al navegar
+    anotDraftKey: `INFOEX:anotaciones_draft:${ctx.tipo}:${parte}`,
+  }
+}
+
 function NoteJR() {
   const router = useRouter()
   const params = useSearchParams()
   const { toast } = useToast()
 
+  // --- Contexto JR -----------------------------------------------------------
   const urlTipo = params.get('tipo') as 'unidad' | 'caseta' | null
   const urlZona = params.get('zona')
   const urlMunicipio = params.get('municipio')
@@ -71,7 +87,6 @@ function NoteJR() {
   const urlLs = params.get('ls')
 
   const [ctx, setCtx] = useState<JRContext | null | undefined>(undefined)
-
   useEffect(() => {
     const resolve = async () => {
       if (urlTipo && urlZona) {
@@ -129,31 +144,24 @@ function NoteJR() {
     resolve()
   }, [urlTipo, urlZona, urlMunicipio, urlUnidad, urlCaseta, urlUnidadId, urlCasetaId, urlLs])
 
-  const { storageKey, anotStorageKey, legacyKey } = useMemo(() => {
-    if (!ctx) return { storageKey: null, anotStorageKey: null, legacyKey: null }
-    const parte =
-      ctx.tipo === 'unidad'
-        ? ctx.unidad_id || `U:${ctx.zona}/${ctx.unidad || ''}`
-        : ctx.caseta_id || `C:${ctx.zona}/${ctx.municipio || ''}/${ctx.caseta || ''}`
-    return {
-      storageKey: ctx.ls ? ctx.ls : `INFOEX:lista:${ctx.tipo}:${parte}`,
-      anotStorageKey: `INFOEX:anotaciones:${ctx.tipo}:${parte}`,
-      legacyKey: legacyListaKey(ctx),
-    }
-  }, [ctx])
+  const { storageKey, anotStorageKey, legacyKey, anotDraftKey } = useMemo(
+    () => computeKeys(ctx ?? null),
+    [ctx],
+  )
 
+  // --- Estado principal ------------------------------------------------------
   const [bomberos, setBomberos] = useState<BomberoItem[] | null>(null)
   const [anotaciones, setAnotaciones] = useState<Record<string, Anotacion>>({})
   const [uiHorasExtras, setUiHorasExtras] = useState<Record<string, string>>({})
   const [msg, setMsg] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
-  // Modal de confirmación (reemplazo)
+  // Modal confirmación
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [confirmLoading, setConfirmLoading] = useState(false)
   const payloadRef = useRef<Anotacion[] | null>(null)
 
-  // Cargar lista de bomberos
+  // --- Cargar lista de bomberos (para filas y users_id) ----------------------
   useEffect(() => {
     if (!storageKey) return
     try {
@@ -177,7 +185,7 @@ function NoteJR() {
     }
   }, [storageKey, legacyKey])
 
-  // Fecha del día (única, mostrada arriba)
+  // Fecha visible (toma la primera disponible)
   const fechaDia: string = useMemo(() => {
     for (const dni in anotaciones) {
       const f = anotaciones[dni]?.fecha
@@ -186,24 +194,36 @@ function NoteJR() {
     return new Date().toISOString().split('T')[0]
   }, [anotaciones])
 
-  // Inicializar/recuperar anotaciones
+  // --- Inicializar/rehidratar anotaciones (DRAFT -> STORAGE -> DEFAULTS) ----
   useEffect(() => {
     if (!bomberos) return
     if (!anotStorageKey) return
+    let loaded: Record<string, Anotacion> | null = null
     try {
-      const raw = localStorage.getItem(anotStorageKey)
-      if (raw) {
-        const parsed = JSON.parse(raw) as Record<string, Anotacion>
-        setAnotaciones(parsed)
-        // hidratar UI de horas extras
-        const ui: Record<string, string> = {}
-        Object.keys(parsed).forEach((dni) => {
-          ui[dni] = String(parsed[dni]?.horas_extras ?? DEFAULTS.horas_extras)
-        })
-        setUiHorasExtras(ui)
-        return
+      // 1) Preferimos el borrador si existe (lo último que escribió el usuario)
+      if (anotDraftKey) {
+        const rawDraft = localStorage.getItem(anotDraftKey)
+        if (rawDraft) loaded = JSON.parse(rawDraft) as Record<string, Anotacion>
+      }
+      // 2) Si no hay borrador, usamos el almacenamiento "oficial" local
+      if (!loaded) {
+        const raw = localStorage.getItem(anotStorageKey)
+        if (raw) loaded = JSON.parse(raw) as Record<string, Anotacion>
       }
     } catch {}
+
+    if (loaded) {
+      setAnotaciones(loaded)
+      // hidratar UI de horas extras
+      const ui: Record<string, string> = {}
+      Object.keys(loaded).forEach((dni) => {
+        ui[dni] = String(loaded![dni]?.horas_extras ?? DEFAULTS.horas_extras)
+      })
+      setUiHorasExtras(ui)
+      return
+    }
+
+    // 3) Si no había nada, generamos base por defecto solo una vez
     const hoy = new Date().toISOString().split('T')[0]
     const base: Record<string, Anotacion> = {}
     const ui: Record<string, string> = {}
@@ -220,9 +240,9 @@ function NoteJR() {
     })
     setAnotaciones(base)
     setUiHorasExtras(ui)
-  }, [bomberos, anotStorageKey])
+  }, [bomberos, anotStorageKey, anotDraftKey])
 
-  // Resolver users_id por DNI (refactor sin uiHorasExtras)
+  // --- Resolver users_id por DNI (sin pisar campos existentes) --------------
   useEffect(() => {
     if (!bomberos || bomberos.length === 0) return
     let cancelled = false
@@ -243,8 +263,9 @@ function NoteJR() {
       const today = new Date().toISOString().split('T')[0]
       setAnotaciones((prev) => {
         const next = { ...prev }
-        const uiNext: Record<string, string> = {}
+        const uiNext: Record<string, string> = { ...uiHorasExtras }
         for (const b of bomberos) {
+          // Si no existe la anotación, crearla con defaults
           if (!next[b.dni]) {
             next[b.dni] = {
               users_id: '',
@@ -254,12 +275,15 @@ function NoteJR() {
               hora_salida: DEFAULTS.hora_salida,
               horas_extras: DEFAULTS.horas_extras,
             }
+            uiNext[b.dni] = String(DEFAULTS.horas_extras)
           } else {
-            next[b.dni].fecha = today
+            // Si existe, NO pisamos sus valores actuales (ni fecha, ni horas, etc.)
+            if (!next[b.dni].fecha) next[b.dni].fecha = today
+            if (uiNext[b.dni] === undefined) {
+              uiNext[b.dni] = String(next[b.dni].horas_extras ?? DEFAULTS.horas_extras)
+            }
           }
           if (updates[b.dni]?.users_id) next[b.dni].users_id = updates[b.dni].users_id
-          // Rehidrato el UI directamente de "next" → sin depender de uiHorasExtras externo
-          uiNext[b.dni] = String(next[b.dni].horas_extras ?? DEFAULTS.horas_extras)
         }
         setUiHorasExtras(uiNext)
         return next
@@ -268,15 +292,18 @@ function NoteJR() {
     return () => {
       cancelled = true
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bomberos])
 
-  // Persistir anotaciones en localStorage
+  // --- Persistir: oficial + borrador (para no perder al navegar) ------------
   useEffect(() => {
     try {
       if (anotStorageKey) localStorage.setItem(anotStorageKey, JSON.stringify(anotaciones))
+      if (anotDraftKey) localStorage.setItem(anotDraftKey, JSON.stringify(anotaciones))
     } catch {}
-  }, [anotaciones, anotStorageKey])
+  }, [anotaciones, anotStorageKey, anotDraftKey])
 
+  // --- Handlers de UI --------------------------------------------------------
   const handleChange = (dni: string, field: keyof Anotacion, value: string | number) => {
     if (field === 'fecha') return // la fecha es global (arriba)
     setAnotaciones((prev) => ({
@@ -295,7 +322,7 @@ function NoteJR() {
     }))
   }
 
-  // --- Horas extras: permitir escribir sin "0" y también flechas ---
+  // Horas extras: permitir escribir vacío y normalizar en blur
   const onHorasChange = (dni: string, raw: string) => {
     setUiHorasExtras((prev) => ({ ...prev, [dni]: raw }))
   }
@@ -320,7 +347,7 @@ function NoteJR() {
     }
   }
 
-  // helpers de reemplazo seguro
+  // --- API helpers -----------------------------------------------------------
   async function postAnotaciones(payload: Anotacion[], opts?: { replace?: boolean }) {
     const url = opts?.replace ? '/api/jr/anotaciones?replace=1' : '/api/jr/anotaciones'
     return fetch(url, {
@@ -340,7 +367,7 @@ function NoteJR() {
     return postAnotaciones(payload, { replace: true })
   }
 
-  // 1) Preparar payload y abrir modal
+  // --- Guardado con confirmación --------------------------------------------
   const guardarAnotacionesAhora = async () => {
     setMsg(null)
     const porUsuario = new Map<string, Anotacion>()
@@ -356,7 +383,7 @@ function NoteJR() {
             : 0
       porUsuario.set(a.users_id, {
         users_id: a.users_id,
-        fecha: fechaDia, // única
+        fecha: fechaDia,
         codigo: a.codigo || DEFAULTS.codigo,
         hora_entrada: a.hora_entrada || DEFAULTS.hora_entrada,
         hora_salida: a.hora_salida || DEFAULTS.hora_salida,
@@ -374,7 +401,6 @@ function NoteJR() {
     setConfirmOpen(true)
   }
 
-  // 2) Confirmar modal → reemplazar
   const onConfirmReplace = async () => {
     if (!payloadRef.current) {
       setConfirmOpen(false)
@@ -396,6 +422,10 @@ function NoteJR() {
           variant: 'destructive',
         })
       } else {
+        // Limpia el borrador solo tras guardar OK
+        try {
+          if (anotDraftKey) localStorage.removeItem(anotDraftKey)
+        } catch {}
         toast({
           title: 'Anotaciones guardadas',
           description: `Se guardaron ${json.inserted ?? payloadRef.current.length} anotaciones correctamente.`,
@@ -416,8 +446,10 @@ function NoteJR() {
     }
   }
 
+  // --- Navegación ------------------------------------------------------------
   const irASalidas = () => {
     if (!ctx) return router.push('/jr')
+    const { storageKey } = computeKeys(ctx)
     const sp = new URLSearchParams({
       tipo: ctx.tipo,
       zona: ctx.zona,
@@ -433,6 +465,7 @@ function NoteJR() {
 
   const volverABomberos = () => {
     if (!ctx) return router.push('/jr/add')
+    const { storageKey } = computeKeys(ctx)
     const sp = new URLSearchParams({
       tipo: ctx.tipo,
       zona: ctx.zona,
@@ -446,6 +479,7 @@ function NoteJR() {
     router.push(`/jr/add?${sp.toString()}`)
   }
 
+  // --- Render ---------------------------------------------------------------
   if (ctx === undefined) {
     return (
       <main className="min-h-dvh w-full grid place-items-center p-4">
@@ -469,7 +503,6 @@ function NoteJR() {
 
   const listaCargando = bomberos === null
 
-  // Helper: detectar si una fila está "tocada" para resaltarla
   const isTouched = (a?: Anotacion) => {
     if (!a) return false
     return (
@@ -506,7 +539,6 @@ function NoteJR() {
         <Card className="shadow-xl rounded-2xl">
           <CardHeader className="space-y-2">
             <CardTitle className="font-black text-2xl">Anotaciones del día</CardTitle>
-            {/* Fecha única arriba */}
             <div className="inline-flex items-center gap-2 text-sm">
               <span className="px-2 py-1 rounded-lg bg-muted text-foreground/90">
                 Fecha:&nbsp;<b>{fechaDia}</b>
@@ -527,7 +559,6 @@ function NoteJR() {
             ) : (
               <>
                 <div className="overflow-x-auto rounded-2xl">
-                  {/* Cabecera (añadimos Horas extras) */}
                   <div className="hidden md:grid grid-cols-[minmax(110px,150px)_minmax(140px,1fr)_minmax(160px,1fr)_minmax(110px,130px)_minmax(120px,140px)_minmax(120px,150px)_minmax(120px,150px)] gap-2 bg-muted text-left text-sm font-bold px-2 py-2 rounded-xl">
                     <div>DNI</div>
                     <div>Nombre</div>
@@ -592,7 +623,7 @@ function NoteJR() {
                               Código de trabajo
                             </label>
                             <select
-                              className="w-full border rounded px-2 py-1 text-sm bg-background"
+                              className="w-full border rounded px-2 py-1 text-sm bg-background h-9"
                               value={a?.codigo ?? DEFAULTS.codigo}
                               onChange={(e) => handleChange(b.dni, 'codigo', e.target.value)}
                               aria-label="Código de trabajo"
@@ -612,6 +643,7 @@ function NoteJR() {
                             </label>
                             <Input
                               type="time"
+                              className="h-9 text-sm"
                               value={a?.hora_entrada ?? DEFAULTS.hora_entrada}
                               onChange={(e) => handleChange(b.dni, 'hora_entrada', e.target.value)}
                               aria-label="Hora de entrada"
@@ -625,13 +657,14 @@ function NoteJR() {
                             </label>
                             <Input
                               type="time"
+                              className="h-9 text-sm"
                               value={a?.hora_salida ?? DEFAULTS.hora_salida}
                               onChange={(e) => handleChange(b.dni, 'hora_salida', e.target.value)}
                               aria-label="Hora de salida"
                             />
                           </div>
 
-                          {/* Horas extras (columna propia en desktop) */}
+                          {/* Horas extras */}
                           <div className="space-y-1">
                             <label className="text-sm font-semibold text-muted-foreground">
                               <span className="md:inline">Horas extras</span>
@@ -641,7 +674,7 @@ function NoteJR() {
                               inputMode="decimal"
                               step={0.25}
                               min={0}
-                              className="w-24 md:w-28 rounded border px-2 py-1 text-right text-sm bg-background [appearance:auto] m-2"
+                              className="w-24 md:w-28 rounded border px-2 py-1 text-right text-sm bg-background [appearance:auto] h-9"
                               value={uiHX}
                               onChange={(e) => {
                                 const v = e.target.value
@@ -701,7 +734,7 @@ function NoteJR() {
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitleUI className="font-black">Reemplazar anotación del día</DialogTitleUI>
+            <DialogTitleUI className="font-black">Guardar anotación del día</DialogTitleUI>
             <DialogDescription className="text-base">
               Se guardará el diario de <b>{fechaDia}</b> sobrescribiendo la anotación existente (si
               la hubiera) para los usuarios seleccionados.

@@ -37,7 +37,7 @@ type SalidaLinea = {
 }
 
 const CTX_KEY = 'INFOEX:jr:ctx'
-const TIPOS_SALIDA = ['Incendio', 'Trabajo'] as const
+const TIPOS_SALIDA = ['Extincion', 'Prevencion'] as const
 
 const DEFAULT_SALIDA: SalidaLinea = {
   tipo: 'Extincion',
@@ -54,22 +54,45 @@ const isTouched = (s: SalidaLinea) =>
   (s.lugar ?? '').trim() !== '' ||
   Number(s.num_intervienen || 0) !== 0
 
+function computeKeys(ctx: JRContext | null) {
+  if (!ctx) {
+    return {
+      storageKey: null,
+      anotStorageKey: null,
+      metaStorageKey: null,
+      salidasDraftKey: null,
+    }
+  }
+  const parte =
+    ctx.tipo === 'unidad'
+      ? ctx.unidad_id || `U:${ctx.zona}/${ctx.unidad || ''}`
+      : ctx.caseta_id || `C:${ctx.zona}/${ctx.municipio || ''}/${ctx.caseta || ''}`
+
+  return {
+    storageKey: ctx.ls ? ctx.ls : `INFOEX:lista:${ctx.tipo}:${parte}`,
+    anotStorageKey: `INFOEX:anotaciones:${ctx.tipo}:${parte}`,
+    metaStorageKey: `INFOEX:meta:${ctx.tipo}:${parte}`,
+    // Borrador local de salidas (para no perder al navegar)
+    salidasDraftKey: `INFOEX:salidas_draft:${ctx.tipo}:${parte}`,
+  }
+}
+
 function ExitJR() {
   const router = useRouter()
   const params = useSearchParams()
   const { toast } = useToast()
 
-  const urlTipo = params.get('tipo') as 'unidad' | 'caseta' | null
-  const urlZona = params.get('zona')
-  const urlMunicipio = params.get('municipio')
-  const urlUnidad = params.get('unidad')
-  const urlCaseta = params.get('caseta')
-  const urlUnidadId = params.get('unidad_id')
-  const urlCasetaId = params.get('caseta_id')
-  const urlLs = params.get('ls')
-
+  // Cargar contexto
   const [ctx, setCtx] = useState<JRContext | null>(null)
   useEffect(() => {
+    const urlTipo = params.get('tipo') as 'unidad' | 'caseta' | null
+    const urlZona = params.get('zona')
+    const urlMunicipio = params.get('municipio')
+    const urlUnidad = params.get('unidad')
+    const urlCaseta = params.get('caseta')
+    const urlUnidadId = params.get('unidad_id')
+    const urlCasetaId = params.get('caseta_id')
+    const urlLs = params.get('ls')
     if (urlTipo && urlZona) {
       const nuevo: JRContext = {
         tipo: urlTipo,
@@ -95,20 +118,12 @@ function ExitJR() {
       }
     } catch {}
     setCtx(null)
-  }, [urlTipo, urlZona, urlMunicipio, urlUnidad, urlCaseta, urlUnidadId, urlCasetaId, urlLs])
+  }, [params])
 
-  const { storageKey, anotStorageKey, metaStorageKey } = useMemo(() => {
-    if (!ctx) return { storageKey: null, anotStorageKey: null, metaStorageKey: null }
-    const parte =
-      ctx.tipo === 'unidad'
-        ? ctx.unidad_id || `U:${ctx.zona}/${ctx.unidad || ''}`
-        : ctx.caseta_id || `C:${ctx.zona}/${ctx.municipio || ''}/${ctx.caseta || ''}`
-    return {
-      storageKey: ctx.ls ? ctx.ls : `INFOEX:lista:${ctx.tipo}:${parte}`,
-      anotStorageKey: `INFOEX:anotaciones:${ctx.tipo}:${parte}`,
-      metaStorageKey: `INFOEX:meta:${ctx.tipo}:${parte}`,
-    }
-  }, [ctx])
+  const { storageKey, anotStorageKey, metaStorageKey, salidasDraftKey } = useMemo(
+    () => computeKeys(ctx),
+    [ctx],
+  )
 
   const [bomberos, setBomberos] = useState<BomberoItem[]>([])
   const [anotaciones, setAnotaciones] = useState<Record<string, Anotacion>>({})
@@ -116,6 +131,7 @@ function ExitJR() {
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
 
+  // Lista (para calcular total bomberos y users_ids/fecha)
   useEffect(() => {
     if (!storageKey) return
     try {
@@ -127,6 +143,7 @@ function ExitJR() {
     } catch {}
   }, [storageKey])
 
+  // Anotaciones (para recuperar users_id y fecha)
   useEffect(() => {
     if (!anotStorageKey) return
     try {
@@ -134,6 +151,26 @@ function ExitJR() {
       if (raw) setAnotaciones(JSON.parse(raw) as Record<string, Anotacion>)
     } catch {}
   }, [anotStorageKey])
+
+  // Borrador local de salidas: cargar si existe
+  useEffect(() => {
+    if (!salidasDraftKey) return
+    try {
+      const raw = localStorage.getItem(salidasDraftKey)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed) && parsed.length) setSalidas(parsed)
+      }
+    } catch {}
+  }, [salidasDraftKey])
+
+  // Borrador local de salidas: guardar en cada cambio (para no perder al navegar)
+  useEffect(() => {
+    if (!salidasDraftKey) return
+    try {
+      localStorage.setItem(salidasDraftKey, JSON.stringify(salidas))
+    } catch {}
+  }, [salidas, salidasDraftKey])
 
   const totalBomberos = bomberos.length
   const fecha = (() => {
@@ -156,6 +193,7 @@ function ExitJR() {
 
   const volverAAnotaciones = () => {
     if (!ctx) return router.push('/jr/note')
+    const { storageKey } = computeKeys(ctx)
     const sp = new URLSearchParams({
       tipo: ctx.tipo,
       zona: ctx.zona,
@@ -187,7 +225,7 @@ function ExitJR() {
         .filter((s) => s.num_intervienen > 0)
 
       if (salidasPayload.length === 0) {
-        setMsg('No hay salidas válidas (nº intervinientes debe ser > 0).')
+        setMsg('No hay salidas válidas (nº intervinientes debe ser mayor q 0).')
         setLoading(false)
         return
       }
@@ -207,6 +245,11 @@ function ExitJR() {
           variant: 'destructive',
         })
       } else {
+        // Borrar borrador tras guardar correctamente
+        try {
+          if (salidasDraftKey) localStorage.removeItem(salidasDraftKey)
+        } catch {}
+
         if (metaStorageKey) {
           try {
             const raw = localStorage.getItem(metaStorageKey)
@@ -242,9 +285,12 @@ function ExitJR() {
   if (ctx === null) {
     return (
       <main className="min-h-dvh w-full grid place-items-center p-4">
-        <div className="text-sm text-muted-foreground">
+        <div className="text-sm font-medium text-muted-foreground">
           No hay contexto de JR. Ve a la selección.
-          <Button className="ml-2" onClick={() => router.push('/jr')}>
+          <Button
+            className="ml-2 font-bold border-2 border-lime-50"
+            onClick={() => router.push('/jr')}
+          >
             Ir a JR
           </Button>
         </div>
@@ -270,15 +316,15 @@ function ExitJR() {
 
         <Card className="shadow-xl rounded-2xl">
           <CardHeader>
-            <CardTitle className="font-black text-2xl">Salidas del día</CardTitle>
-            <div className="mt-1 text-xl font-semibold text-muted-foreground md:text-xs md:font-normal">
+            <CardTitle className="text-2xl font-black">Salidas del día</CardTitle>
+            <div className="mt-1 text-sm font-medium text-muted-foreground">
               Fecha: <b>{fecha}</b> — Bomberos disponibles: <b>{totalBomberos}</b>
             </div>
           </CardHeader>
 
           <CardContent className="space-y-3 rounded-2xl">
             <div className="overflow-x-auto rounded-2xl">
-              {/* Cabecera md+ — columna LUGAR flexible sin empujar al resto */}
+              {/* Cabecera md+ — LUGAR flexible para no empujar al resto */}
               <div className="hidden md:grid grid-cols-[minmax(110px,160px)_minmax(110px,160px)_minmax(110px,160px)_minmax(0,1fr)_minmax(110px,170px)_minmax(90px,120px)] gap-2 bg-muted text-left text-sm font-bold px-2 py-2 rounded-xl">
                 <div>Tipo</div>
                 <div>Hora salida</div>
@@ -305,11 +351,9 @@ function ExitJR() {
                     >
                       {/* Tipo */}
                       <div className="space-y-1 min-w-0">
-                        <label className="md:hidden text-sm font-semibold text-muted-foreground">
-                          Tipo
-                        </label>
+                        <label className="text-sm font-semibold text-muted-foreground">Tipo</label>
                         <select
-                          className="w-full border rounded px-2 py-1 text-sm bg-background"
+                          className="w-full border rounded px-2 py-1 text-sm bg-background h-9"
                           value={s.tipo}
                           onChange={(e) =>
                             changeSalida(idx, 'tipo', e.target.value as 'Extincion' | 'Prevencion')
@@ -326,12 +370,12 @@ function ExitJR() {
 
                       {/* Hora salida */}
                       <div className="space-y-1 min-w-0">
-                        <label className="md:hidden text-sm font-semibold text-muted-foreground">
+                        <label className="text-sm font-semibold text-muted-foreground">
                           Hora salida
                         </label>
                         <Input
                           type="time"
-                          className="w-full md:w-28"
+                          className="h-9 text-sm w-full md:w-28"
                           value={s.hora_salida}
                           onChange={(e) => changeSalida(idx, 'hora_salida', e.target.value)}
                           aria-label="Hora de salida"
@@ -340,55 +384,47 @@ function ExitJR() {
 
                       {/* Hora entrada */}
                       <div className="space-y-1 min-w-0">
-                        <label className="md:hidden text-sm font-semibold text-muted-foreground">
+                        <label className="text-sm font-semibold text-muted-foreground">
                           Hora entrada
                         </label>
                         <Input
                           type="time"
-                          className="w-full md:w-28"
+                          className="h-9 text-sm w-full md:w-28"
                           value={s.hora_entrada}
                           onChange={(e) => changeSalida(idx, 'hora_entrada', e.target.value)}
                           aria-label="Hora de entrada"
                         />
                       </div>
 
-                      {/* Lugar — flexible (no empuja) */}
+                      {/* Lugar — flexible (no envuelve al nº) */}
                       <div className="space-y-1 min-w-0 md:justify-self-stretch">
-                        <label className="md:hidden text-sm font-semibold text-muted-foreground">
-                          Zona
-                        </label>
+                        <label className="text-sm font-semibold text-muted-foreground">Zona</label>
                         <Input
-                          placeholder="zona incidencia"
-                          className="w-full min-w-0"
+                          placeholder="Describe el lugar…"
+                          className="w-full min-w-0 h-9 text-sm"
                           value={s.lugar}
                           onChange={(e) => changeSalida(idx, 'lugar', e.target.value)}
-                          aria-label="Zona"
+                          aria-label="Lugar"
                         />
                       </div>
 
-                      {/* Nº intervinientes */}
+                      {/* Nº intervinientes — CONTROLADO para que se guarde al vuelo */}
                       <div className="space-y-1 min-w-0">
-                        <label className="md:hidden text-sm font-semibold text-muted-foreground m-2">
-                          Bomberos en zona: {totalBomberos}
+                        <label className="text-sm font-semibold text-muted-foreground">
+                          Bomberos hoy {totalBomberos}
                         </label>
-                        <Input
-                          type="number"
+                        <input
+                          type="tel"
                           inputMode="numeric"
                           pattern="[0-9]*"
-                          min={0}
-                          max={totalBomberos}
-                          className="w-28 md:w-24 text-right"
-                          value={s.num_intervienen}
-                          onChange={(e) =>
-                            changeSalida(
-                              idx,
-                              'num_intervienen',
-                              Math.max(
-                                0,
-                                Math.min(parseInt(e.target.value || '0', 10) || 0, totalBomberos),
-                              ),
-                            )
-                          }
+                          className="w-28 md:w-24 text-right border rounded px-2 py-1 text-sm bg-background h-9"
+                          value={String(s.num_intervienen)}
+                          onChange={(e) => {
+                            const raw = e.currentTarget.value.replace(/\D+/g, '')
+                            const n = raw === '' ? 0 : parseInt(raw, 10)
+                            const safe = isFinite(n) ? Math.max(0, Math.min(n, totalBomberos)) : 0
+                            changeSalida(idx, 'num_intervienen', safe)
+                          }}
                           aria-label="Número de intervinientes"
                         />
                       </div>
@@ -416,7 +452,7 @@ function ExitJR() {
               <Button className="font-bold border-2 border-lime-50" onClick={addSalida}>
                 Añadir salida
               </Button>
-              <div className="text-xl font-semibold text-muted-foreground md:text-xs md:font-normal">
+              <div className="text-sm font-medium text-muted-foreground">
                 Fecha: <b>{fecha}</b> · Bomberos en lista: <b>{totalBomberos}</b>
               </div>
             </div>

@@ -2,10 +2,10 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-const TIPOS_SALIDA_PERMITIDOS = ['incendio', 'trabajo'] as const
+const TIPOS_SALIDA_PERMITIDOS = ['Extincion', 'Prevencion'] as const
 
 type SalidaResumen = {
-  tipo: string // "incendio" | "trabajo"
+  tipo: string
   hora_salida: string // "HH:mm"
   hora_entrada: string // "HH:mm"
   lugar: string
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
         const tipo = (s.tipo || '').toString().trim().toLowerCase()
         const tipoVal = (TIPOS_SALIDA_PERMITIDOS as readonly string[]).includes(tipo)
           ? tipo
-          : 'trabajo'
+          : 'Extincion'
 
         const n = Math.max(0, parseInt(String(s.num_intervienen ?? '0'), 10) || 0)
         if (n <= 0) return null // << descartar
