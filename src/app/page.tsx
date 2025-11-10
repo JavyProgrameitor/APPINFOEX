@@ -107,11 +107,11 @@ export default function AuthPage() {
 
   return (
     <main className="h-130 grid place-items-center py-8 px-4">
-      <Card className="w-full max-w-lg shadow-2xl rounded-xl">
+      <Card className="w-full max-w-lg shadow-accent  rounded-xl">
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-3">
             <div className="space-y-1">
-              <label className="text-xl font-bold">Correo :</label>
+              <label className="text-primary font-black">Correo :</label>
               <Input
                 className="bg-zinc-400 placeholder:font-thin"
                 type="email"
@@ -123,7 +123,7 @@ export default function AuthPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xl font-bold">Contraseña :</label>
+              <label className="text-primary font-black">Contraseña :</label>
               <Input
                 className="bg-zinc-400 placeholder:font-thin"
                 type="password"
@@ -136,7 +136,7 @@ export default function AuthPage() {
 
             {error && <p className="text-sm text-foreground">{error}</p>}
 
-            <Button type="submit" className="w-full text-xl font-bold" disabled={loading}>
+            <Button type="submit" className="w-full text-lg font-black" disabled={loading}>
               {loading ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>

@@ -101,7 +101,7 @@ export default function NavBar() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-[--card]/90 backdrop-blur supports-[backdrop-filter]:bg-[--card]/80">
+    <header className="sticky top-0 z-50 w-full border-8 bg-[--card]/90 backdrop-blur supports-backdrop-filter:bg-[--card]/80">
       <nav className="mx-auto max-w-6xl px-3 sm:px-4">
         {/* 3 columnas reales: izquierda (hamburguesa), centro (título), derecha (acciones) */}
         <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 h-14">

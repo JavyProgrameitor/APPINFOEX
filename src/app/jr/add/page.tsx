@@ -232,10 +232,10 @@ function AgregarBomberos() {
 
   return (
     <>
-      <main className=" grid place-items-center p-4 ">
-        <Card className=" w-full max-w-3xl rounded-2xl">
+      <main className="grid place-items-center p-4">
+        <Card className=" w-full max-w-3xl rounded-2xl shadow-accent">
           <CardHeader>
-            <CardTitle>Seleccionar componentes (A y B) de la zona</CardTitle>
+            <CardTitle>Selecciona Bomberos de las Unidades</CardTitle>
           </CardHeader>
           <CardContent>
             {!ctx ? (
@@ -251,7 +251,7 @@ function AgregarBomberos() {
                 ) : (
                   grupos.map((g) => (
                     <div key={g.unidad_id} className="p-3">
-                      <div className="font-bold mb-2 mr-4 text-2xl">{g.unidad_nombre}</div>
+                      <div className="font-black mb-2 mr-4 text-primary">{g.unidad_nombre}</div>
                       <div className="text-xl grid grid-cols-1 md:grid-cols-2 gap-2">
                         {g.miembros.map((m) => (
                           <label key={m.dni} className="flex items-center gap-3">
@@ -260,10 +260,10 @@ function AgregarBomberos() {
                               checked={!!seleccion[m.dni]}
                               onChange={() => toggle(m.dni)}
                             />
-                            <span>
+                            <span className="font-bold">
                               {m.nombre} {m.apellidos}
                             </span>
-                            <span className="text-sm text-gray-400 ml-2">
+                            <span className="text-sm text-gray-500 ml-2">
                               <label>DNI : </label>
                               {m.dni}
                             </span>

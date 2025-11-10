@@ -122,9 +122,9 @@ export default function StartJR() {
   return (
     <main className="h-120 w-full flex items-center justify-center p-4">
       <div className="mx-auto w-full max-w-3xl">
-        <Card className="shadow-xl rounded-xl">
+        <Card className="shadow-accent rounded-xl">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">DESTINO ASIGNADO</CardTitle>
+            <CardTitle className="text-xl">DESTINO ASIGNADO</CardTitle>
           </CardHeader>
 
           <CardContent className="space-y-6 text-center">
@@ -133,7 +133,7 @@ export default function StartJR() {
             ) : destino ? (
               <>
                 <div className="space-y-1">
-                  <p className="text-lg font-extralight">Zona</p>
+                  <p className="text-lg text-muted-foreground">Zona</p>
                   <p className="text-xl font-bold">{destino.zona}</p>
                 </div>
 

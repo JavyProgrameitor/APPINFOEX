@@ -221,7 +221,7 @@ function ExitJR() {
         .filter((s) => s.num_intervienen > 0)
 
       if (salidasPayload.length === 0) {
-        setMsg('No hay salidas válidas (nº intervinientes debe ser mayor q 0).')
+        setMsg('No hay salidas válidas (no hay numeros de Bomberos).')
         setLoading(false)
         return
       }
@@ -309,11 +309,13 @@ function ExitJR() {
           </Button>
         </div>
 
-        <Card className="shadow-xl rounded-2xl">
+        <Card className="shadow-xl rounded-2xl shadow-accent">
           <CardHeader>
-            <CardTitle className="text-2xl font-black">Salidas del día</CardTitle>
-            <div className="mt-1 text-sm font-medium text-muted-foreground">
-              Fecha: <b>{fecha}</b> — Bomberos disponibles: <b>{totalBomberos}</b>
+            <CardTitle className="text-2xl font-black">
+              Salidas del día: <b className="text-primary">{fecha}</b>
+            </CardTitle>
+            <div className="text-lg font-bold">
+              Bomberos disponibles: <b className="text-primary">{totalBomberos}</b>
             </div>
           </CardHeader>
 
@@ -345,11 +347,11 @@ function ExitJR() {
                     >
                       {/* Tipo */}
                       <div className="space-y-1 min-w-0">
-                        <label className="lg:hidden text-sm font-semibold text-muted-foreground">
+                        <label className="lg:hidden text-lg font-bold text-muted-foreground">
                           Tipo
                         </label>
                         <select
-                          className="w-full border rounded px-2 py-1 text-sm bg-background h-9"
+                          className="w-full border rounded px-2 py-1 text-lg bg-background h-9"
                           value={s.tipo}
                           onChange={(e) =>
                             changeSalida(idx, 'tipo', e.target.value as 'Extincion' | 'Prevencion')
@@ -366,12 +368,12 @@ function ExitJR() {
 
                       {/* Hora salida */}
                       <div className="space-y-1 min-w-0">
-                        <label className="lg:hidden text-sm font-semibold text-muted-foreground">
+                        <label className="lg:hidden text-lg font-bold text-muted-foreground">
                           Hora salida
                         </label>
                         <Input
                           type="time"
-                          className="h-9 text-sm w-full lg:w-28"
+                          className="h-9 text-lg w-full lg:w-28"
                           value={s.hora_salida}
                           onChange={(e) => changeSalida(idx, 'hora_salida', e.target.value)}
                           aria-label="Hora de salida"
@@ -380,12 +382,12 @@ function ExitJR() {
 
                       {/* Hora entrada */}
                       <div className="space-y-1 min-w-0">
-                        <label className="lg:hidden text-sm font-semibold text-muted-foreground">
+                        <label className="lg:hidden text-lg font-bold text-muted-foreground">
                           Hora entrada
                         </label>
                         <Input
                           type="time"
-                          className="h-9 text-sm w-full lg:w-28"
+                          className="h-9 text-lg w-full lg:w-28"
                           value={s.hora_entrada}
                           onChange={(e) => changeSalida(idx, 'hora_entrada', e.target.value)}
                           aria-label="Hora de entrada"
@@ -394,12 +396,12 @@ function ExitJR() {
 
                       {/* Lugar */}
                       <div className="space-y-1 min-w-0 lg:justify-self-stretch">
-                        <label className="lg:hidden text-sm font-semibold text-muted-foreground">
+                        <label className="lg:hidden text-lg font-bold text-muted-foreground">
                           Zona
                         </label>
                         <Input
-                          placeholder="Describe el lugar…"
-                          className="w-full min-w-0 h-9 text-sm"
+                          placeholder="zona de intervencion"
+                          className="w-full min-w-0 h-9 text-lg"
                           value={s.lugar}
                           onChange={(e) => changeSalida(idx, 'lugar', e.target.value)}
                           aria-label="Lugar"
@@ -408,14 +410,14 @@ function ExitJR() {
 
                       {/* Nº intervinientes */}
                       <div className="space-y-1 min-w-0">
-                        <label className="lg:hidden text-sm font-semibold text-muted-foreground">
+                        <label className="lg:hidden text-lg font-bold text-muted-foreground">
                           Bomberos hoy {totalBomberos}
                         </label>
                         <input
                           type="tel"
                           inputMode="numeric"
                           pattern="[0-9]*"
-                          className="w-28 lg:w-24 text-right border rounded px-2 py-1 text-sm bg-background h-9"
+                          className="w-28 lg:w-24 text-right border rounded px-2 py-1 text-lg bg-background h-9 m-2"
                           value={String(s.num_intervienen)}
                           onChange={(e) => {
                             const raw = e.currentTarget.value.replace(/\D+/g, '')
@@ -441,8 +443,8 @@ function ExitJR() {
 
             {msg && (
               <Alert variant="destructive">
-                <AlertTitle className="font-bold text-lg">Atención</AlertTitle>
-                <AlertDescription className="text-base">{msg}</AlertDescription>
+                <AlertTitle className="font-black text-lg">Atención</AlertTitle>
+                <AlertDescription className="text-base font-semibold">{msg}</AlertDescription>
               </Alert>
             )}
 
@@ -450,9 +452,6 @@ function ExitJR() {
               <Button className="font-bold border-2 border-lime-50" onClick={addSalida}>
                 Añadir salida
               </Button>
-              <div className="text-sm font-medium text-muted-foreground">
-                Fecha: <b>{fecha}</b> · Bomberos en lista: <b>{totalBomberos}</b>
-              </div>
             </div>
 
             <div className="flex justify-end gap-2">

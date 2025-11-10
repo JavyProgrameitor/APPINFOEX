@@ -522,11 +522,11 @@ function NoteJR() {
           </Button>
         </div>
 
-        <Card className="shadow-xl rounded-2xl">
+        <Card className="shadow-xl rounded-2xl shadow-accent">
           <CardHeader className="space-y-2">
             <CardTitle className="font-black text-2xl">Anotaciones del día</CardTitle>
             <div className="inline-flex items-center gap-2 text-sm">
-              <span className="px-2 py-1 rounded-lg bg-muted text-foreground/90">
+              <span className="font-black text-primary text-xl px-2 py-1">
                 Fecha:&nbsp;<b>{fechaDia}</b>
               </span>
             </div>
@@ -576,37 +576,37 @@ function NoteJR() {
                         >
                           {/* DNI */}
                           <div className="space-y-1">
-                            <label className="lg:hidden text-sm font-semibold text-muted-foreground">
+                            <label className="lg:hidden text-lg font-bold text-muted-foreground">
                               DNI
                             </label>
-                            <div className="text-2xl font-bold lg:text-sm lg:font-medium">
+                            <div className="text-2xl font-black lg:text-sm lg:font-medium">
                               {b.dni}
                             </div>
                           </div>
 
                           {/* Nombre */}
                           <div className="space-y-1">
-                            <label className="lg:hidden text-sm font-semibold text-muted-foreground">
+                            <label className="lg:hidden text-lg font-bold text-muted-foreground">
                               Nombre
                             </label>
-                            <div className="text-xl font-semibold lg:text-sm lg:font-medium">
+                            <div className="text-2xl font-black lg:text-sm lg:font-medium">
                               {b.nombre}
                             </div>
                           </div>
 
                           {/* Apellidos */}
                           <div className="space-y-1">
-                            <label className="lg:hidden text-sm font-semibold text-muted-foreground">
+                            <label className="lg:hidden text-lg font-bold text-muted-foreground">
                               Apellidos
                             </label>
-                            <div className="text-lg font-medium lg:text-sm lg:font-medium">
+                            <div className="text-2xl font-black lg:text-sm lg:font-medium">
                               {b.apellidos}
                             </div>
                           </div>
 
                           {/* Código */}
                           <div className="space-y-1">
-                            <label className="lg:hidden text-sm font-semibold text-muted-foreground">
+                            <label className="lg:hidden text-lg font-bold text-muted-foreground">
                               Código de trabajo
                             </label>
                             <select
@@ -625,7 +625,7 @@ function NoteJR() {
 
                           {/* Entrada */}
                           <div className="space-y-1">
-                            <label className="lg:hidden text-sm font-semibold text-muted-foreground">
+                            <label className="lg:hidden text-lg font-bold text-muted-foreground">
                               Entrada
                             </label>
                             <Input
@@ -639,7 +639,7 @@ function NoteJR() {
 
                           {/* Salida */}
                           <div className="space-y-1">
-                            <label className="lg:hidden text-sm font-semibold text-muted-foreground">
+                            <label className="lg:hidden text-lg font-bold text-muted-foreground">
                               Salida
                             </label>
                             <Input
@@ -653,7 +653,7 @@ function NoteJR() {
 
                           {/* Horas extras */}
                           <div className="space-y-1">
-                            <label className="text-sm font-semibold text-muted-foreground">
+                            <label className="text-lg font-bold text-muted-foreground">
                               <span className="lg:inline">Horas extras</span>
                             </label>
                             <input
@@ -661,7 +661,7 @@ function NoteJR() {
                               inputMode="decimal"
                               step={0.25}
                               min={0}
-                              className="w-24 lg:w-28 rounded border px-2 py-1 text-right text-sm bg-background [appearance:auto] h-9"
+                              className="w-24 lg:w-28 rounded border px-2 py-1 text-right text-sm bg-background appearance-auto h-9 m-2"
                               value={uiHX}
                               onChange={(e) => {
                                 const v = e.target.value
@@ -723,8 +723,8 @@ function NoteJR() {
           <DialogHeader>
             <DialogTitleUI className="font-black">Guardar anotación del día</DialogTitleUI>
             <DialogDescription className="text-base">
-              Se guardará el diario de <b>{fechaDia}</b> sobrescribiendo la anotación existente (si
-              la hubiera) para los usuarios seleccionados.
+              Se guardará el diario de <b>{fechaDia}</b> Guardando la anotación existente (si la
+              hubiera) para los usuarios seleccionados.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-2">
