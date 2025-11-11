@@ -242,7 +242,7 @@ export default function AdminListBFPage() {
 
           {/* Select de Zona */}
           <Select value={zona} onValueChange={setZona}>
-            <SelectTrigger className="min-w-[10rem] rounded-sm">
+            <SelectTrigger className="min-w-40 rounded-sm">
               <SelectValue placeholder="Elegir zona" />
             </SelectTrigger>
             <SelectContent className="rounded-xs">
@@ -277,7 +277,7 @@ export default function AdminListBFPage() {
           {/* Select de Unidad/Caseta dentro de la zona */}
           {scope === 'unidad' ? (
             <Select value={unidadId} onValueChange={setUnidadId} disabled={!zona}>
-              <SelectTrigger className="min-w-[14rem] rounded-sm">
+              <SelectTrigger className="min-w-56 rounded-sm">
                 <SelectValue placeholder={zona ? 'Elegir unidad…' : 'Primero elige zona'} />
               </SelectTrigger>
               <SelectContent className="rounded-xs max-h-64">
@@ -290,7 +290,7 @@ export default function AdminListBFPage() {
             </Select>
           ) : (
             <Select value={casetaId} onValueChange={setCasetaId} disabled={!zona}>
-              <SelectTrigger className="min-w-[14rem] rounded-sm">
+              <SelectTrigger className="min-w-56 rounded-sm">
                 <SelectValue placeholder={zona ? 'Elegir caseta…' : 'Primero elige zona'} />
               </SelectTrigger>
               <SelectContent className="rounded-sm max-h-64">
@@ -305,7 +305,7 @@ export default function AdminListBFPage() {
         </div>
       </div>
 
-      <Card>
+      <Card className="shadow-accent">
         <CardHeader className="gap-2">
           <CardTitle className="flex items-center gap-2 text-base md:text-lg">
             <User className="h-5 w-5" /> Personal ({filtrados.length})
@@ -371,7 +371,7 @@ export default function AdminListBFPage() {
                 return (
                   <div
                     key={u.id}
-                    className="rounded-xl border bg-card text-card-foreground shadow-sm hover:shadow-md transition cursor-pointer"
+                    className="rounded-xl border bg-card text-card-foreground shadow-sm hover:shadow-md transition cursor-pointer shadow-accent"
                     onClick={() => openDetalle(u)}
                   >
                     <div className="p-3">

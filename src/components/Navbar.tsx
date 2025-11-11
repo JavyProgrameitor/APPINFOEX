@@ -186,7 +186,7 @@ export default function NavBar() {
           <div className="border-t py-2">
             <div className="flex items-center justify-between gap-2">
               {isRoleRoute && !loading && email && (
-                <span className="text-xs inline-flex items-center gap-2 px-3 py-1 rounded-lg border border-white/40 bg-white/10">
+                <span className="text-xs inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-amber/40 bg-white/10 ">
                   <span className="inline-flex items-center gap-1">
                     <span className="rounded-full w-2 h-2 bg-card" />
                     <span className="font-semibold">{roleLabel(rol)}</span>
@@ -198,7 +198,7 @@ export default function NavBar() {
 
               <div className="flex items-center gap-2">
                 {isRoleRoute && !loading && email && (
-                  <Button size="sm" variant="destructive" onClick={onLogout} className="text-xs">
+                  <Button size="sm" variant="destructive" onClick={onLogout}>
                     Salir
                   </Button>
                 )}

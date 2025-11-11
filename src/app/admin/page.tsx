@@ -5,211 +5,209 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { getSupabaseBrowser } from '@/lib/supabase/client'
-import { RefreshCcw, Calendar as CalendarIcon, Search } from 'lucide-react'
-
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover'
-import { Calendar } from '@/components/ui/Calendar'
+import { RefreshCcw, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // --- Tipos ---
-interface Anotacion {
-  id: string
-  users_id: string
-  fecha: string // YYYY-MM-DD
-  codigo: string | null
-  hora_entrada: string
-  hora_salida: string
-  horas_extras: number
-}
 interface Usuario {
   id: string
   dni: string | null
   nombre: string
   apellidos: string
+  email: string | null
 }
 
-type Row = {
-  anot: Anotacion
-  user?: Usuario
-}
-
-// --- Helpers ---
-function formatDateLocalYYYYMMDD(d: Date) {
-  // Construye YYYY-MM-DD en zona local (no UTC) para cuadrar con columna DATE de Postgres
-  const year = d.getFullYear()
-  const month = `${d.getMonth() + 1}`.padStart(2, '0')
-  const day = `${d.getDate()}`.padStart(2, '0')
-  return `${year}-${day.length === 2 ? month : `0${month}`}-${day}`
-}
-// (corrección: mes ya está con padStart; dejamos función simple y segura)
-function ymd(d: Date) {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const dd = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${dd}`
-}
-
-function formatNice(d: Date) {
-  try {
-    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: '2-digit' })
-  } catch {
-    return ymd(d)
-  }
-}
+// Tamaños disponibles
+const PAGE_SIZES = [20, 40, 60] as const
 
 export default function AdminHomePage() {
-  // Fecha seleccionada (por defecto hoy)
-  const [date, setDate] = useState<Date>(new Date())
   const [loading, setLoading] = useState(false)
-
-  // Datos
-  const [rows, setRows] = useState<Row[]>([])
   const [q, setQ] = useState('')
 
-  const dateStr = useMemo(() => ymd(date), [date])
+  // paginación
+  const [page, setPage] = useState(1) // 1-based
+  const [pageSize, setPageSize] = useState<(typeof PAGE_SIZES)[number]>(40)
 
-  // Cargar anotaciones del día
+  // datos
+  const [items, setItems] = useState<Usuario[]>([])
+  const [total, setTotal] = useState(0)
+
+  // normalizar query (evitar re-renders)
+  const normQ = useMemo(() => q.trim(), [q])
+
+  // cargar usuarios con filtros + paginación
   useEffect(() => {
     ;(async () => {
       if (typeof window === 'undefined') return
       const supa = getSupabaseBrowser()
       setLoading(true)
+
       try {
-        const { data: anot } = await supa
-          .from('anotaciones')
-          .select('id,users_id,fecha,codigo,hora_entrada,hora_salida,horas_extras')
-          .eq('fecha', dateStr)
-          .order('hora_entrada', { ascending: true })
+        const from = (page - 1) * pageSize
+        const to = from + pageSize - 1
 
-        const list = (anot as Anotacion[]) || []
-        const userIds = Array.from(new Set(list.map((a) => a.users_id))).filter(Boolean)
+        let query = supa
+          .from('usuarios')
+          .select('id,dni,nombre,apellidos,email', { count: 'exact' })
+          .order('apellidos', { ascending: true })
+          .order('nombre', { ascending: true, nullsFirst: false })
 
-        let usersMap = new Map<string, Usuario>()
-        if (userIds.length) {
-          const { data: users } = await supa
-            .from('usuarios')
-            .select('id,dni,nombre,apellidos')
-            .in('id', userIds)
-
-          for (const u of (users as Usuario[]) || []) {
-            usersMap.set(u.id, u)
-          }
+        if (normQ) {
+          // Buscar por DNI, nombre, apellidos y email (case-insensitive)
+          const like = `%${normQ}%`
+          query = query.or(
+            `dni.ilike.${like},nombre.ilike.${like},apellidos.ilike.${like},email.ilike.${like}`,
+          )
         }
 
-        setRows(
-          list.map((a) => ({
-            anot: a,
-            user: usersMap.get(a.users_id),
-          })),
-        )
+        const { data, count, error } = await query.range(from, to)
+        if (error) throw error
+
+        setItems((data as Usuario[]) || [])
+        setTotal(count || 0)
+      } catch (err) {
+        console.error(err)
+        setItems([])
+        setTotal(0)
       } finally {
         setLoading(false)
       }
     })()
-  }, [dateStr])
+  }, [page, pageSize, normQ])
+
+  // cuando cambie el pageSize o el filtro, vuelve a la página 1
+  useEffect(() => {
+    setPage(1)
+  }, [pageSize, normQ])
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const canPrev = page > 1
+  const canNext = page < totalPages
 
   function refresh() {
-    // Simplemente fuerza el mismo efecto cambiando el estado de fecha a una copia
-    setDate((d) => new Date(d.getTime()))
+    // refresco simple: re-dispara el efecto cambiando el page a sí mismo con clamp
+    setPage((p) => Math.min(Math.max(1, p), totalPages))
   }
 
-  const filtered = useMemo(() => {
-    const text = q.trim().toLowerCase()
-    if (!text) return rows
-    return rows.filter((r) => {
-      const name = r.user ? `${r.user.nombre} ${r.user.apellidos}`.toLowerCase() : ''
-      const dni = (r.user?.dni || '').toLowerCase()
-      const cod = (r.anot.codigo || '').toLowerCase()
-      return name.includes(text) || dni.includes(text) || cod.includes(text)
-    })
-  }, [rows, q])
-
-  const count = filtered.length
-
   return (
-    <main className="p-4 md:p-6 max-w-6xl mx-auto space-y-4">
+    <main className="p-4 md:p-6 max-w-6xl mx-auto space-y-4 shadow-accent">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <h1 className="text-xl md:text-2xl font-semibold">Anotaciones del día</h1>
+        <h1 className="text-center text-xl md:text-2xl font-semibold">J.R Y Bomberos</h1>
+
         <div className="flex flex-wrap items-center gap-2">
-          {/* Date Picker (shadcn Calendar + Popover) */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className={cn('rounded-sm gap-2')}>
-                <CalendarIcon className="h-4 w-4" />
-                {formatNice(date)}
+          {/* Tamaño de página */}
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-muted-foreground mr-1">Tamaño:</span>
+            {PAGE_SIZES.map((sz) => (
+              <Button
+                key={sz}
+                size="sm"
+                variant={pageSize === sz ? 'default' : 'outline'}
+                className="rounded-sm"
+                onClick={() => setPageSize(sz)}
+                aria-pressed={pageSize === sz}
+              >
+                {sz}
               </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 rounded-sm">
-              <Calendar mode="single" selected={date} onSelect={(d) => d && setDate(d)} />
-            </PopoverContent>
-          </Popover>
+            ))}
+          </div>
 
-          <Button variant="secondary" className="rounded-sm" onClick={() => setDate(new Date())}>
-            Hoy
-          </Button>
-
-          <Button variant="outline" size="icon" onClick={refresh} aria-label="Recargar">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={refresh}
+            aria-label="Recargar"
+            className="rounded-sm"
+          >
             <RefreshCcw className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      <Card>
+      <Card className="shadow-accent">
         <CardHeader className="gap-2">
-          <CardTitle className="flex items-center gap-2 text-base md:text-lg">
-            {formatNice(date)} · {count} anotación{count === 1 ? '' : 'es'}
+          <CardTitle className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-base md:text-lg">
+            <span>
+              {total} usuario{total === 1 ? '' : 's'}
+              {normQ ? (
+                <span className="text-muted-foreground">
+                  {' '}
+                  · filtro: <span className="font-medium">“{normQ}”</span>
+                </span>
+              ) : null}
+            </span>
+
+            <div className="relative w-full md:max-w-sm">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 opacity-60" />
+              <Input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Buscar por DNI, nombre, apellidos o email…"
+                className="pl-8 rounded-sm"
+              />
+            </div>
           </CardTitle>
-          <div className="relative w-full md:max-w-sm">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 opacity-60" />
-            <Input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Buscar por nombre, DNI o código…"
-              className="pl-8 rounded-sm"
-            />
-          </div>
         </CardHeader>
-        <CardContent>
+
+        <CardContent className="space-y-4 shadow-accent">
+          {/* Grid de cards */}
           {loading ? (
-            <div className="space-y-2">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-16 rounded-xl bg-muted/50 animate-pulse" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {Array.from({ length: 9 }).map((_, i) => (
+                <div key={i} className="h-28 rounded-xl bg-muted/50 animate-pulse" />
               ))}
             </div>
-          ) : !filtered.length ? (
-            <p className="text-sm text-muted-foreground">
-              No hay anotaciones para la fecha seleccionada.
-            </p>
+          ) : items.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No hay usuarios para mostrar.</p>
           ) : (
-            <ul className="divide-y rounded-xs border overflow-hidden">
-              {filtered.map(({ anot, user }) => (
-                <li
-                  key={anot.id}
-                  className="p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
-                >
-                  <div className="min-w-0">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 ">
+              {items.map((u) => (
+                <li key={u.id}>
+                  <div className="rounded-xl border-3 border-accent p-3 h-full">
                     <div className="font-medium truncate">
-                      {user ? `${user.apellidos}, ${user.nombre}` : '—'}
+                      {u.apellidos ? `${u.apellidos}, ${u.nombre}` : u.nombre}
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      DNI: <span className="font-mono">{user?.dni || '—'}</span>
-                      {anot.codigo ? (
-                        <>
-                          {' '}
-                          · Código: <span className="font-mono">{anot.codigo}</span>
-                        </>
-                      ) : null}
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      DNI: <span className="font-mono">{u.dni || '—'}</span>
                     </div>
-                  </div>
-                  <div className="text-xs sm:text-sm text-muted-foreground sm:text-right">
-                    Entrada <span className="font-medium">{anot.hora_entrada}</span> · Salida{' '}
-                    <span className="font-medium">{anot.hora_salida}</span> · Extras:{' '}
-                    <span className="font-medium">{anot.horas_extras}</span>
+                    <div className="mt-1 text-xs text-muted-foreground truncate">
+                      Email: <span className="font-mono break-all">{u.email || '—'}</span>
+                    </div>
                   </div>
                 </li>
               ))}
             </ul>
           )}
+
+          {/* Paginación */}
+          <div className="flex items-center justify-between pt-2">
+            <div className="text-xs text-muted-foreground">
+              Página <span className="font-medium">{page}</span> de{' '}
+              <span className="font-medium">{totalPages}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn('rounded-sm')}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={!canPrev || loading}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Anterior
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn('rounded-sm')}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={!canNext || loading}
+              >
+                Siguiente
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </main>
