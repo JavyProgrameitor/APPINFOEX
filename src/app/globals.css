@@ -68,13 +68,13 @@
   --popover-foreground: #f8fafc;
 
   /* Marca / Accentos */
-  --primary: #55d400; /* verde vivo para CTA */
+  --primary: #4d8c23; /* verde apagado para CTA */
   --primary-foreground: #052e16;
   --secondary: #0b0f14; /* apoya el look dark */
   --secondary-foreground: #f8fafc;
 
   /* UI neutrales */
-  --muted: #55d400; /* gris/azulado muy oscuro para hovers */
+  --muted: #4d8c23; /* verde apagado para CTA */
   --muted-foreground: #cbd5e1; /* slate-300 */
   --border: #17202c; /* línea sutil */
   --input: #17202c;
@@ -82,11 +82,11 @@
 
   /* Detalles mínimos en rojo (errores/alertas) */
   --destructive: #ef4444;
-  --accent: #55d400;
+  --accent: #4d8c23; /* verde apagado para CTA */
   --accent-foreground: #052e16;
 
   /* Charts (opcionales, gama verde/neutral) */
-  --chart-1: #55d400;
+  --chart-1: #4d8c23; /* verde apagado para CTA */
   --chart-2: #16a34a;
   --chart-3: #10b981;
   --chart-4: #84cc16;
@@ -95,11 +95,11 @@
   /* Sidebar */
   --sidebar: #0b0f14;
   --sidebar-foreground: #f8fafc;
-  --sidebar-primary: #55d400;
+  --sidebar-primary: #4d8c23; /* verde apagado para CTA */
   --sidebar-primary-foreground: #052e16;
   --sidebar-accent: #0f1826;
   --sidebar-accent-foreground: #f8fafc;
-  --sidebar-ring: #55d400;
+  --sidebar-ring: #4d8c23; /* verde apagado para CTA */
 }
 
 /* ===============================
@@ -115,7 +115,7 @@
   --popover: #ffffff;
   --popover-foreground: #0b0f14;
 
-  --primary: #55d400;
+  --primary: #4d8c23; /* verde apagado para CTA */
   --primary-foreground: #ffffff;
   --secondary: #0b0f14;
   --secondary-foreground: #ffffff;
@@ -124,13 +124,13 @@
   --muted-foreground: #4b5563;
   --border: #e5e7eb;
   --input: #e5e7eb;
-  --ring: #55d400;
+  --ring: #4d8c23; /* verde apagado para CTA */
 
   --destructive: #ef4444;
-  --accent: #55d400;
+  --accent: #4d8c23; /* verde apagado para CTA */
   --accent-foreground: #052e16;
 
-  --chart-1: #55d400;
+  --chart-1: #4d8c23; /* verde apagado para CTA */
   --chart-2: #22c55e;
   --chart-3: #10b981;
   --chart-4: #84cc16;
@@ -138,12 +138,12 @@
 
   --sidebar: #ffffff;
   --sidebar-foreground: #0b0f14;
-  --sidebar-primary: #55d400;
+  --sidebar-primary: #4d8c23; /* verde apagado para CTA */
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #f3f4f6;
   --sidebar-accent-foreground: #0b0f14;
   --sidebar-border: #e5e7eb;
-  --sidebar-ring: #55d400;
+  --sidebar-ring: #4d8c23; /* verde apagado para CTA */
 }
 
 /* --- Base layer: aplica fondo/texto global y suaviza render --- */

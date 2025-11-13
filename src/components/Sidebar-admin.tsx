@@ -7,9 +7,9 @@ import type { LucideIcon } from 'lucide-react'
 import { FileText, Home, Users } from 'lucide-react'
 
 const links = [
-  { href: '/admin', label: 'Escritorio', icon: Home },
-  { href: '/admin/list', label: 'Ver usuarios', icon: FileText },
-  { href: '/admin/users', label: 'Agregar usuarios', icon: Users },
+  { href: '/admin', label: 'Listar usuarios', icon: Home },
+  { href: '/admin/list', label: 'Ver usuario', icon: FileText },
+  { href: '/admin/users', label: 'Agregar usuario', icon: Users },
 ]
 
 export function SidebarAdmin({ className }: { className?: string }) {

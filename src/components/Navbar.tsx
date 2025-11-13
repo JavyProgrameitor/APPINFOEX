@@ -141,9 +141,9 @@ export default function NavBar() {
           {/* Derecha: acciones desktop */}
           <div className="hidden md:flex items-center gap-2 justify-self-end">
             {isRoleRoute && !loading && email && (
-              <span className="flex text-sm items-center gap-2 px-3 py-1 rounded-xl border border-white/40 bg-white/10">
+              <span className="flex text-sm items-center gap-2 px-3 py-1 rounded-xl border border-/40">
                 <span className="inline-flex items-center gap-1">
-                  <span className="rounded-full w-2 h-2 bg-card" />
+                  <span className="rounded-full w-2 h-2 bg-destructive" />
                   <span className="font-semibold">{roleLabel(rol)}</span>
                 </span>
                 <span className="text-primary/70">✓</span>
@@ -188,7 +188,7 @@ export default function NavBar() {
               {isRoleRoute && !loading && email && (
                 <span className="text-xs inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-amber/40 bg-white/10 ">
                   <span className="inline-flex items-center gap-1">
-                    <span className="rounded-full w-2 h-2 bg-card" />
+                    <span className="rounded-full w-2 h-2 bg-destructive" />
                     <span className="font-semibold">{roleLabel(rol)}</span>
                   </span>
                   <span className="text-primary/70">✓</span>
