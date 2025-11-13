@@ -1,7 +1,7 @@
 'use client'
 
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Separator } from '@/components/ui/Separator'
@@ -42,7 +42,25 @@ interface Anotacion {
   horas_extras: number
 }
 
-export default function AdminListBFPage() {
+/** Wrapper que Next 15 quiere: página envuelta en Suspense */
+export default function Page() {
+  return (
+    <Suspense
+      fallback={
+        <main className="p-4 md:p-6 max-w-3xl mx-auto">
+          <Card className="rounded-2xl shadow-accent">
+            <CardContent className="p-4 text-sm text-muted-foreground">Cargando…</CardContent>
+          </Card>
+        </main>
+      }
+    >
+      <AdminListBFPageInner />
+    </Suspense>
+  )
+}
+
+/** Tu componente original, sin cambiar estilos ni estructura */
+function AdminListBFPageInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const id = searchParams.get('id')

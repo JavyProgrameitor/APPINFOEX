@@ -7,12 +7,12 @@ function Input({ className, type, ...props }: React.ComponentProps<'input'>) {
       type={type}
       data-slot="input"
       className={cn(
-        'rounded-xl border bg-card text-card-foreground shadow-sm hover:shadow-md transition cursor-pointer shadow-accent h-full p-2 ',
+        'rounded-sm border bg-card text-card-foreground shadow-sm hover:shadow-md transition cursor-pointer shadow-accent h-full p-2 m-1 ',
         // base colors via CSS vars
-        'bg-[var(--card)] text-[var(--foreground)] border-[var(--border)] placeholder:[color:var(--muted-foreground)]',
+        'bg-(--card) text-foreground border-(--border) placeholder:text-muted-foreground',
         // hover/focus
         'hover:border-[color-mix(in_oklab,var(--border),black_10%)]',
-        'focus:border-[var(--ring)] focus:ring-2 focus:ring-[var(--ring)]',
+        'focus:border-ring focus:ring-2 focus:ring-ring',
         // disabled / invalid
         'disabled:opacity-50 disabled:cursor-not-allowed',
         'aria-invalid:border-destructive aria-invalid:ring-destructive/30',

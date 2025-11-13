@@ -37,7 +37,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                dark:border-primary/40 dark:bg-primary/10 dark:hover:bg-primary/30
                                transition-all duration-200 shadow-sm hover:shadow-md"
                   >
-                    Escritorio
+                    Listar usuarios
                   </Link>
                 </SheetClose>
                 <SheetClose asChild>
@@ -48,7 +48,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                dark:border-primary/40 dark:bg-primary/10 dark:hover:bg-primary/30
                                transition-all duration-200 shadow-sm hover:shadow-md"
                   >
-                    Ver usuarios
+                    Ver usuario
                   </Link>
                 </SheetClose>
                 <SheetClose asChild>
@@ -59,7 +59,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                dark:border-primary/40 dark:bg-primary/10 dark:hover:bg-primary/30
                                transition-all duration-200 shadow-sm hover:shadow-md"
                   >
-                    Agregar usuarios
+                    Agregar usuario
                   </Link>
                 </SheetClose>
               </nav>
