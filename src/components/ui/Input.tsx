@@ -7,7 +7,7 @@ function Input({ className, type, ...props }: React.ComponentProps<'input'>) {
       type={type}
       data-slot="input"
       className={cn(
-        'h-9 w-full min-w-0 rounded-md border px-3 py-1 font-semibold text-base md:text-xl shadow-xs outline-none transition-colors',
+        'rounded-xl border bg-card text-card-foreground shadow-sm hover:shadow-md transition cursor-pointer shadow-accent h-full p-2 ',
         // base colors via CSS vars
         'bg-[var(--card)] text-[var(--foreground)] border-[var(--border)] placeholder:[color:var(--muted-foreground)]',
         // hover/focus

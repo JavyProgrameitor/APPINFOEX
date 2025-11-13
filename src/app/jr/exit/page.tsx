@@ -311,10 +311,9 @@ function ExitJR() {
 
         <Card className="shadow-xl rounded-2xl shadow-accent">
           <CardHeader>
-            <CardTitle className="text-2xl font-black">
-              Salidas del día: <b className="text-primary">{fecha}</b>
-            </CardTitle>
-            <div className="text-lg font-bold">
+            <CardTitle className="text-center text-2xl font-black">Salidas del día</CardTitle>
+            <b className="text-primary text-center text-xl">Fecha: {fecha}</b>
+            <div className="text-lg font-bold text-center">
               Bomberos disponibles: <b className="text-primary">{totalBomberos}</b>
             </div>
           </CardHeader>

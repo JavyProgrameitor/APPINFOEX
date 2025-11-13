@@ -173,9 +173,9 @@ export default function AdminUsersPage() {
 
   return (
     <main className="min-h-full w-full flex items-center justify-center p-4">
-      <Card className="w-full max-w-xl">
+      <Card className="w-full max-w-xl shadow-accent border-2 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-center">Crear usuario</CardTitle>
+          <CardTitle className="text-center text-accent">Crear usuario</CardTitle>
         </CardHeader>
 
         <CardContent className="space-y-4">
@@ -231,21 +231,21 @@ export default function AdminUsersPage() {
 
             <div className="grid md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm mb-1">DNI</label>
+                <label className="block text-sm ">DNI</label>
                 <Input
                   value={form.dni}
                   onChange={(e) => setForm({ ...form, dni: e.target.value })}
                 />
               </div>
               <div>
-                <label className="block text-sm mb-1">Nombre</label>
+                <label className="block text-sm mt-3">Nombre</label>
                 <Input
                   value={form.nombre}
                   onChange={(e) => setForm({ ...form, nombre: e.target.value })}
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm mb-1">Apellidos</label>
+                <label className="block text-sm mt-6">Apellidos</label>
                 <Input
                   value={form.apellidos}
                   onChange={(e) => setForm({ ...form, apellidos: e.target.value })}
@@ -255,7 +255,7 @@ export default function AdminUsersPage() {
 
             {/* Zona */}
             <div>
-              <label className="block text-sm mb-1">Zona</label>
+              <label className="block text-sm mt-12">Zona</label>
               <Select value={zona} onValueChange={(v) => setZona(v)}>
                 <SelectTrigger className="w-full rounded-sm">
                   <SelectValue placeholder="Elige una zona" />
@@ -341,7 +341,6 @@ export default function AdminUsersPage() {
             </div>
 
             {/* Mensajes de ayuda/validación */}
-            {!zona && <p className="text-xs text-red-600">Debes seleccionar una Zona.</p>}
             {zona && !asignacionTipo && (
               <p className="text-xs text-red-600">Selecciona si asignas por Unidad o Caseta.</p>
             )}

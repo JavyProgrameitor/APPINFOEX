@@ -524,12 +524,8 @@ function NoteJR() {
 
         <Card className="shadow-xl rounded-2xl shadow-accent">
           <CardHeader className="space-y-2">
-            <CardTitle className="font-black text-2xl">Anotaciones del día</CardTitle>
-            <div className="inline-flex items-center gap-2 text-sm">
-              <span className="font-black text-primary text-xl px-2 py-1">
-                Fecha:&nbsp;<b>{fechaDia}</b>
-              </span>
-            </div>
+            <CardTitle className="text-center font-black text-2xl">Control Diario</CardTitle>
+            <span className="font-black text-primary text-center text-xl">Fecha:{fechaDia}</span>
           </CardHeader>
 
           <CardContent className="space-y-4">

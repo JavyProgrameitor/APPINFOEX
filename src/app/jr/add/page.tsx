@@ -1,4 +1,3 @@
-// src/app/jr/add/page.tsx
 'use client'
 
 import { Suspense, useEffect, useMemo, useState } from 'react'
@@ -20,12 +19,12 @@ type JRContext = {
   caseta?: string
   unidad_id?: string
   caseta_id?: string
-  ls?: string // clave explícita (opcional)
+  ls?: string
 }
 
-const CTX_KEY = 'INFOEX:jr:ctx' // <-- igual que /jr/page y /jr/note
+const CTX_KEY = 'INFOEX:jr:ctx'
 
-// Genera la MISMA clave que espera /jr/note
+// helpers de clave
 function computeListaKey(ctx: JRContext | null): string | null {
   if (!ctx) return null
   if (ctx.ls) return ctx.ls
@@ -35,12 +34,34 @@ function computeListaKey(ctx: JRContext | null): string | null {
       : ctx.caseta_id || `C:${ctx.zona}/${ctx.municipio || ''}/${ctx.caseta || ''}`
   return `INFOEX:lista:${ctx.tipo}:${parte}`
 }
-
-// Clave legacy que usabas antes (para migración transparente)
 function computeLegacyKey(ctx: JRContext | null): string | null {
   if (!ctx) return null
   const base = ctx.tipo === 'unidad' ? `unidad:${ctx.unidad_id}` : `caseta:${ctx.caseta_id}`
   return `jr.bomberos.${ctx.zona}.${base}`
+}
+
+// normalizadores y emparejado A/B
+function norm(s?: string) {
+  return (s || '')
+    .toLowerCase()
+    .replaceAll('.', '')
+    .replaceAll('-', ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+function isUnitA(name?: string) {
+  const n = norm(name)
+  return /\s+a$/.test(n) || n === 'unidad a' || n === 'u a' || n === 'ua' || n === 'a'
+}
+function isUnitB(name?: string) {
+  const n = norm(name)
+  return /\s+b$/.test(n) || n === 'unidad b' || n === 'u b' || n === 'ub' || n === 'b'
+}
+
+function baseName(name?: string) {
+  let n = norm(name)
+  n = n.replace(/\s+[ab]$/, '')
+  return n
 }
 
 function groupByUnidad(usuarios: (Bombero & { unidad_id: string; unidad_nombre: string })[]) {
@@ -59,7 +80,7 @@ function AgregarBomberos() {
   const router = useRouter()
   const params = useSearchParams()
 
-  // 1) Cargar contexto desde URL o localStorage
+  // 1) Contexto
   const urlTipo = params.get('tipo') as 'unidad' | 'caseta' | null
   const urlZona = params.get('zona')
   const urlMunicipio = params.get('municipio')
@@ -73,7 +94,6 @@ function AgregarBomberos() {
   const [loadedKey, setLoadedKey] = useState<string | null>(null)
 
   useEffect(() => {
-    // Prioridad a parámetros de URL
     if (urlTipo && urlZona) {
       const nuevo: JRContext = {
         tipo: urlTipo,
@@ -91,8 +111,6 @@ function AgregarBomberos() {
       } catch {}
       return
     }
-
-    // Si no viene por URL, miro localStorage
     try {
       const raw = localStorage.getItem(CTX_KEY)
       if (raw) setCtx(JSON.parse(raw))
@@ -102,7 +120,7 @@ function AgregarBomberos() {
   const storageKey = useMemo(() => computeListaKey(ctx), [ctx])
   const legacyKey = useMemo(() => computeLegacyKey(ctx), [ctx])
 
-  // 2) Cargar selección previa (si existe) para esta clave (con migración desde la legacy)
+  // 2) Selección previa
   const [seleccion, setSeleccion] = useState<Record<string, boolean>>({})
   const [, setListaInicial] = useState<Bombero[] | null>(null)
 
@@ -110,7 +128,6 @@ function AgregarBomberos() {
     if (!storageKey) return
     setLoadedKey(storageKey)
     try {
-      // Primero intento con la clave nueva
       const raw = localStorage.getItem(storageKey)
       if (raw) {
         const arr: Bombero[] = JSON.parse(raw)
@@ -120,7 +137,6 @@ function AgregarBomberos() {
         setSeleccion(map)
         return
       }
-      // Si no hay, intento migrar desde la clave legacy
       if (legacyKey) {
         const legacyRaw = localStorage.getItem(legacyKey)
         if (legacyRaw) {
@@ -129,7 +145,6 @@ function AgregarBomberos() {
           const map: Record<string, boolean> = {}
           for (const b of arr) map[b.dni] = true
           setSeleccion(map)
-          // guardo inmediatamente en la nueva clave para unificar
           localStorage.setItem(storageKey, legacyRaw)
           return
         }
@@ -142,7 +157,7 @@ function AgregarBomberos() {
     }
   }, [storageKey, legacyKey])
 
-  // 3) Obtener miembros de la zona (sin pedir DNI)
+  // 3) Cargar miembros y filtrar por pareja A/B de la MISMA base
   const [miembros, setMiembros] = useState<
     (Bombero & { unidad_id: string; unidad_nombre: string })[] | null
   >(null)
@@ -155,7 +170,6 @@ function AgregarBomberos() {
       setCargando(true)
       setMensaje(null)
       try {
-        // Usa el endpoint que tengas disponible. Si tu endpoint real es /api/usuarios/por-zona, cámbialo aquí.
         const res = await fetch(`/api/usuarios/zona?zona=${encodeURIComponent(ctx.zona)}`, {
           credentials: 'include',
         })
@@ -165,18 +179,62 @@ function AgregarBomberos() {
           return
         }
         const json = await res.json()
+
+        const unidades: { id: string; nombre: string }[] = (json.unidades || []) as any[]
+
         const unidadesById: Record<string, string> = {}
-        for (const u of json.unidades as { id: string; nombre: string }[]) {
-          unidadesById[u.id] = u.nombre
+        for (const u of unidades) unidadesById[u.id] = u.nombre
+
+        // Resolver mi unidad (id o por nombre aproximado)
+        let myUnitId = ctx.unidad_id || undefined
+        let myUnitName: string | undefined = undefined
+
+        if (myUnitId && unidadesById[myUnitId]) {
+          myUnitName = unidadesById[myUnitId]
+        } else if (ctx.unidad) {
+          // buscar por base aproximada
+          const targetBase = baseName(ctx.unidad)
+          const candidate = unidades.find((u) => baseName(u.nombre) === targetBase)
+          if (candidate) {
+            myUnitId = candidate.id
+            myUnitName = candidate.nombre
+          }
         }
 
-        const lista = (json.usuarios as any[]).map((u) => ({
-          dni: u.dni,
-          nombre: u.nombre,
-          apellidos: u.apellidos,
-          unidad_id: u.unidad_id,
+        // Si soy A o B, quiero la pareja A/B de la MISMA base
+        let allowedIds = new Set<string>()
+        if (myUnitName) {
+          const myBase = baseName(myUnitName)
+          const isAorB = isUnitA(myUnitName) || isUnitB(myUnitName)
+          if (isAorB) {
+            for (const u of unidades) {
+              if (baseName(u.nombre) === myBase && (isUnitA(u.nombre) || isUnitB(u.nombre))) {
+                allowedIds.add(u.id)
+              }
+            }
+          }
+        }
+
+        // Si no logré emparejar A/B por base, caigo al comportamiento anterior:
+        if (allowedIds.size === 0 && myUnitId) {
+          allowedIds.add(myUnitId)
+        }
+
+        if (allowedIds.size === 0) {
+          setMensaje('No se encontraron unidades permitidas para tu contexto.')
+          setMiembros([])
+          return
+        }
+
+        const todos = ((json.usuarios as any[]) || []).map((u) => ({
+          dni: u.dni as string,
+          nombre: u.nombre as string,
+          apellidos: u.apellidos as string,
+          unidad_id: u.unidad_id as string,
           unidad_nombre: unidadesById[u.unidad_id] ?? '',
         }))
+
+        const lista = todos.filter((u) => u.unidad_id && allowedIds.has(u.unidad_id))
         setMiembros(lista)
       } catch {
         setMensaje('Error al cargar miembros.')
@@ -185,12 +243,12 @@ function AgregarBomberos() {
         setCargando(false)
       }
     })()
-  }, [ctx?.zona])
+  }, [ctx?.zona, ctx?.unidad_id, ctx?.unidad])
 
-  // Grupos por unidad
+  // Grupos
   const grupos = useMemo(() => (miembros ? groupByUnidad(miembros) : []), [miembros])
 
-  // 4) Guardar selección en localStorage cuando cambie (con la clave NUEVA)
+  // 4) Persistir selección
   useEffect(() => {
     if (!storageKey) return
     if (loadedKey !== storageKey) return
@@ -203,20 +261,14 @@ function AgregarBomberos() {
     } catch {}
   }, [seleccion, storageKey, loadedKey, miembros])
 
-  const toggle = (dni: string) => {
-    setSeleccion((prev) => ({ ...prev, [dni]: !prev[dni] }))
-  }
-
+  const toggle = (dni: string) => setSeleccion((prev) => ({ ...prev, [dni]: !prev[dni] }))
   const limpiar = () => {
     setSeleccion({})
     try {
       if (storageKey) localStorage.removeItem(storageKey)
     } catch {}
   }
-
-  const goNext = () => {
-    router.push('/jr/note' + (ctx ? buildQueryFromCtx(ctx) : ''))
-  }
+  const goNext = () => router.push('/jr/note' + (ctx ? buildQueryFromCtx(ctx) : ''))
 
   function buildQueryFromCtx(c: JRContext) {
     const p = new URLSearchParams()
@@ -235,7 +287,7 @@ function AgregarBomberos() {
       <main className="grid place-items-center p-4">
         <Card className=" w-full max-w-3xl rounded-2xl shadow-accent">
           <CardHeader>
-            <CardTitle>Selecciona Bomberos de las Unidades</CardTitle>
+            <CardTitle>Selecciona Bomberos de sus Unidades A y B</CardTitle>
           </CardHeader>
           <CardContent>
             {!ctx ? (
@@ -247,7 +299,7 @@ function AgregarBomberos() {
                 {mensaje ? <div className="text-red-600 text-sm">{mensaje}</div> : null}
 
                 {grupos.length === 0 ? (
-                  <div>No hay miembros para esta zona.</div>
+                  <div>No hay miembros para mostrar.</div>
                 ) : (
                   grupos.map((g) => (
                     <div key={g.unidad_id} className="p-3">
