@@ -45,7 +45,9 @@ export default function StartJR() {
         return
       }
 
-      const destRes = await fetch('/api/jr/destino', { credentials: 'include' })
+      const destRes = await fetch('/api/jr/destino', {
+        credentials: 'include',
+      })
       const djson = await destRes.json()
 
       if (!destRes.ok) {

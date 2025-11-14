@@ -119,7 +119,9 @@ export async function POST(req: Request) {
       const anchor = insertedAnot?.[0]
       if (!anchor) {
         return NextResponse.json(
-          { error: 'No se pudo resolver una anotación para anclar las salidas.' },
+          {
+            error: 'No se pudo resolver una anotación para anclar las salidas.',
+          },
           { status: 500 },
         )
       }

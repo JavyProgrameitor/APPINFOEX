@@ -15,7 +15,9 @@ type ToastInput = {
 
 type ToastItem = ToastInput & { id: string; open: boolean }
 
-const ToastContext = React.createContext<{ toast: (t: ToastInput) => void } | null>(null)
+const ToastContext = React.createContext<{
+  toast: (t: ToastInput) => void
+} | null>(null)
 
 export function ToasterProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = React.useState<ToastItem[]>([])

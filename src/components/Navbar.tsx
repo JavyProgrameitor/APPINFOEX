@@ -41,7 +41,10 @@ export default function NavBar() {
       }
       setLoading(true)
       try {
-        const res = await fetch('/api/me', { method: 'GET', credentials: 'include' })
+        const res = await fetch('/api/me', {
+          method: 'GET',
+          credentials: 'include',
+        })
         if (res.status === 200) {
           const json = await res.json()
           setEmail(json.email)

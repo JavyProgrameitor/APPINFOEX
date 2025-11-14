@@ -54,7 +54,9 @@ export async function POST(req: Request) {
     const anchor = anotaciones[0]
     if (!anchor) {
       return NextResponse.json(
-        { error: 'No existen anotaciones para esa fecha. Guarda anotaciones primero.' },
+        {
+          error: 'No existen anotaciones para esa fecha. Guarda anotaciones primero.',
+        },
         { status: 400 },
       )
     }
@@ -91,7 +93,11 @@ export async function POST(req: Request) {
     if (rows.length === 0) {
       // No hay nada válido que insertar; devolvemos OK con 0 inserts
       return NextResponse.json(
-        { ok: true, inserted_salidas: 0, note: 'No se insertaron salidas con 0 intervinientes.' },
+        {
+          ok: true,
+          inserted_salidas: 0,
+          note: 'No se insertaron salidas con 0 intervinientes.',
+        },
         { status: 200 },
       )
     }

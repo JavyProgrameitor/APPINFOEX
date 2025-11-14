@@ -34,7 +34,9 @@ export async function middleware(req: NextRequest) {
   const cookiesAdapter: CookieMethodsServer = {
     getAll(): GetCookie[] {
       const items = (
-        req as unknown as { cookies: { getAll: () => { name: string; value: string }[] } }
+        req as unknown as {
+          cookies: { getAll: () => { name: string; value: string }[] }
+        }
       ).cookies.getAll()
       return items.map(({ name, value }) => ({ name, value }))
     },

@@ -57,7 +57,13 @@ function legacyListaKey(ctx: JRContext | null): string | null {
 }
 
 function computeKeys(ctx: JRContext | null) {
-  if (!ctx) return { storageKey: null, anotStorageKey: null, legacyKey: null, anotDraftKey: null }
+  if (!ctx)
+    return {
+      storageKey: null,
+      anotStorageKey: null,
+      legacyKey: null,
+      anotDraftKey: null,
+    }
   const parte =
     ctx.tipo === 'unidad'
       ? ctx.unidad_id || `U:${ctx.zona}/${ctx.unidad || ''}`

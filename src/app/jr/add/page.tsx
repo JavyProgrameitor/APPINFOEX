@@ -69,9 +69,17 @@ function groupByUnidad(usuarios: (Bombero & { unidad_id: string; unidad_nombre: 
   for (const u of usuarios) {
     const key = u.unidad_id
     if (!mapa[key]) {
-      mapa[key] = { unidad_id: u.unidad_id, unidad_nombre: u.unidad_nombre, miembros: [] }
+      mapa[key] = {
+        unidad_id: u.unidad_id,
+        unidad_nombre: u.unidad_nombre,
+        miembros: [],
+      }
     }
-    mapa[key].miembros.push({ dni: u.dni, nombre: u.nombre, apellidos: u.apellidos })
+    mapa[key].miembros.push({
+      dni: u.dni,
+      nombre: u.nombre,
+      apellidos: u.apellidos,
+    })
   }
   return Object.values(mapa)
 }

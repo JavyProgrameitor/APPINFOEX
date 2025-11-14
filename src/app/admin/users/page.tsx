@@ -46,7 +46,10 @@ export default function AdminUsersPage() {
   const [casetas, setCasetas] = useState<Caseta[]>([])
 
   const [loading, setLoading] = useState(false)
-  const [alert, setAlert] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
+  const [alert, setAlert] = useState<{
+    type: 'success' | 'error'
+    msg: string
+  } | null>(null)
 
   // Cargar unidades, municipios y casetas
   useEffect(() => {
@@ -157,7 +160,14 @@ export default function AdminUsersPage() {
       setAlert({ type: 'success', msg: 'Usuario creado correctamente.' })
 
       // Reset
-      setForm({ email: '', password: '', rol: 'bf', dni: '', nombre: '', apellidos: '' })
+      setForm({
+        email: '',
+        password: '',
+        rol: 'bf',
+        dni: '',
+        nombre: '',
+        apellidos: '',
+      })
       setZona('')
       setAsignacionTipo('')
       setUnidadId('')
