@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { useToast } from '@/components/ui/Use-toast'
-import { getSupabaseBrowser } from '@/lib/supabase/client'
+import { getSupabaseBrowser } from '@/server/client'
 import {
   Select,
   SelectContent,
@@ -134,7 +134,7 @@ export default function AdminUsersPage() {
       } = await supa.auth.getSession()
       const token = session?.access_token
 
-      const res = await fetch('/api/admin/crear-usuarios', {
+      const res = await fetch('/supabase/admin/crear-usuarios', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -180,192 +180,205 @@ export default function AdminUsersPage() {
       setLoading(false)
     }
   }
-
   return (
-    <main className="min-h-screen w-full flex items-center justify-center p-4">
-      <Card className="w-full max-w-xl shadow-accent border-2 rounded-2xl">
+    <main className="min-h-screen w-full flex items-center justify-center">
+      <Card className="w-full max-w-xl rounded-2xl shadow-accent">
         <CardHeader>
           <CardTitle className="text-center text-accent">Crear usuario</CardTitle>
         </CardHeader>
-
-        <CardContent className="space-y-4">
-          {alert && (
-            <Alert variant={alert.type === 'error' ? 'destructive' : 'default'}>
-              <AlertTitle>{alert.type === 'error' ? 'Error' : 'Listo'}</AlertTitle>
-              <AlertDescription>{alert.msg}</AlertDescription>
-            </Alert>
-          )}
-
-          <form onSubmit={onSubmit} className="space-y-3">
-            <div>
-              <label className="block text-sm mb-1">Email</label>
-              <Input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm mb-1">Contraseña</label>
-              <Input
-                type="password"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                required
-              />
-              <p className="text-xs mt-1">Mínimo 6 caracteres.</p>
-            </div>
-
-            {/* Rol */}
-            <div>
-              <label className="block text-sm mb-1">Usuario tipo</label>
-              <Select value={form.rol} onValueChange={(v) => setForm({ ...form, rol: v as Rol })}>
-                <SelectTrigger className="w-full rounded-sm">
-                  <SelectValue placeholder="Selecciona un rol" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xs">
-                  <SelectItem value="admin" className="text-center">
-                    Administrador
-                  </SelectItem>
-                  <SelectItem value="bf" className="text-center">
-                    Bombero Forestal
-                  </SelectItem>
-                  <SelectItem value="jr" className="text-center">
-                    Jefe de Servicio
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm ">DNI</label>
-                <Input
-                  value={form.dni}
-                  onChange={(e) => setForm({ ...form, dni: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-sm mt-3">Nombre</label>
-                <Input
-                  value={form.nombre}
-                  onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm mt-6">Apellidos</label>
-                <Input
-                  value={form.apellidos}
-                  onChange={(e) => setForm({ ...form, apellidos: e.target.value })}
-                />
-              </div>
-            </div>
-
-            {/* Zona */}
-            <div>
-              <label className="block text-sm mt-12">Zona</label>
-              <Select value={zona} onValueChange={(v) => setZona(v)}>
-                <SelectTrigger className="w-full rounded-sm">
-                  <SelectValue placeholder="Elige una zona" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xs max-h-64">
-                  {zonas.map((z) => (
-                    <SelectItem key={z} value={z} className="text-center">
-                      {z}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Asignación por Unidad o Caseta */}
-            <div className="grid md:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm mb-1">Asignar por</label>
-                <Select
-                  value={asignacionTipo}
-                  onValueChange={(v) => {
-                    const value = v as AsignacionTipo | ''
-                    setAsignacionTipo(value)
-                    setUnidadId('')
-                    setCasetaId('')
-                  }}
-                  // Si no hay zona, bloquea el cambio de asignación
-                  disabled={!zona}
-                >
-                  <SelectTrigger className="w-full rounded-sm">
-                    <SelectValue placeholder={zona ? '— Selecciona —' : 'Primero elige zona'} />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xs">
-                    <SelectItem value="unidad" className="text-center">
-                      Unidad
-                    </SelectItem>
-                    <SelectItem value="caseta" className="text-center">
-                      Caseta
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {asignacionTipo === 'unidad' && (
+        <CardContent>
+          <div className="max-w-xl mx-auto space-y-4">
+            {alert && (
+              <Alert variant={alert.type === 'error' ? 'destructive' : 'default'}>
+                <AlertTitle>{alert.type === 'error' ? 'Error' : 'Listo'}</AlertTitle>
+                <AlertDescription>{alert.msg}</AlertDescription>
+              </Alert>
+            )}
+            <div className="flex items-center justify-center">
+              <form onSubmit={onSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm mb-1">Unidad</label>
-                  <Select value={unidadId} onValueChange={(v) => setUnidadId(v)} disabled={!zona}>
-                    <SelectTrigger className="w-full rounded-sm">
-                      <SelectValue
-                        placeholder={zona ? '— Selecciona unidad —' : 'Primero elige zona'}
-                      />
+                  <label className="text-sm m-1">Email</label>
+                  <Input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm m-1">Contraseña</label>
+                  <Input
+                    type="password"
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    required
+                  />
+                  <p className="text-xs mt-1 text-primary">Mínimo 6 caracteres.</p>
+                </div>
+
+                {/* Rol */}
+                <div>
+                  <Select
+                    value={form.rol}
+                    onValueChange={(v) => setForm({ ...form, rol: v as Rol })}
+                  >
+                    <SelectTrigger className="w-80 rounded-sm shadow-accent">
+                      <SelectValue placeholder="Selecciona un rol" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-b-xl">
+                      <SelectItem value="admin" className="text-center">
+                        Administrador
+                      </SelectItem>
+                      <SelectItem value="bf" className="text-center">
+                        Bombero Forestal
+                      </SelectItem>
+                      <SelectItem value="jr" className="text-center">
+                        Jefe de Servicio
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className=" text-sm">DNI</label>
+                  <Input
+                    type="text"
+                    value={form.dni}
+                    onChange={(e) => setForm({ ...form, dni: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm">Nombre</label>
+                  <Input
+                    value={form.nombre}
+                    onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className=" text-sm">Apellidos</label>
+                  <Input
+                    value={form.apellidos}
+                    onChange={(e) => setForm({ ...form, apellidos: e.target.value })}
+                  />
+                </div>
+
+                {/* Zona */}
+                <div>
+                  <Select value={zona} onValueChange={(v) => setZona(v)}>
+                    <SelectTrigger className="w-80 rounded-sm shadow-accent">
+                      <SelectValue placeholder="Elige una zona" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xs max-h-64">
-                      {unidadesEnZona.map((u) => (
-                        <SelectItem key={u.id} value={u.id} className="text-center">
-                          {u.nombre}
+                      {zonas.map((z) => (
+                        <SelectItem key={z} value={z} className="text-center">
+                          {z}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-              )}
 
-              {asignacionTipo === 'caseta' && (
-                <div>
-                  <label className="block text-sm mb-1">Caseta</label>
-                  <Select value={casetaId} onValueChange={(v) => setCasetaId(v)} disabled={!zona}>
-                    <SelectTrigger className="w-full rounded-sm">
-                      <SelectValue
-                        placeholder={zona ? '— Selecciona caseta —' : 'Primero elige zona'}
-                      />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xs max-h-64">
-                      {casetasEnZona.map((c) => (
-                        <SelectItem key={c.id} value={c.id} className="text-center">
-                          {c.nombre}
+                {/* Asignación por Unidad o Caseta */}
+                <div className="grid md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm mb-1">Asignar por</label>
+                    <Select
+                      value={asignacionTipo}
+                      onValueChange={(v) => {
+                        const value = v as AsignacionTipo | ''
+                        setAsignacionTipo(value)
+                        setUnidadId('')
+                        setCasetaId('')
+                      }}
+                      disabled={!zona}
+                    >
+                      <SelectTrigger className="w-full rounded-sm shadow-accent">
+                        <SelectValue placeholder={zona ? '— Selecciona —' : 'Primero elige zona'} />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xs">
+                        <SelectItem value="unidad" className="text-center">
+                          Unidad
                         </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                        <SelectItem value="caseta" className="text-center">
+                          Caseta
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {asignacionTipo === 'unidad' && (
+                    <div>
+                      <label className="block text-sm mb-1">Unidad</label>
+                      <Select
+                        value={unidadId}
+                        onValueChange={(v) => setUnidadId(v)}
+                        disabled={!zona}
+                      >
+                        <SelectTrigger className="w-full rounded-sm shadow-accent">
+                          <SelectValue
+                            placeholder={zona ? '— Selecciona unidad —' : 'Primero elige zona'}
+                          />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xs max-h-64">
+                          {unidadesEnZona.map((u) => (
+                            <SelectItem key={u.id} value={u.id} className="text-center">
+                              {u.nombre}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {asignacionTipo === 'caseta' && (
+                    <div>
+                      <label className="block text-sm mb-1">Caseta</label>
+                      <Select
+                        value={casetaId}
+                        onValueChange={(v) => setCasetaId(v)}
+                        disabled={!zona}
+                      >
+                        <SelectTrigger className="w-full rounded-sm shadow-accent">
+                          <SelectValue
+                            placeholder={zona ? '— Selecciona caseta —' : 'Primero elige zona'}
+                          />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xs max-h-64">
+                          {casetasEnZona.map((c) => (
+                            <SelectItem key={c.id} value={c.id} className="text-center">
+                              {c.nombre}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
-              )}
+
+                {/* Mensajes de ayuda/validación */}
+                {zona && !asignacionTipo && (
+                  <p className="text-xs text-red-600">Selecciona si asignas por Unidad o Caseta.</p>
+                )}
+                {zona && asignacionTipo && !seleccionValida && (
+                  <p className="text-xs text-red-600">
+                    {asignacionTipo === 'unidad'
+                      ? 'Debes seleccionar una Unidad.'
+                      : 'Debes seleccionar una Caseta.'}
+                  </p>
+                )}
+
+                <div className="flex justify-center">
+                  <Button
+                    type="submit"
+                    disabled={loading || !seleccionValida}
+                    className="w-full sm:w-auto"
+                  >
+                    {loading ? 'Creando...' : 'Crear usuario'}
+                  </Button>
+                </div>
+              </form>
             </div>
-
-            {/* Mensajes de ayuda/validación */}
-            {zona && !asignacionTipo && (
-              <p className="text-xs text-red-600">Selecciona si asignas por Unidad o Caseta.</p>
-            )}
-            {zona && asignacionTipo && !seleccionValida && (
-              <p className="text-xs text-red-600">
-                {asignacionTipo === 'unidad'
-                  ? 'Debes seleccionar una Unidad.'
-                  : 'Debes seleccionar una Caseta.'}
-              </p>
-            )}
-
-            <Button type="submit" disabled={loading || !seleccionValida}>
-              {loading ? 'Creando...' : 'Crear usuario'}
-            </Button>
-          </form>
+          </div>
         </CardContent>
       </Card>
     </main>

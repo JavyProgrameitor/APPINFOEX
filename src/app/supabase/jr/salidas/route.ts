@@ -1,6 +1,6 @@
 // src/app/api/jr/salidas/route.ts
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/server/server'
 
 const TIPOS_SALIDA_PERMITIDOS = ['Extincion', 'Prevencion'] as const
 

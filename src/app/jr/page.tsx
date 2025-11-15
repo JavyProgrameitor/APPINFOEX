@@ -34,7 +34,7 @@ export default function StartJR() {
   // Carga de sesión + destino (sin auto-redirect)
   useEffect(() => {
     ;(async () => {
-      const meRes = await fetch('/api/me', { credentials: 'include' })
+      const meRes = await fetch('/supabase/me', { credentials: 'include' })
       if (meRes.status !== 200) {
         router.replace('/')
         return
@@ -45,7 +45,7 @@ export default function StartJR() {
         return
       }
 
-      const destRes = await fetch('/api/jr/destino', {
+      const destRes = await fetch('/supabase/jr/destino', {
         credentials: 'include',
       })
       const djson = await destRes.json()

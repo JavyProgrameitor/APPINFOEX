@@ -1,20 +1,20 @@
-// src/app/api/unidades/route.ts
+// src/app/api/casetas/route.ts
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/server/server'
 
 export async function GET(req: Request) {
   const url = new URL(req.url)
-  const zona = url.searchParams.get('zona')
+  const municipioId = url.searchParams.get('municipio_id')
   const supabase = await createClient()
 
-  if (!zona) {
+  if (!municipioId) {
     return NextResponse.json([], { status: 200 })
   }
 
   const { data, error } = await supabase
-    .from('unidades')
-    .select('id,nombre')
-    .eq('zona', zona)
+    .from('casetas')
+    .select('id,nombre,municipio_id')
+    .eq('municipio_id', municipioId)
     .order('nombre', { ascending: true })
 
   if (error) {

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Separator } from '@/components/ui/Separator'
 import { Copy } from 'lucide-react'
-import { getSupabaseBrowser } from '@/lib/supabase/client'
+import { getSupabaseBrowser } from '@/server/client'
 
 interface Unidad {
   id: string
@@ -59,7 +59,6 @@ export default function Page() {
   )
 }
 
-/** Tu componente original, sin cambiar estilos ni estructura */
 function AdminListBFPageInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -74,7 +73,6 @@ function AdminListBFPageInner() {
   const [anotaciones, setAnotaciones] = useState<Anotacion[] | null>(null)
   const [loadingAnot, setLoadingAnot] = useState(false)
 
-  // Cargar usuario y su adscripción
   useEffect(() => {
     ;(async () => {
       if (!id) return

@@ -140,7 +140,11 @@ export default function AuthPage() {
 
             {error && <p className="text-sm text-foreground">{error}</p>}
 
-            <Button type="submit" className="w-full text-sm font-black" disabled={loading}>
+            <Button
+              type="submit"
+              className="w-full text-sm font-black cursor-pointer"
+              disabled={loading}
+            >
               {loading ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>

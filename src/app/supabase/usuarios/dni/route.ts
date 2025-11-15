@@ -1,6 +1,6 @@
 // src/app/api/usuarios/dni/route.ts
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/server/server'
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { getSupabaseBrowser } from '@/lib/supabase/client'
+import { getSupabaseBrowser } from '@/server/client'
 import { RefreshCcw, Search, ChevronLeft, ChevronRight, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -47,7 +47,7 @@ interface UsuarioBF {
 }
 
 // Tamaños disponibles
-const PAGE_SIZES = [20, 40, 60] as const
+const PAGE_SIZES = [5, 10, 20, 40, 60] as const
 type Scope = 'unidad' | 'caseta'
 
 export default function AdminHomePage() {
@@ -208,10 +208,10 @@ export default function AdminHomePage() {
   return (
     <main className="p-4 md:p-6 max-w-6xl mx-auto space-y-4 shadow-accent">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <h1 className="text-center text-xl md:text-2xl font-semibold text-accent">
+        <h1 className="text-center text-xl md:text-2xl font-bold text-accent">
           Bomberos y Jefes de Servicio
         </h1>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center justify-center gap-2">
           <Button
             variant="ghost"
             size="icon"
@@ -289,7 +289,7 @@ export default function AdminHomePage() {
 
       <Card className="shadow-accent">
         <CardHeader className="gap-2">
-          <CardTitle className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-base md:text-2xl">
+          <CardTitle className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:text-xl">
             <span>
               <User className="inline mr-2 h-5 w-5" />
               {total} Bomberos registrado{total === 1 ? '' : 's'}
@@ -301,20 +301,19 @@ export default function AdminHomePage() {
               ) : null}
             </span>
 
-            <div className="relative w-full md:max-w-sm">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 opacity-60" />
+            <div className="relative md:max-w-xl text-xs">
+              <Search className="absolute top-4 h-4 opacity-60" />
               <Input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Buscar por DNI, nombre, apellidos o email…"
-                className="pl-8 rounded-sm"
+                placeholder="Busqueda por DNI, nombre, apellidos o email…"
+                className="pl-8 w-80 rounded-sm"
               />
             </div>
           </CardTitle>
         </CardHeader>
 
         <CardContent className="space-y-4 shadow-accent">
-          {/* Grid de cards como en /admin/list */}
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {Array.from({ length: 6 }).map((_, i) => (

@@ -226,7 +226,7 @@ function ExitJR() {
         return
       }
 
-      const res = await fetch('/api/jr/salidas', {
+      const res = await fetch('/supabase/jr/salidas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fecha, users_ids, salidas: salidasPayload }),
@@ -317,122 +317,134 @@ function ExitJR() {
               Bomberos disponibles: <b className="text-primary">{totalBomberos}</b>
             </div>
           </CardHeader>
-
           <CardContent className="space-y-3 rounded-2xl">
-            <div className="overflow-x-auto rounded-2xl">
+            <div className="overflow-x-auto rounded-2xl cursor-pointer">
               {/* Cabecera solo en escritorio (lg+) */}
-              <div className="hidden lg:grid grid-cols-[minmax(110px,160px)_minmax(110px,160px)_minmax(110px,160px)_minmax(0,1fr)_minmax(110px,170px)_minmax(90px,120px)] gap-2 bg-muted text-left text-sm font-bold px-2 py-2 rounded-xl">
-                <div>Tipo</div>
+              <div className="hidden lg:grid lg:grid-cols-[minmax(110px,150px)_minmax(110px,150px)_minmax(110px,150px)_minmax(110px,150px)_minmax(90px,140px)] gap-2 bg-muted text-sm font-bold px-2 py-2 rounded-xl text-center">
+                <div>Tipo salida</div>
                 <div>Hora salida</div>
                 <div>Hora entrada</div>
-                <div>Lugar</div>
                 <div>Nº intervinientes</div>
                 <div></div>
               </div>
 
-              <div className="space-y-2 mt-2">
+              {/* Filas */}
+              <div className="space-y-1 mt-2 lg:space-y-2">
                 {salidas.map((s, idx) => {
                   const touched = isTouched(s)
                   return (
                     <div
                       key={idx}
                       className={[
-                        'grid gap-2 px-2 py-3 rounded-xl border transition',
-                        'lg:grid-cols-[minmax(110px,160px)_minmax(110px,160px)_minmax(110px,160px)_minmax(0,1fr)_minmax(110px,170px)_minmax(90px,120px)] lg:items-center',
+                        'px-2 py-3 rounded-xl border transition space-y-2',
                         touched
                           ? 'bg-muted/50 dark:bg-muted/30 border-primary/50 ring-1 ring-primary/25'
                           : 'bg-background hover:bg-muted/40 dark:hover:bg-muted/20 border-border hover:border-primary/30 focus-within:ring-1 focus-within:ring-primary/30',
                       ].join(' ')}
                     >
-                      {/* Tipo */}
-                      <div className="space-y-1 min-w-0">
-                        <label className="lg:hidden text-lg font-bold text-muted-foreground">
-                          Tipo
-                        </label>
-                        <select
-                          className="w-full border rounded px-2 py-1 text-lg bg-background h-9"
-                          value={s.tipo}
-                          onChange={(e) =>
-                            changeSalida(idx, 'tipo', e.target.value as 'Extincion' | 'Prevencion')
-                          }
-                          aria-label="Tipo de salida"
-                        >
-                          {TIPOS_SALIDA.map((t) => (
-                            <option key={t} value={t}>
-                              {t}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                      {/* Bloque tabla (PC) + layout compacto (móvil) */}
+                      <div
+                        className={[
+                          'grid gap-2 text-center',
+                          'lg:grid-cols-[minmax(110px,150px)_minmax(110px,150px)_minmax(110px,150px)_minmax(110px,150px)_minmax(90px,140px)] lg:items-center',
+                        ].join(' ')}
+                      >
+                        {/* Tipo */}
+                        <div className="space-y-1">
+                          <label className="lg:hidden text-lg font-bold text-muted-foreground">
+                            Tipo
+                          </label>
+                          <select
+                            className="lg:w-32 border rounded-2xl px-2 py-1 text-xs bg-background h-9"
+                            value={s.tipo}
+                            onChange={(e) =>
+                              changeSalida(
+                                idx,
+                                'tipo',
+                                e.target.value as 'Extincion' | 'Prevencion',
+                              )
+                            }
+                            aria-label="Tipo de salida"
+                          >
+                            {TIPOS_SALIDA.map((t) => (
+                              <option key={t} value={t}>
+                                {t}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
 
-                      {/* Hora salida */}
-                      <div className="space-y-1 min-w-0">
-                        <label className="lg:hidden text-lg font-bold text-muted-foreground">
-                          Hora salida
-                        </label>
-                        <Input
-                          type="time"
-                          className="h-9 text-lg w-full lg:w-28"
-                          value={s.hora_salida}
-                          onChange={(e) => changeSalida(idx, 'hora_salida', e.target.value)}
-                          aria-label="Hora de salida"
-                        />
-                      </div>
+                        {/* Hora salida */}
+                        <div className="space-y-1">
+                          <label className="lg:hidden text-lg font-bold text-muted-foreground">
+                            Hora salida
+                          </label>
+                          <Input
+                            type="time"
+                            className="h-9 text-sm  lg:w-24"
+                            value={s.hora_salida}
+                            onChange={(e) => changeSalida(idx, 'hora_salida', e.target.value)}
+                            aria-label="Hora de salida"
+                          />
+                        </div>
 
-                      {/* Hora entrada */}
-                      <div className="space-y-1 min-w-0">
-                        <label className="lg:hidden text-lg font-bold text-muted-foreground">
-                          Hora entrada
-                        </label>
-                        <Input
-                          type="time"
-                          className="h-9 text-lg w-full lg:w-28"
-                          value={s.hora_entrada}
-                          onChange={(e) => changeSalida(idx, 'hora_entrada', e.target.value)}
-                          aria-label="Hora de entrada"
-                        />
-                      </div>
+                        {/* Hora entrada */}
+                        <div className="space-y-1 min-w-0">
+                          <label className="lg:hidden text-lg font-bold text-muted-foreground">
+                            Hora entrada
+                          </label>
+                          <Input
+                            type="time"
+                            className="h-9 text-sm lg:w-24"
+                            value={s.hora_entrada}
+                            onChange={(e) => changeSalida(idx, 'hora_entrada', e.target.value)}
+                            aria-label="Hora de entrada"
+                          />
+                        </div>
 
-                      {/* Lugar */}
-                      <div className="space-y-1 min-w-0 lg:justify-self-stretch">
-                        <label className="lg:hidden text-lg font-bold text-muted-foreground">
-                          Zona
-                        </label>
-                        <Input
-                          placeholder="zona de intervencion"
-                          className="w-full min-w-0 h-9 text-lg"
-                          value={s.lugar}
-                          onChange={(e) => changeSalida(idx, 'lugar', e.target.value)}
-                          aria-label="Lugar"
-                        />
-                      </div>
-
-                      {/* Nº intervinientes */}
-                      <div className="space-y-1 min-w-0">
-                        <label className="lg:hidden text-lg font-bold text-muted-foreground">
-                          Bomberos hoy {totalBomberos}
-                        </label>
-                        <input
-                          type="tel"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          className="w-28 lg:w-24 text-right border rounded px-2 py-1 text-lg bg-background h-9 m-2"
-                          value={String(s.num_intervienen)}
-                          onChange={(e) => {
-                            const raw = e.currentTarget.value.replace(/\D+/g, '')
-                            const n = raw === '' ? 0 : parseInt(raw, 10)
-                            const safe = isFinite(n) ? Math.max(0, Math.min(n, totalBomberos)) : 0
-                            changeSalida(idx, 'num_intervienen', safe)
-                          }}
-                          aria-label="Número de intervinientes"
-                        />
-                      </div>
-
-                      {/* Acción */}
-                      <div className="flex lg:justify-end">
-                        <Button variant="secondary" onClick={() => removeSalida(idx)}>
-                          Eliminar
-                        </Button>
+                        {/* Nº intervinientes */}
+                        <div className="space-y-1 min-w-0">
+                          <label className="lg:hidden text-lg font-bold text-muted-foreground">
+                            Bomberos hoy {totalBomberos}
+                          </label>
+                          <input
+                            type="tel"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            className="w-24 lg:w-20 text-right border rounded px-2 py-1 text-sm bg-background h-9"
+                            value={String(s.num_intervienen)}
+                            onChange={(e) => {
+                              const raw = e.currentTarget.value.replace(/\D+/g, '')
+                              const n = raw === '' ? 0 : parseInt(raw, 10)
+                              const safe = isFinite(n) ? Math.max(0, Math.min(n, totalBomberos)) : 0
+                              changeSalida(idx, 'num_intervienen', safe)
+                            }}
+                            aria-label="Número de intervinientes"
+                          />
+                        </div>
+                        {/* Zona intervención FUERA de la tabla en PC, pero visible también en móvil */}
+                        <div className="space-y-1 text-center lg:text-left">
+                          <label className="text-lg font-bold text-muted-foreground lg:text-sm">
+                            Zona de intervención
+                          </label>
+                          <Input
+                            placeholder="Zona de intervención"
+                            className="w-48 h-9 text-sm lg:h-10"
+                            value={s.lugar}
+                            onChange={(e) => changeSalida(idx, 'lugar', e.target.value)}
+                            aria-label="Lugar"
+                          />
+                        </div>
+                        {/* Acción */}
+                        <div className="flex justify-center">
+                          <Button
+                            variant="secondary"
+                            className="font-bold border-2 border-lime-50 cursor-pointer transition-colors hover:bg-lime-200 hover:text-lime-900"
+                            onClick={() => removeSalida(idx)}
+                          >
+                            Eliminar
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   )
@@ -446,23 +458,24 @@ function ExitJR() {
                 <AlertDescription className="text-base font-semibold">{msg}</AlertDescription>
               </Alert>
             )}
-
-            <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-              <Button className="font-bold border-2 border-lime-50" onClick={addSalida}>
-                Añadir salida
-              </Button>
-            </div>
-
             <div className="flex justify-end gap-2">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <Button
+                  className="font-bold border-2 border-lime-50 cursor-pointer transition-colors hover:bg-lime-200 hover:text-lime-900"
+                  onClick={addSalida}
+                >
+                  Añadir salida
+                </Button>
+              </div>
               <Button
                 variant="secondary"
-                className="font-bold border-2 border-lime-50"
+                className="font-bold border-2 border-lime-50 cursor-pointer transition-colors hover:bg-lime-200 hover:text-lime-900"
                 onClick={volverAAnotaciones}
               >
                 Atrás
               </Button>
               <Button
-                className="font-bold border-2 border-lime-50"
+                className="font-bold border-2 border-lime-50 cursor-pointer transition-colors hover:bg-lime-200 hover:text-lime-900"
                 onClick={guardarSalidas}
                 disabled={loading}
               >
@@ -471,7 +484,6 @@ function ExitJR() {
             </div>
           </CardContent>
         </Card>
-
         {metaStorageKey ? (
           <small className="text-xs text-muted-foreground">
             Última subida en este dispositivo{' '}

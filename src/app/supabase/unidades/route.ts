@@ -1,6 +1,6 @@
-// src/app/api/municipios/route.ts
+// src/app/api/unidades/route.ts
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/server/server'
 
 export async function GET(req: Request) {
   const url = new URL(req.url)
@@ -12,7 +12,7 @@ export async function GET(req: Request) {
   }
 
   const { data, error } = await supabase
-    .from('municipios')
+    .from('unidades')
     .select('id,nombre')
     .eq('zona', zona)
     .order('nombre', { ascending: true })

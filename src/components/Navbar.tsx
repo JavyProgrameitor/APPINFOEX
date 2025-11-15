@@ -41,7 +41,7 @@ export default function NavBar() {
       }
       setLoading(true)
       try {
-        const res = await fetch('/api/me', {
+        const res = await fetch('/supabase/me', {
           method: 'GET',
           credentials: 'include',
         })
@@ -88,7 +88,7 @@ export default function NavBar() {
 
   const onLogout = async () => {
     try {
-      await fetch('/api/logout', { method: 'POST', credentials: 'include' })
+      await fetch('/supabase/logout', { method: 'POST', credentials: 'include' })
     } catch {}
     justLoggedOutRef.current = true
     setEmail(null)

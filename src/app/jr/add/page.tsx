@@ -178,7 +178,7 @@ function AgregarBomberos() {
       setCargando(true)
       setMensaje(null)
       try {
-        const res = await fetch(`/api/usuarios/zona?zona=${encodeURIComponent(ctx.zona)}`, {
+        const res = await fetch(`/supabase/usuarios/zona?zona=${encodeURIComponent(ctx.zona)}`, {
           credentials: 'include',
         })
         if (!res.ok) {

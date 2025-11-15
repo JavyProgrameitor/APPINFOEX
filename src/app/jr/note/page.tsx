@@ -118,7 +118,7 @@ function NoteJR() {
         }
       } catch {}
       try {
-        const res = await fetch('/api/jr/destino', { credentials: 'include' })
+        const res = await fetch('/supabase/jr/destino', { credentials: 'include' })
         if (res.ok) {
           const djson = await res.json()
           const fallback: JRContext =
@@ -248,7 +248,7 @@ function NoteJR() {
       const updates: Record<string, { users_id: string }> = {}
       for (const b of bomberos) {
         try {
-          const res = await fetch(`/api/usuarios/dni?dni=${encodeURIComponent(b.dni)}`, {
+          const res = await fetch(`/supabase/usuarios/dni?dni=${encodeURIComponent(b.dni)}`, {
             credentials: 'include',
           })
           if (res.ok) {
@@ -344,7 +344,7 @@ function NoteJR() {
 
   // API
   async function postAnotaciones(payload: Anotacion[], opts?: { replace?: boolean }) {
-    const url = opts?.replace ? '/api/jr/anotaciones?replace=1' : '/api/jr/anotaciones'
+    const url = opts?.replace ? '/supabase/jr/anotaciones?replace=1' : '/supabase/jr/anotaciones'
     return fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -354,7 +354,7 @@ function NoteJR() {
 
   async function replaceViaDeleteThenPost(payload: Anotacion[]) {
     const users = payload.map((p) => p.users_id)
-    await fetch(`/api/jr/anotaciones?fecha=${encodeURIComponent(fechaDia)}`, {
+    await fetch(`/supabase/jr/anotaciones?fecha=${encodeURIComponent(fechaDia)}`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ users_ids: users }),
@@ -546,9 +546,9 @@ function NoteJR() {
               </div>
             ) : (
               <>
-                <div className="overflow-x-auto rounded-2xl">
+                <div className="overflow-x-auto rounded-2xl text-center cursor-pointer">
                   {/* Encabezado solo en escritorio verdadero (lg+) */}
-                  <div className="hidden lg:grid grid-cols-[minmax(110px,150px)_minmax(140px,1fr)_minmax(160px,1fr)_minmax(110px,130px)_minmax(120px,140px)_minmax(120px,150px)_minmax(120px,150px)] gap-2 bg-muted text-left text-sm font-bold px-2 py-2 rounded-xl">
+                  <div className="hidden lg:grid grid-cols-7 gap-3 bg-muted text-left text-sm font-bold px-2 py-2 rounded-xl">
                     <div>DNI</div>
                     <div>Nombre</div>
                     <div>Apellidos</div>
@@ -558,7 +558,8 @@ function NoteJR() {
                     <div>Horas extras</div>
                   </div>
 
-                  <div className="space-y-2 mt-2">
+                  {/* Filas */}
+                  <div className="space-y-1 mt-2 lg:space-y-2">
                     {(bomberos || []).map((b) => {
                       const a = anotaciones[b.dni]
                       const touched = isTouched(a)
@@ -570,10 +571,11 @@ function NoteJR() {
                           key={b.dni}
                           className={[
                             'grid gap-2 px-2 py-3 rounded-xl border transition',
-                            'lg:grid-cols-[minmax(110px,150px)_minmax(140px,1fr)_minmax(160px,1fr)_minmax(110px,130px)_minmax(120px,140px)_minmax(120px,150px)_minmax(120px,150px)] lg:items-center',
+                            // en escritorio: 7 columnas alineadas con el header
+                            'lg:grid-cols-7 lg:items-center',
                             touched
                               ? 'bg-muted/50 dark:bg-muted/30 border-primary/50 ring-1 ring-primary/25'
-                              : 'bg-background hover:bg-muted/40 dark:hover:bg-muted/20 border-border hover:border-primary/30 focus-within:ring-1 focus-within:ring-primary/30',
+                              : 'bg-background hover:bg-muted/40 border-muted/60 focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/40',
                           ].join(' ')}
                         >
                           {/* DNI */}
@@ -612,7 +614,8 @@ function NoteJR() {
                               Código de trabajo
                             </label>
                             <select
-                              className="w-full border rounded px-2 py-1 text-sm bg-background h-9"
+                              // en móvil ocupa todo, en escritorio lo limitamos
+                              className="lg:w-12 xl:w-24 border rounded px-2 py-1 text-sm bg-background h-9 m-1"
                               value={a?.codigo ?? DEFAULTS.codigo}
                               onChange={(e) => handleChange(b.dni, 'codigo', e.target.value)}
                               aria-label="Código de trabajo"
@@ -655,15 +658,16 @@ function NoteJR() {
 
                           {/* Horas extras */}
                           <div className="space-y-1">
-                            <label className="text-lg font-bold text-muted-foreground">
-                              <span className="lg:inline">Horas extras</span>
+                            <label className="lg:hidden text-lg font-bold text-muted-foreground">
+                              Horas extras
                             </label>
                             <input
                               type="number"
                               inputMode="decimal"
                               step={0.25}
                               min={0}
-                              className="w-24 lg:w-28 rounded border px-2 py-1 text-right text-sm bg-background appearance-auto h-9 m-2"
+                              // ancho contenido y sin márgenes que lo saquen fuera
+                              className="w-14 lg:w-16 xl:w-20 rounded border px-2 py-1 text-right text-sm bg-background appearance-auto h-9 m-1"
                               value={uiHX}
                               onChange={(e) => {
                                 const v = e.target.value
@@ -686,7 +690,6 @@ function NoteJR() {
                     })}
                   </div>
                 </div>
-
                 {msg && (
                   <Alert variant="destructive">
                     <AlertTitle className="font-bold text-lg">Error</AlertTitle>
@@ -697,19 +700,24 @@ function NoteJR() {
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="secondary"
-                    className="font-bold border-2 border-lime-50"
+                    className="font-bold border-2 border-lime-50 cursor-pointer transition-colors hover:bg-lime-200 hover:text-lime-900"
                     onClick={volverABomberos}
                   >
                     Atrás
                   </Button>
+
                   <Button
-                    className="font-bold border-2 border-lime-50"
+                    className="font-bold border-2 border-lime-50 cursor-pointer transition-colors hover:bg-lime-200 hover:text-lime-900"
                     onClick={guardarAnotacionesAhora}
                     disabled={saving}
                   >
                     {saving ? 'Guardando…' : 'Guardar diario '}
                   </Button>
-                  <Button className="font-bold border-2 border-lime-50" onClick={irASalidas}>
+
+                  <Button
+                    className="font-bold border-2 border-lime-50 cursor-pointer transition-colors hover:bg-lime-200 hover:text-lime-900"
+                    onClick={irASalidas}
+                  >
                     Siguiente: Salidas
                   </Button>
                 </div>
@@ -745,7 +753,7 @@ function NoteJR() {
               onClick={onConfirmReplace}
               disabled={confirmLoading}
             >
-              {confirmLoading ? 'Reemplazando…' : 'Reemplazar ahora'}
+              {confirmLoading ? 'Insertando....' : 'Insertar ahora'}
             </Button>
           </DialogFooter>
         </DialogContent>
