@@ -288,9 +288,7 @@ function NoteJR() {
     return () => {
       cancelled = true
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bomberos])
-
+  }, [bomberos, uiHorasExtras])
   // Persistencia
   useEffect(() => {
     try {
@@ -298,7 +296,6 @@ function NoteJR() {
       if (anotDraftKey) localStorage.setItem(anotDraftKey, JSON.stringify(anotaciones))
     } catch {}
   }, [anotaciones, anotStorageKey, anotDraftKey])
-
   // Handlers
   const handleChange = (dni: string, field: keyof Anotacion, value: string | number) => {
     if (field === 'fecha') return
@@ -317,7 +314,6 @@ function NoteJR() {
       },
     }))
   }
-
   const onHorasChange = (dni: string, raw: string) => {
     setUiHorasExtras((prev) => ({ ...prev, [dni]: raw }))
   }
@@ -341,7 +337,6 @@ function NoteJR() {
       }))
     }
   }
-
   // API
   async function postAnotaciones(payload: Anotacion[], opts?: { replace?: boolean }) {
     const url = opts?.replace ? '/supabase/jr/anotaciones?replace=1' : '/supabase/jr/anotaciones'
@@ -470,7 +465,6 @@ function NoteJR() {
     })
     router.push(`/jr/add?${sp.toString()}`)
   }
-
   // Render
   if (ctx === undefined) {
     return (
@@ -479,7 +473,6 @@ function NoteJR() {
       </main>
     )
   }
-
   if (ctx === null) {
     return (
       <main className="min-h-dvh w-full grid place-items-center p-4">
@@ -492,9 +485,7 @@ function NoteJR() {
       </main>
     )
   }
-
   const listaCargando = bomberos === null
-
   const isTouched = (a?: Anotacion) => {
     if (!a) return false
     return (
@@ -547,7 +538,7 @@ function NoteJR() {
             ) : (
               <>
                 <div className="overflow-x-auto rounded-2xl text-center cursor-pointer">
-                  {/* Encabezado solo en escritorio verdadero (lg+) */}
+                  {/* Encabezado */}
                   <div className="hidden lg:grid grid-cols-7 gap-3 bg-muted text-left text-sm font-bold px-2 py-2 rounded-xl">
                     <div>DNI</div>
                     <div>Nombre</div>
@@ -557,7 +548,6 @@ function NoteJR() {
                     <div>Salida</div>
                     <div>Horas extras</div>
                   </div>
-
                   {/* Filas */}
                   <div className="space-y-1 mt-2 lg:space-y-2">
                     {(bomberos || []).map((b) => {
@@ -571,14 +561,12 @@ function NoteJR() {
                           key={b.dni}
                           className={[
                             'grid gap-2 px-2 py-3 rounded-xl border transition',
-                            // en escritorio: 7 columnas alineadas con el header
                             'lg:grid-cols-7 lg:items-center',
                             touched
                               ? 'bg-muted/50 dark:bg-muted/30 border-primary/50 ring-1 ring-primary/25'
                               : 'bg-background hover:bg-muted/40 border-muted/60 focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/40',
                           ].join(' ')}
                         >
-                          {/* DNI */}
                           <div className="space-y-1">
                             <label className="lg:hidden text-lg font-bold text-muted-foreground">
                               DNI
@@ -587,8 +575,6 @@ function NoteJR() {
                               {b.dni}
                             </div>
                           </div>
-
-                          {/* Nombre */}
                           <div className="space-y-1">
                             <label className="lg:hidden text-lg font-bold text-muted-foreground">
                               Nombre
@@ -597,8 +583,6 @@ function NoteJR() {
                               {b.nombre}
                             </div>
                           </div>
-
-                          {/* Apellidos */}
                           <div className="space-y-1">
                             <label className="lg:hidden text-lg font-bold text-muted-foreground">
                               Apellidos
@@ -607,8 +591,6 @@ function NoteJR() {
                               {b.apellidos}
                             </div>
                           </div>
-
-                          {/* Código */}
                           <div className="space-y-1">
                             <label className="lg:hidden text-lg font-bold text-muted-foreground">
                               Código de trabajo
@@ -627,8 +609,6 @@ function NoteJR() {
                               ))}
                             </select>
                           </div>
-
-                          {/* Entrada */}
                           <div className="space-y-1">
                             <label className="lg:hidden text-lg font-bold text-muted-foreground">
                               Entrada
@@ -641,8 +621,6 @@ function NoteJR() {
                               aria-label="Hora de entrada"
                             />
                           </div>
-
-                          {/* Salida */}
                           <div className="space-y-1">
                             <label className="lg:hidden text-lg font-bold text-muted-foreground">
                               Salida
@@ -655,8 +633,6 @@ function NoteJR() {
                               aria-label="Hora de salida"
                             />
                           </div>
-
-                          {/* Horas extras */}
                           <div className="space-y-1">
                             <label className="lg:hidden text-lg font-bold text-muted-foreground">
                               Horas extras
@@ -726,14 +702,13 @@ function NoteJR() {
           </CardContent>
         </Card>
       </div>
-
       {/* Modal de confirmación */}
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitleUI className="font-black">Guardar anotación del día</DialogTitleUI>
             <DialogDescription className="text-base">
-              Se guardará el diario de <b>{fechaDia}</b> Guardando la anotación existente (si la
+              Se guardará el diario de <b>{fechaDia}</b> Guardando en la anotación existente (si la
               hubiera) para los usuarios seleccionados.
             </DialogDescription>
           </DialogHeader>

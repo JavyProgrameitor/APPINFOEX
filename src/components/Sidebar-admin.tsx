@@ -4,12 +4,13 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { usePathname } from 'next/navigation'
 import type { LucideIcon } from 'lucide-react'
-import { FileText, Home, Users } from 'lucide-react'
+import { FileText, Home, Users, UserX } from 'lucide-react'
 
 const links = [
   { href: '/admin', label: 'Listar usuarios', icon: Home },
   { href: '/admin/list', label: 'Ver usuario', icon: FileText },
   { href: '/admin/users', label: 'Agregar usuario', icon: Users },
+  { href: '/admin/delete', label: 'Eliminar usuario', icon: UserX },
 ]
 
 export function SidebarAdmin({ className }: { className?: string }) {
@@ -54,7 +55,7 @@ export function SidebarAdmin({ className }: { className?: string }) {
 
                 // Micro-animación en hover (no en activo)
                 !active &&
-                  'hover:translate-y-[1px] hover:shadow-[0_4px_14px_rgba(0,0,0,0.14)] dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.6)]',
+                  'hover:translate-y-px hover:shadow-[0_4px_14px_rgba(0,0,0,0.14)] dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.6)]',
               )}
             >
               {/* Icono */}

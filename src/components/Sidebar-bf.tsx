@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { usePathname } from 'next/navigation'
 
-const links = [{ href: '/bf/list', label: 'Listar' }]
+const links = [{ href: '/bf/list', label: 'Mis Datos' }]
 
 export function SidebarBF({ className }: { className?: string }) {
   const pathname = usePathname()
