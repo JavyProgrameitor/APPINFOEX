@@ -17,7 +17,6 @@ export async function createClient() {
           }))
         },
         setAll(cookiesToSet) {
-          // en rutas API de Next, a veces es de solo lectura
           cookiesToSet.forEach(({ name, value, options }) => {
             try {
               cookieStore.set(name, value, options)

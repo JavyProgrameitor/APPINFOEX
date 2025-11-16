@@ -17,12 +17,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" suppressHydrationWarning>
-      {/* 👇 clave: layout de toda la app */}
       <body className="min-h-dvh flex flex-col overflow-x-hidden">
         <ThemeProvider>
           <NavBar />
           <ToasterProvider>
-            {/* 👇 el área que crece */}
             <main className="flex-1">{children}</main>
           </ToasterProvider>
           <Footer />

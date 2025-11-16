@@ -52,13 +52,13 @@ export function SidebarJR({ className }: { className?: string }) {
 
                 // Micro-animación en hover (no en activo)
                 !active &&
-                  'hover:translate-y-[1px] hover:shadow-[0_4px_14px_rgba(0,0,0,0.14)] dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.6)]',
+                  'hover:translate-y-px hover:shadow-[0_4px_14px_rgba(0,0,0,0.14)] dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.6)]',
               )}
             >
               {/* Icono */}
               <l.icon
                 className={cn(
-                  'size-4 shrink-0 transition-all duration-200',
+                  'size-6 shrink-0 transition-all duration-200 stroke-yellow-500 ring-1 bg-destructive rounded-sm p-0.5',
                   active ? 'scale-110' : 'opacity-80 group-hover:opacity-100 group-hover:scale-105',
                 )}
               />

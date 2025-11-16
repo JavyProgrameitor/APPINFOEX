@@ -63,7 +63,7 @@ export default function AdminHomePage() {
 
   // paginación
   const [page, setPage] = useState(1) // 1-based
-  const [pageSize, setPageSize] = useState<(typeof PAGE_SIZES)[number]>(40)
+  const [pageSize, setPageSize] = useState<(typeof PAGE_SIZES)[number]>(5)
 
   // datos
   const [unidades, setUnidades] = useState<Unidad[]>([])
@@ -255,8 +255,6 @@ export default function AdminHomePage() {
               Casetas
             </Button>
           </div>
-
-          {/* Select de Unidad/Caseta */}
           {scope === 'unidad' ? (
             <Select value={unidadId} onValueChange={setUnidadId} disabled={!zona}>
               <SelectTrigger className="min-w-56 rounded-sm">

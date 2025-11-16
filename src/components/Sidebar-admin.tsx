@@ -61,7 +61,7 @@ export function SidebarAdmin({ className }: { className?: string }) {
               {/* Icono */}
               <l.icon
                 className={cn(
-                  'size-4 shrink-0 transition-all duration-200',
+                  'size-6 shrink-0 transition-all duration-200 stroke-yellow-500 ring-1 bg-destructive rounded-sm p-0.5',
                   active ? 'scale-110' : 'opacity-80 group-hover:opacity-100 group-hover:scale-105',
                 )}
               />

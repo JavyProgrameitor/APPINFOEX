@@ -201,16 +201,14 @@ function BFListPageInner() {
 
   const zona = unidad?.zona || municipio?.zona || '—'
 
-  const tituloPrincipal = 'Mi ficha de Bombero Forestal'
-
   return (
     <main className="p-4 md:p-6 max-w-3xl mx-auto">
       <Card className="rounded-2xl shadow-accent">
         <CardHeader className="flex flex-row items-center justify-between gap-2">
           <div>
             <CardTitle className="text-lg md:text-xl text-accent flex items-center gap-2">
-              <Flame className="h-5 w-5" />
-              {tituloPrincipal}
+              <Flame color="#F52121" />
+              Mi ficha de Bombero Forestal
             </CardTitle>
             <p className="text-xs text-muted-foreground mt-1">
               Aquí puedes consultar todos los datos que se han registrado sobre tu rol de Bombero
