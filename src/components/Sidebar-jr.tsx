@@ -4,9 +4,10 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { usePathname } from 'next/navigation'
 import type { LucideIcon } from 'lucide-react'
-import { CalendarClock, Users, DoorOpen } from 'lucide-react'
+import { CalendarClock, Users, DoorOpen, Home } from 'lucide-react'
 
 const links = [
+  { href: '/jr', label: 'Inicio', icon: Home },
   { href: '/jr/add', label: 'Agregar Bomberos', icon: Users },
   { href: '/jr/note', label: 'Anotaciones Diarias', icon: CalendarClock },
   { href: '/jr/exit', label: 'Salidas Diarias', icon: DoorOpen },

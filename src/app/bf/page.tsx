@@ -31,11 +31,20 @@ export default function BFHome() {
         }
 
         const me = await res.json()
+
+        const allowedRoles = ['bf', 'jr'] as const
+        if (!allowedRoles.includes(me.rol)) {
+          // Si no es bombero forestal ni jefe de retén, lo mandamos fuera
+          router.replace('/')
+          return
+        }
+        /*
         if (me.rol !== 'bf') {
           // Si no es bombero forestal, lo mandamos fuera
           router.replace('/')
           return
         }
+          */
       } catch (e) {
         router.replace('/')
         return
@@ -92,9 +101,9 @@ export default function BFHome() {
   }
 
   return (
-    <div className="min-h-dvh flex items-center justify-center   p-4">
+    <div className="min-h-dvh flex items-center justify-center">
       <div className="w-full max-w-md space-y-4">
-        <Card>
+        <Card className="rounded-2xl shadow-2xl shadow-accent">
           <CardHeader>
             <CardTitle className="text-lg">Cambiar contraseña</CardTitle>
           </CardHeader>

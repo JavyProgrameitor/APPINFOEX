@@ -74,9 +74,23 @@ export async function middleware(req: NextRequest) {
 
   const rol = String(rec.rol) as Rol
 
+  /*
   // 3) ruta permitida
   if (!ROUTE_ROLE[rol].test(pathname)) {
     return NextResponse.redirect(new URL(HOME_BY_ROLE[rol], req.url))
+  }
+*/
+  // 3) ruta permitida
+  if (rol === 'jr') {
+    // Los jefes de retén (jr) pueden acceder a /jr y también a /bf
+    const allowedForJr = ROUTE_ROLE.jr.test(pathname) || ROUTE_ROLE.bf.test(pathname)
+    if (!allowedForJr) {
+      return NextResponse.redirect(new URL(HOME_BY_ROLE[rol], req.url))
+    }
+  } else {
+    if (!ROUTE_ROLE[rol].test(pathname)) {
+      return NextResponse.redirect(new URL(HOME_BY_ROLE[rol], req.url))
+    }
   }
 
   return res

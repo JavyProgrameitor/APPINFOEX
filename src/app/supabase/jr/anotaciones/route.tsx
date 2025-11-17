@@ -180,3 +180,47 @@ export async function POST(req: Request) {
     )
   }
 }
+export async function DELETE(req: Request) {
+  try {
+    const supabase = await createClient()
+    const url = new URL(req.url)
+    const fecha = url.searchParams.get('fecha')
+
+    if (!fecha) {
+      return NextResponse.json({ error: 'Falta el parámetro "fecha" en la URL.' }, { status: 400 })
+    }
+
+    let users_ids: string[] | undefined = undefined
+
+    // Intentamos leer el body { users_ids: [...] }
+    try {
+      const body = await req.json().catch(() => null)
+      if (body && Array.isArray(body.users_ids)) {
+        users_ids = body.users_ids as string[]
+      }
+    } catch {
+      // Si falla el parseo del body, simplemente ignoramos y borramos por fecha solo
+    }
+
+    let query = supabase.from('anotaciones').delete().eq('fecha', fecha)
+
+    if (users_ids && users_ids.length > 0) {
+      query = query.in('users_id', users_ids)
+    }
+
+    const { error } = await query
+
+    if (error) {
+      console.error('Error al borrar anotaciones:', error.message)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ ok: true }, { status: 200 })
+  } catch (err: any) {
+    console.error('Error inesperado en DELETE /jr/anotaciones:', err)
+    return NextResponse.json(
+      { error: err?.message || 'Error interno del servidor.' },
+      { status: 500 },
+    )
+  }
+}

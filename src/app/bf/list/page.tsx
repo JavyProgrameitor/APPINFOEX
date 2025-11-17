@@ -113,12 +113,13 @@ function BFListPageInner() {
           return
         }
 
+        /*
         if (rec.rol !== 'bf') {
           // Middleware debería evitar esto, pero por si acaso:
           setError('Esta pantalla está reservada para el rol Bombero Forestal.')
           return
         }
-
+*/
         const uNorm: UsuarioBF = {
           id: rec.id,
           dni: rec.dni ?? null,

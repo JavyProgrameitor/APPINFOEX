@@ -223,7 +223,6 @@ function AgregarBomberos() {
           }
         }
 
-        // Si no logré emparejar A/B por base, caigo al comportamiento anterior:
         if (allowedIds.size === 0 && myUnitId) {
           allowedIds.add(myUnitId)
         }

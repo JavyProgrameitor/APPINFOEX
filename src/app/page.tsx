@@ -107,7 +107,7 @@ export default function AuthPage() {
 
   return (
     <main className="h-130 grid place-items-center">
-      <Card className="flex items-center max-w-sm shadow-accent rounded-xl">
+      <Card className="flex items-center max-w-sm shadow-2xl shadow-accent rounded-xl">
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="flex flex-col gap-1">

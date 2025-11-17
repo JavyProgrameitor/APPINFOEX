@@ -246,6 +246,7 @@ function NoteJR() {
     let cancelled = false
     ;(async () => {
       const updates: Record<string, { users_id: string }> = {}
+
       for (const b of bomberos) {
         try {
           const res = await fetch(`/supabase/usuarios/dni?dni=${encodeURIComponent(b.dni)}`, {
@@ -257,11 +258,14 @@ function NoteJR() {
           }
         } catch {}
       }
+
       if (cancelled) return
+
       const today = new Date().toISOString().split('T')[0]
+
       setAnotaciones((prev) => {
-        const next = { ...prev }
-        const uiNext: Record<string, string> = { ...uiHorasExtras }
+        const next: Record<string, Anotacion> = { ...prev }
+
         for (const b of bomberos) {
           if (!next[b.dni]) {
             next[b.dni] = {
@@ -272,23 +276,23 @@ function NoteJR() {
               hora_salida: DEFAULTS.hora_salida,
               horas_extras: DEFAULTS.horas_extras,
             }
-            uiNext[b.dni] = String(DEFAULTS.horas_extras)
-          } else {
-            if (!next[b.dni].fecha) next[b.dni].fecha = today
-            if (uiNext[b.dni] === undefined) {
-              uiNext[b.dni] = String(next[b.dni].horas_extras ?? DEFAULTS.horas_extras)
-            }
+          } else if (!next[b.dni].fecha) {
+            next[b.dni].fecha = today
           }
-          if (updates[b.dni]?.users_id) next[b.dni].users_id = updates[b.dni].users_id
+
+          if (updates[b.dni]?.users_id) {
+            next[b.dni].users_id = updates[b.dni].users_id
+          }
         }
-        setUiHorasExtras(uiNext)
+
         return next
       })
     })()
     return () => {
       cancelled = true
     }
-  }, [bomberos, uiHorasExtras])
+  }, [bomberos]) // 👈 SOLO depende de bomberos
+
   // Persistencia
   useEffect(() => {
     try {
@@ -398,11 +402,10 @@ function NoteJR() {
     setConfirmLoading(true)
     setSaving(true)
     try {
-      let res = await postAnotaciones(payloadRef.current, { replace: true })
-      if (!res.ok) {
-        res = await replaceViaDeleteThenPost(payloadRef.current)
-      }
+      // Siempre hacemos: DELETE (por fecha + usuarios) y luego POST
+      const res = await replaceViaDeleteThenPost(payloadRef.current)
       const json = await res.json().catch(() => ({}))
+
       if (!res.ok) {
         setMsg(json.error || 'Error al guardar las anotaciones.')
         toast({
