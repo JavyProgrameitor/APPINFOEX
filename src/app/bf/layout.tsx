@@ -49,6 +49,17 @@ export default function BFLayout({ children }: { children: React.ReactNode }) {
                     Mis Datos
                   </Link>
                 </SheetClose>
+                <SheetClose asChild>
+                  <Link
+                    href="/bf/send"
+                    className="w-10/12 text-center rounded-xl px-5 py-3 text-sm font-medium
+                               border-2 border-primary/60 bg-primary/10 hover:bg-primary/20
+                               dark:border-primary/40 dark:bg-primary/10 dark:hover:bg-primary/30
+                               transition-all duration-200 shadow-sm hover:shadow-md"
+                  >
+                    Enviar Solicitud
+                  </Link>
+                </SheetClose>
               </nav>
             </SheetContent>
           </Sheet>

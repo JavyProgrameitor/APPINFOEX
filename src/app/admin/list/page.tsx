@@ -42,23 +42,6 @@ interface Anotacion {
   horas_extras: number
 }
 
-/** Wrapper que Next 15 quiere: página envuelta en Suspense */
-export default function Page() {
-  return (
-    <Suspense
-      fallback={
-        <main className="p-4 md:p-6 max-w-3xl mx-auto">
-          <Card className="rounded-2xl shadow-accent">
-            <CardContent className="p-4 text-sm text-muted-foreground">Cargando…</CardContent>
-          </Card>
-        </main>
-      }
-    >
-      <AdminListBFPageInner />
-    </Suspense>
-  )
-}
-
 function AdminListBFPageInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -72,6 +55,18 @@ function AdminListBFPageInner() {
 
   const [anotaciones, setAnotaciones] = useState<Anotacion[] | null>(null)
   const [loadingAnot, setLoadingAnot] = useState(false)
+
+  const [horas, setHoras] = useState({
+    total: 0,
+    dias: 0,
+    restantes: 0,
+  })
+
+  const [dias, setDias] = useState({
+    year: new Date().getFullYear(),
+    vacaciones: { total: 22, usados: 0, restantes: 22 },
+    asuntosPropios: { total: 7, usados: 0, restantes: 7 },
+  })
 
   useEffect(() => {
     ;(async () => {
@@ -175,7 +170,55 @@ function AdminListBFPageInner() {
     })()
   }, [user])
 
-  const zona = unidad?.zona || municipio?.zona || '—'
+  // Cargar horas extras acumuladas
+  useEffect(() => {
+    if (!user) return
+
+    const fetchHoras = async () => {
+      try {
+        const res = await fetch(`/supabase/horas?userId=${user.id}`)
+        const data = await res.json()
+        if (!res.ok) {
+          console.error('Error horas:', data)
+          return
+        }
+        setHoras({
+          total: data.total_horas,
+          dias: data.dias_libres,
+          restantes: data.horas_restantes,
+        })
+      } catch (e) {
+        console.error(e)
+      }
+    }
+    fetchHoras()
+  }, [user])
+
+  // Cargar días V/AP del bombero
+  useEffect(() => {
+    if (!user) return
+
+    const fetchDias = async () => {
+      try {
+        const res = await fetch(`/supabase/dias?userId=${user.id}`)
+        const data = await res.json()
+        if (!res.ok) {
+          console.error('Error días V/AP:', data)
+          return
+        }
+        setDias({
+          year: data.year,
+          vacaciones: data.vacaciones,
+          asuntosPropios: data.asuntosPropios,
+        })
+      } catch (e) {
+        console.error(e)
+      }
+    }
+
+    fetchDias()
+  }, [user])
+
   const tituloRol =
     user?.rol === 'jr'
       ? 'Jefe de Servicio'
@@ -183,9 +226,20 @@ function AdminListBFPageInner() {
         ? 'Bombero Forestal'
         : 'Administrador'
 
+  const PROGRESO_UMBRAL = 3.15
+  const progreso = PROGRESO_UMBRAL > 0 ? Math.min(horas.restantes / PROGRESO_UMBRAL, 1) : 0
+
+  const progresoVac =
+    dias.vacaciones.total > 0 ? Math.min(dias.vacaciones.usados / dias.vacaciones.total, 1) : 0
+
+  const progresoAP =
+    dias.asuntosPropios.total > 0
+      ? Math.min(dias.asuntosPropios.usados / dias.asuntosPropios.total, 1)
+      : 0
+
   return (
     <main className="p-4 md:p-6 max-w-3xl mx-auto">
-      <Card className="rounded-2xl shadow-accent">
+      <Card className="rounded-2xl shadow-2xl shadow-accent">
         <CardHeader>
           <CardTitle className="text-center text-lg md:text-xl text-accent">
             Detalle del Bombero
@@ -199,7 +253,7 @@ function AdminListBFPageInner() {
               <div className="h-32 rounded bg-muted/50 animate-pulse" />
             </div>
           ) : !user ? (
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-muted-foreground ">
               No se ha encontrado el usuario. Vuelve al listado y selecciona uno.
             </div>
           ) : (
@@ -301,6 +355,86 @@ function AdminListBFPageInner() {
                       ))}
                     </ul>
                   )}
+
+                  {/* Resumen de horas extra */}
+                  <div className="mt-3 text-sm space-y-1">
+                    <p>
+                      <strong>Horas extra acumuladas:</strong> {horas.total.toFixed(2)} h
+                    </p>
+                    <p>
+                      <strong>Días libres generados:</strong> {horas.dias}
+                    </p>
+                    <p>
+                      <strong>Horas acumuladas para el próximo día libre:</strong>{' '}
+                      {horas.restantes.toFixed(2)} h
+                    </p>
+
+                    {/* Barra de progreso visual */}
+                    <div className="mt-2">
+                      <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                        <span>Progreso próximo día libre</span>
+                        <span>
+                          {horas.restantes.toFixed(2)} / {PROGRESO_UMBRAL} h
+                        </span>
+                      </div>
+                      <div className="w-full h-2 rounded-full bg-muted">
+                        <div
+                          className="h-2 rounded-full bg-amber-300"
+                          style={{ width: `${progreso * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-3 text-xs sm:text-sm space-y-2">
+                <p className="font-semibold">Año {dias.year}</p>
+
+                <div>
+                  <p>
+                    <strong>Vacaciones:</strong> {dias.vacaciones.usados} / {dias.vacaciones.total}{' '}
+                    usadas
+                    {' · '}
+                    <span className="font-medium">{dias.vacaciones.restantes} restantes</span>
+                  </p>
+                  <div className="mt-1">
+                    <div className="flex justify-between text-[0.7rem] text-muted-foreground mb-1">
+                      <span>Progreso vacaciones</span>
+                      <span>
+                        {dias.vacaciones.usados} / {dias.vacaciones.total} días
+                      </span>
+                    </div>
+                    <div className="w-full h-2 rounded-full bg-muted">
+                      <div
+                        className="h-2 rounded-full bg-amber-300"
+                        style={{ width: `${progresoVac * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <p>
+                    <strong>Asuntos propios:</strong> {dias.asuntosPropios.usados} /{' '}
+                    {dias.asuntosPropios.total} usados
+                    {' · '}
+                    <span className="font-medium">{dias.asuntosPropios.restantes} restantes</span>
+                  </p>
+                  <div className="mt-1">
+                    <div className="flex justify-between text-[0.7rem] text-muted-foreground mb-1">
+                      <span>Progreso asuntos propios</span>
+                      <span>
+                        {dias.asuntosPropios.usados} / {dias.asuntosPropios.total} días
+                      </span>
+                    </div>
+                    <div className="w-full h-2 rounded-full bg-muted">
+                      <div
+                        className="h-2 rounded-full bg-amber-300"
+                        style={{ width: `${progresoAP * 100}%` }}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -314,5 +448,21 @@ function AdminListBFPageInner() {
         </CardContent>
       </Card>
     </main>
+  )
+}
+
+export default function Page() {
+  return (
+    <Suspense
+      fallback={
+        <main className="p-4 md:p-6 max-w-3xl mx-auto">
+          <Card className="rounded-2xl shadow-accent">
+            <CardContent className="p-4 text-sm text-muted-foreground">Cargando…</CardContent>
+          </Card>
+        </main>
+      }
+    >
+      <AdminListBFPageInner />
+    </Suspense>
   )
 }

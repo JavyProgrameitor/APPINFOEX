@@ -38,13 +38,6 @@ export default function BFHome() {
           router.replace('/')
           return
         }
-        /*
-        if (me.rol !== 'bf') {
-          // Si no es bombero forestal, lo mandamos fuera
-          router.replace('/')
-          return
-        }
-          */
       } catch (e) {
         router.replace('/')
         return

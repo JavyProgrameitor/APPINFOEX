@@ -182,7 +182,7 @@ export default function AdminUsersPage() {
   }
   return (
     <main className="min-h-screen w-full flex items-center justify-center">
-      <Card className="w-full max-w-xl rounded-2xl shadow-accent">
+      <Card className="w-full max-w-xl rounded-2xl shadow-2xl shadow-accent">
         <CardHeader>
           <CardTitle className="text-center text-accent">Crear usuario</CardTitle>
         </CardHeader>

@@ -310,7 +310,7 @@ function AdminDeleteUserPageInner() {
         </h1>
       </div>
 
-      <Card className="rounded-2xl shadow-accent">
+      <Card className="rounded-2xl shadow-2xl shadow-accent">
         <CardHeader className="pb-3 flex flex-col gap-1">
           <CardTitle className="text-base md:text-lg">Buscar usuario a eliminar</CardTitle>
           <p className="text-xs text-muted-foreground">
@@ -443,8 +443,7 @@ function AdminDeleteUserPageInner() {
                     <Input
                       value={confirmDni}
                       onChange={(e) => setConfirmDni(e.target.value)}
-                      placeholder={user.dni || 'DNI'}
-                      className="max-w-xs rounded-sm"
+                      className="h-12 rounded-sm font-bold"
                     />
                     <div className="flex flex-wrap gap-2 pt-1">
                       <Button

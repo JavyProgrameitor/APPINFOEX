@@ -63,10 +63,16 @@ export async function POST(req: Request) {
     const dni = clean(body.dni)
     const nombre = clean(body.nombre) ?? ''
     const apellidos = clean(body.apellidos) ?? ''
+    const safeEmail = email?.trim().toLowerCase()
+
+    if (!safeEmail || !password || !rol) {
+      return NextResponse.json({ error: 'Faltan campos (email, password, rol)' }, { status: 400 })
+    }
 
     if (!email || !password || !rol) {
       return NextResponse.json({ error: 'Faltan campos (email, password, rol)' }, { status: 400 })
     }
+
     if (password.length < 6) {
       return NextResponse.json(
         { error: 'La contraseña debe tener al menos 6 caracteres' },
@@ -87,7 +93,7 @@ export async function POST(req: Request) {
 
     // 4) Crear usuario en auth
     const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
-      email,
+      email: safeEmail,
       password,
       email_confirm: true,
       app_metadata: { role: rol },
@@ -113,6 +119,7 @@ export async function POST(req: Request) {
     const { error: upsertErr } = await supabaseAdmin.from('usuarios').upsert(
       {
         auth_user_id,
+        email: safeEmail,
         rol,
         dni,
         nombre,

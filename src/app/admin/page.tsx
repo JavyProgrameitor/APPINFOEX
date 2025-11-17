@@ -285,7 +285,7 @@ export default function AdminHomePage() {
         </div>
       </div>
 
-      <Card className="shadow-accent">
+      <Card className="rounded-2xl shadow-2xl shadow-accent">
         <CardHeader className="gap-2">
           <CardTitle className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:text-xl">
             <span>
@@ -329,14 +329,14 @@ export default function AdminHomePage() {
                   unidad?.zona || (caseta ? municipioById.get(caseta.municipio_id)?.zona : '—')
                 return (
                   <Link key={u.id} href={`/admin/list?id=${u.id}`} className="block">
-                    <div className="rounded-xl border bg-card text-card-foreground shadow-sm hover:shadow-md transition cursor-pointer shadow-accent h-full">
+                    <div className="rounded-xl border bg-card text-card-foreground shadow-sm hover:shadow-2xl transition cursor-pointer shadow-accent h-full">
                       <div className="p-3">
                         <div className="flex items-center justify-between gap-2">
                           <div className="font-semibold text-sm truncate">
                             {u.apellidos ? `${u.apellidos}, ${u.nombre}` : u.nombre}
                           </div>
                           <div className="flex items-center gap-1">
-                            <div className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                            <div className="text-xs px-2 py-0.5 rounded-ss-sm bg-muted text-muted-foreground">
                               {chipZona}
                             </div>
                             <div className="text-[10px] px-2 py-0.5 rounded-full border bg-background">

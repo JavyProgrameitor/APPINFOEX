@@ -80,6 +80,18 @@ function BFListPageInner() {
   const [loadingAnot, setLoadingAnot] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // 👉 NUEVO: estado para horas acumuladas y días libres
+  const [horas, setHoras] = useState({
+    total: 0,
+    dias: 0,
+    restantes: 0,
+  })
+  const [dias, setDias] = useState({
+    year: new Date().getFullYear(),
+    vacaciones: { total: 22, usados: 0, restantes: 22 },
+    asuntosPropios: { total: 7, usados: 0, restantes: 7 },
+  })
+
   // 1) Cargar datos del propio usuario BF
   useEffect(() => {
     ;(async () => {
@@ -112,14 +124,6 @@ function BFListPageInner() {
           setError('No se ha encontrado tu ficha de Bombero en la base de datos.')
           return
         }
-
-        /*
-        if (rec.rol !== 'bf') {
-          // Middleware debería evitar esto, pero por si acaso:
-          setError('Esta pantalla está reservada para el rol Bombero Forestal.')
-          return
-        }
-*/
         const uNorm: UsuarioBF = {
           id: rec.id,
           dni: rec.dni ?? null,
@@ -200,20 +204,79 @@ function BFListPageInner() {
     })()
   }, [user])
 
+  // 👉 NUEVO: cargar horas extras acumuladas + días libres desde /supabase/horas
+  useEffect(() => {
+    if (!user) return
+
+    const fetchHoras = async () => {
+      try {
+        const res = await fetch(`/supabase/horas?userId=${user.id}`)
+        const data = await res.json()
+        if (!res.ok) {
+          console.error('Error horas:', data)
+          return
+        }
+        setHoras({
+          total: data.total_horas,
+          dias: data.dias_libres,
+          restantes: data.horas_restantes,
+        })
+      } catch (e) {
+        console.error(e)
+      }
+    }
+
+    fetchHoras()
+  }, [user])
+  // Cargar días de vacaciones (V) y asuntos propios (AP)
+  useEffect(() => {
+    if (!user) return
+
+    const fetchDias = async () => {
+      try {
+        const res = await fetch(`/supabase/dias?userId=${user.id}`)
+        const data = await res.json()
+        if (!res.ok) {
+          console.error('Error días V/AP:', data)
+          return
+        }
+        setDias({
+          year: data.year,
+          vacaciones: data.vacaciones,
+          asuntosPropios: data.asuntosPropios,
+        })
+      } catch (e) {
+        console.error(e)
+      }
+    }
+
+    fetchDias()
+  }, [user])
+
   const zona = unidad?.zona || municipio?.zona || '—'
+
+  const PROGRESO_UMBRAL = 3.15 // para horas extra (si lo usas)
+  const progreso = PROGRESO_UMBRAL > 0 ? Math.min(horas.restantes / PROGRESO_UMBRAL, 1) : 0
+
+  const progresoVac =
+    dias.vacaciones.total > 0 ? Math.min(dias.vacaciones.usados / dias.vacaciones.total, 1) : 0
+
+  const progresoAP =
+    dias.asuntosPropios.total > 0
+      ? Math.min(dias.asuntosPropios.usados / dias.asuntosPropios.total, 1)
+      : 0
 
   return (
     <main className="p-4 md:p-6 max-w-3xl mx-auto">
-      <Card className="rounded-2xl shadow-accent">
+      <Card className="rounded-2xl shadow-2xl shadow-accent">
         <CardHeader className="flex flex-row items-center justify-between gap-2">
           <div>
             <CardTitle className="text-lg md:text-xl text-accent flex items-center gap-2">
-              <Flame color="#F52121" />
+              <Flame color="#F52121" className="bg-amber-400 rounded-full" />
               Mi ficha de Bombero Forestal
             </CardTitle>
             <p className="text-xs text-muted-foreground mt-1">
-              Aquí puedes consultar todos los datos que se han registrado sobre tu rol de Bombero
-              Forestal.
+              Aquí puedes consultar todos los datos de Bombero Forestal.
             </p>
           </div>
           <Button
@@ -223,7 +286,7 @@ function BFListPageInner() {
             onClick={() => router.push('/bf')}
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
-            Volver al panel
+            Inicio
           </Button>
         </CardHeader>
 
@@ -353,7 +416,7 @@ function BFListPageInner() {
                 </div>
               </div>
 
-              {/* Últimas anotaciones */}
+              {/* Últimas anotaciones + resumen de horas extra */}
               <div className="rounded-sm border bg-card text-card-foreground shadow-sm hover:shadow-md transition shadow-accent">
                 <div className="p-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -364,7 +427,7 @@ function BFListPageInner() {
                   </div>
                 </div>
                 <Separator />
-                <div className="p-3 space-y-2">
+                <div className="p-3 space-y-3">
                   {loadingAnot ? (
                     <div className="space-y-2">
                       {Array.from({ length: 4 }).map((_, i) => (
@@ -404,10 +467,87 @@ function BFListPageInner() {
                       ))}
                     </ul>
                   )}
+
+                  <div className="mt-2 text-xs sm:text-sm space-y-1">
+                    <p>
+                      <strong>Horas extra acumuladas:</strong> {horas.total.toFixed(2)} h
+                    </p>
+                    <p>
+                      <strong>Días libres generados:</strong> {horas.dias}
+                    </p>
+                    <p>
+                      <strong>Horas acumuladas hacia el próximo día libre:</strong>{' '}
+                      {horas.restantes.toFixed(2)} h
+                    </p>
+
+                    <div className="mt-2">
+                      <div className="flex justify-between text-[0.7rem] text-muted-foreground mb-1">
+                        <span>Progreso próximo día libre</span>
+                        <span>
+                          {horas.restantes.toFixed(2)} / {PROGRESO_UMBRAL} h
+                        </span>
+                      </div>
+                      <div className="w-full h-2 rounded-full bg-muted">
+                        <div
+                          className="h-2 rounded-full bg-amber-300"
+                          style={{ width: `${progreso * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* 👉 Resumen de vacaciones y asuntos propios */}
+              <div className="mt-3 text-xs sm:text-sm space-y-2">
+                <p className="font-semibold">Año {dias.year}</p>
+
+                <div>
+                  <p>
+                    <strong>Vacaciones:</strong> {dias.vacaciones.usados} / {dias.vacaciones.total}{' '}
+                    usadas
+                    {' · '}
+                    <span className="font-medium">{dias.vacaciones.restantes} restantes</span>
+                  </p>
+                  <div className="mt-1">
+                    <div className="flex justify-between text-[0.7rem] text-muted-foreground mb-1">
+                      <span>Progreso vacaciones</span>
+                      <span>
+                        {dias.vacaciones.usados} / {dias.vacaciones.total} días
+                      </span>
+                    </div>
+                    <div className="w-full h-2 rounded-full bg-muted">
+                      <div
+                        className="h-2 rounded-full bg-amber-300"
+                        style={{ width: `${progresoVac * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <p>
+                    <strong>Asuntos propios:</strong> {dias.asuntosPropios.usados} /{' '}
+                    {dias.asuntosPropios.total} usados
+                    {' · '}
+                    <span className="font-medium">{dias.asuntosPropios.restantes} restantes</span>
+                  </p>
+                  <div className="mt-1">
+                    <div className="flex justify-between text-[0.7rem] text-muted-foreground mb-1">
+                      <span>Progreso asuntos propios</span>
+                      <span>
+                        {dias.asuntosPropios.usados} / {dias.asuntosPropios.total} días
+                      </span>
+                    </div>
+                    <div className="w-full h-2 rounded-full bg-muted">
+                      <div
+                        className="h-2 rounded-full bg-amber-300"
+                        style={{ width: `${progresoAP * 100}%` }}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Botón volver en móvil */}
               <div className="flex justify-start pt-1 sm:hidden">
                 <Button variant="ghost" size="sm" onClick={() => router.push('/bf')}>
                   <ArrowLeft className="h-4 w-4 mr-1" />
