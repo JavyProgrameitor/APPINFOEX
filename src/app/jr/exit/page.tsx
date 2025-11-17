@@ -350,12 +350,10 @@ function ExitJR() {
                         ].join(' ')}
                       >
                         {/* Tipo */}
-                        <div className="space-y-1">
-                          <label className="lg:hidden text-lg font-bold text-muted-foreground">
-                            Tipo
-                          </label>
+                        <div className="gap-3">
+                          <label className="text-lg font-bold text-muted-foreground">Tipo</label>
                           <select
-                            className="lg:w-32 border rounded-2xl px-2 py-1 text-xs bg-background h-9"
+                            className="border-8 shadow-2xl shadow-accent m-1"
                             value={s.tipo}
                             onChange={(e) =>
                               changeSalida(
@@ -405,13 +403,13 @@ function ExitJR() {
                         {/* Nº intervinientes */}
                         <div className="space-y-1 min-w-0">
                           <label className="lg:hidden text-lg font-bold text-muted-foreground">
-                            Bomberos hoy {totalBomberos}
+                            Bomberos hoy {totalBomberos} :
                           </label>
                           <input
                             type="tel"
                             inputMode="numeric"
                             pattern="[0-9]*"
-                            className="w-24 lg:w-20 text-right border rounded px-2 py-1 text-sm bg-background h-9"
+                            className="w-18 lg:w-20 text-right border rounded-2xl px-2 py-1 text-sm bg-background m-2 h-9"
                             value={String(s.num_intervienen)}
                             onChange={(e) => {
                               const raw = e.currentTarget.value.replace(/\D+/g, '')

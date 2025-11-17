@@ -94,11 +94,11 @@ export default function BFHome() {
   }
 
   return (
-    <div className="min-h-dvh flex items-center justify-center">
+    <div className="h-screen flex items-center justify-center">
       <div className="w-full max-w-md space-y-4">
         <Card className="rounded-2xl shadow-2xl shadow-accent">
           <CardHeader>
-            <CardTitle className="text-lg">Cambiar contraseña</CardTitle>
+            <CardTitle className="text-lg text-center">Cambiar contraseña</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={onSubmit} className="space-y-4">
@@ -107,6 +107,7 @@ export default function BFHome() {
                 <Input
                   type="password"
                   value={newPass}
+                  placeholder="    ********   "
                   onChange={(e) => setNewPass(e.target.value)}
                   required
                 />
@@ -117,6 +118,7 @@ export default function BFHome() {
                 <Input
                   type="password"
                   value={newPass2}
+                  placeholder="    ********   "
                   onChange={(e) => setNewPass2(e.target.value)}
                   required
                 />

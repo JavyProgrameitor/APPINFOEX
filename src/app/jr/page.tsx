@@ -100,25 +100,7 @@ export default function StartJR() {
       localStorage.setItem(CTX_KEY, JSON.stringify(ctx))
     } catch {}
   }, [loading, destino])
-  /*
-  const goNext = () => {
-    if (!destino) return
 
-    const params = new URLSearchParams()
-    params.set('zona', destino.zona)
-    if (destino.tipo === 'unidad') {
-      params.set('tipo', 'unidad')
-      params.set('unidad', destino.unidad_nombre)
-      params.set('unidad_id', destino.unidad_id)
-    } else {
-      params.set('tipo', 'caseta')
-      params.set('municipio', destino.municipio_nombre)
-      params.set('caseta', destino.caseta_nombre)
-      params.set('caseta_id', destino.caseta_id)
-    }
-    router.push(`/jr/add?${params.toString()}`)
-  }
-*/
   const goNext = () => {
     if (!destino) return
 
@@ -179,12 +161,12 @@ export default function StartJR() {
                   </>
                 )}
 
-                <div className="flex justify-center pt-2">
-                  <Button variant="outline" onClick={goNext}>
-                    Continuar
+                <div className="flex justify-center gap-3">
+                  <Button variant="ghost" onClick={goNext}>
+                    Continuar como JR
                   </Button>
-                  <Button variant="outline" onClick={goBF}>
-                    Ver panel Bombero Forestal
+                  <Button variant="ghost" onClick={goBF}>
+                    Ver mi panel de BF
                   </Button>
                 </div>
               </>

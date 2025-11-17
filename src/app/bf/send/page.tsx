@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Separator } from '@/components/ui/Separator'
 import { getSupabaseBrowser } from '@/server/client'
 import { ArrowLeft, CalendarDays, Flame, Clock } from 'lucide-react'
+import { Input } from '@/components/ui/Input'
 
 type Rol = 'bf' | 'jr'
 
@@ -200,7 +201,7 @@ function BFSendPageInner() {
           </Button>
         </CardHeader>
 
-        <CardContent className="space-y-4 p-4">
+        <CardContent className="space-y-4 p-4  shadow-accent">
           {loadingUser ? (
             <div className="space-y-3">
               <div className="h-6 rounded bg-muted/50 animate-pulse" />
@@ -218,13 +219,11 @@ function BFSendPageInner() {
               {/* FORMULARIO DE SOLICITUD */}
               <form
                 onSubmit={handleEnviar}
-                className="rounded-sm border bg-card text-card-foreground shadow-sm hover:shadow-md transition shadow-accent"
+                className="rounded-sm border bg-card text-center shadow-2xl hover:shadow-md transition shadow-accent"
               >
-                <div className="p-3 flex items-center gap-2">
+                <div className="p-3 flex items-center justify-center gap-2">
                   <CalendarDays className="h-4 w-4" />
-                  <div className="text-xs uppercase text-muted-foreground">
-                    Nueva solicitud de día
-                  </div>
+                  <div className=" text-xl font-bold text-accent">Nueva solicitud de día</div>
                 </div>
                 <Separator />
                 <div className="p-3 space-y-3 text-sm">
@@ -232,9 +231,9 @@ function BFSendPageInner() {
                     {/* Tipo de día */}
                     <div className="flex flex-col gap-1">
                       <label className="text-xs font-medium text-muted-foreground">
-                        Tipo de día
+                        Tipo de Solicitud
                       </label>
-                      <div className="flex gap-2">
+                      <div className="flex items-center justify-center gap-2">
                         <Button
                           type="button"
                           variant={tipo === 'V' ? 'default' : 'outline'}
@@ -259,11 +258,11 @@ function BFSendPageInner() {
                     </div>
 
                     {/* Fecha */}
-                    <div className="flex flex-col gap-1">
-                      <label className="text-xs font-medium text-muted-foreground">Fecha</label>
-                      <input
+                    <div className="flex items-center justify-center gap-1">
+                      <label className="text-xs font-bold text-muted-foreground">Fecha</label>
+                      <Input
                         type="date"
-                        className="border rounded px-2 py-1 text-sm bg-background"
+                        className="rounded-2xl w-32 shadow-2xl shadow-accent"
                         value={fecha}
                         onChange={(e) => setFecha(e.target.value)}
                       />
@@ -276,7 +275,7 @@ function BFSendPageInner() {
                   {mensajeOk && <div className="text-xs text-emerald-600 mt-1">{mensajeOk}</div>}
 
                   <div className="pt-2 flex justify-end">
-                    <Button type="submit" size="sm" disabled={enviando}>
+                    <Button type="submit" variant="ghost" disabled={enviando}>
                       {enviando ? 'Enviando…' : 'Enviar solicitud'}
                     </Button>
                   </div>
@@ -292,8 +291,6 @@ function BFSendPageInner() {
                       Tus solicitudes registradas (V / AP)
                     </div>
                   </div>
-
-                  {/* 👉 NUEVO: selector 10 / 20 / 30 */}
                   <div className="flex items-center gap-1 text-[0.7rem] md:text-xs">
                     <span className="text-muted-foreground hidden sm:inline">Mostrar</span>
                     {[10, 20, 30].map((n) => (
