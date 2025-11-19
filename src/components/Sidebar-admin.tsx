@@ -3,14 +3,13 @@
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { Calendar, FileText, Home, Users, UserX } from 'lucide-react'
+import { Calendar, FileText, Home, Users } from 'lucide-react'
 
 const links = [
   { href: '/admin', label: 'Listar Bomberos', icon: Home },
   { href: '/admin/list', label: 'Datos personales', icon: FileText },
   { href: '/admin/month', label: 'Resumen mensual', icon: Calendar },
   { href: '/admin/users', label: 'Agregar bombero', icon: Users },
-  { href: '/admin/delete', label: 'Eliminar bombero', icon: UserX },
 ]
 
 export function SidebarAdmin({ className }: { className?: string }) {
