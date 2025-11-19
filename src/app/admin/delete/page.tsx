@@ -1,5 +1,6 @@
 // app/admin/delete/page.tsx
 // app/admin/delete/page.tsx
+/*
 import { Suspense } from 'react'
 import AdminDeleteUserPageClient from './deleteUserClient'
 
@@ -25,3 +26,4 @@ export default function AdminDeleteUserPage({ searchParams }: { searchParams: Se
     </Suspense>
   )
 }
+*/
