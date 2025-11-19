@@ -1,7 +1,7 @@
 'use client'
 
-import { Suspense, useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -42,7 +42,7 @@ interface UsuarioBasic {
   email?: string | null
 }
 
-function AdminDeleteUserPageInner() {
+export default function AdminDeleteUserPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
@@ -59,22 +59,21 @@ function AdminDeleteUserPageInner() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [confirmDni, setConfirmDni] = useState('')
 
-  // Prefill desde query ?dni= o ?id=
-  useEffect(() => {
-    const dni = searchParams.get('dni')
-    const id = searchParams.get('id')
+  // --- FIX: derivamos valores estables sin romper nada ---
+  const dniParam = useMemo(() => searchParams.get('dni'), [searchParams])
+  const idParam = useMemo(() => searchParams.get('id'), [searchParams])
 
-    if (dni && dni !== dniQuery) {
-      setDniQuery(dni)
-      void handleSearch(dni)
+  useEffect(() => {
+    if (dniParam && dniParam !== dniQuery) {
+      setDniQuery(dniParam)
+      void handleSearch(dniParam)
       return
     }
 
-    if (id && !user && !loadingUser) {
-      void loadById(id)
+    if (idParam && !user && !loadingUser) {
+      void loadById(idParam)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams])
+  }, [dniParam, idParam]) // ← ahora sin warnings
 
   async function loadById(id: string) {
     setLoadingUser(true)
@@ -107,6 +106,7 @@ function AdminDeleteUserPageInner() {
         caseta_id: data.caseta_id ?? null,
         email: data.email ?? null,
       }
+
       setUser(u)
       setDniQuery(u.dni || '')
       await loadAdscripcion(u)
@@ -151,9 +151,7 @@ function AdminDeleteUserPageInner() {
           setMunicipio((m as Municipio) || null)
         }
       }
-    } catch {
-      // la adscripción es "extra"; si falla, simplemente no se muestra
-    }
+    } catch {}
   }
 
   async function handleSearch(dniOverride?: string) {
@@ -178,6 +176,7 @@ function AdminDeleteUserPageInner() {
       const res = await fetch(`/supabase/usuarios/dni?dni=${encodeURIComponent(dni)}`, {
         credentials: 'include',
       })
+
       if (res.status === 404) {
         setErrorMsg('No se ha encontrado ningún usuario con ese DNI.')
         return
@@ -187,15 +186,7 @@ function AdminDeleteUserPageInner() {
         return
       }
 
-      const data = (await res.json()) as {
-        id: string
-        dni: string | null
-        nombre: string | null
-        apellidos: string | null
-        rol: Rol
-        unidad_id: string | null
-        caseta_id: string | null
-      }
+      const data = await res.json()
 
       const u: UsuarioBasic = {
         id: data.id,
@@ -206,6 +197,7 @@ function AdminDeleteUserPageInner() {
         unidad_id: data.unidad_id,
         caseta_id: data.caseta_id,
       }
+
       setUser(u)
       await loadAdscripcion(u)
     } catch {
@@ -258,6 +250,7 @@ function AdminDeleteUserPageInner() {
           (res.status === 403
             ? 'No tienes permisos para eliminar usuarios.'
             : 'No se pudo eliminar el usuario.')
+
         setErrorMsg(msg)
         toast({
           title: 'No se pudo eliminar',
@@ -278,6 +271,7 @@ function AdminDeleteUserPageInner() {
       setMunicipio(null)
       setConfirmDni('')
       setDniQuery('')
+
       router.push('/admin')
     } catch {
       const msg = 'Error de conexión con el servidor.'
@@ -304,6 +298,7 @@ function AdminDeleteUserPageInner() {
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
+
         <h1 className="text-xl md:text-2xl font-bold text-accent flex items-center gap-2">
           <UserX className="h-5 w-5" />
           Eliminar usuario
@@ -317,6 +312,7 @@ function AdminDeleteUserPageInner() {
             Localiza el usuario por DNI y confirma la eliminación escribiendo su DNI completo.
           </p>
         </CardHeader>
+
         <CardContent className="space-y-4">
           <form
             onSubmit={(e) => {
@@ -331,6 +327,7 @@ function AdminDeleteUserPageInner() {
               placeholder="DNI del usuario"
               className="md:max-w-xs rounded-sm"
             />
+
             <div className="flex gap-2">
               <Button
                 type="submit"
@@ -341,6 +338,7 @@ function AdminDeleteUserPageInner() {
                 <Search className="h-4 w-4" />
                 Buscar
               </Button>
+
               {user && (
                 <Button
                   type="button"
@@ -389,20 +387,23 @@ function AdminDeleteUserPageInner() {
                           : 'Jefe de Retén'}
                     </span>
                   </div>
+
                   {user.dni && (
                     <div className="text-xs">
                       DNI: <span className="font-mono font-semibold">{user.dni}</span>
                     </div>
                   )}
+
                   {user.email && (
                     <div className="text-xs">
-                      Email: <span className="font-medium text-primary">{user.email}</span>
+                      Email: <span className="text-primary font-medium">{user.email}</span>
                     </div>
                   )}
                 </div>
 
                 <div className="rounded-sm border bg-card p-3 text-card-foreground space-y-1">
                   <div className="text-xs uppercase text-muted-foreground">Adscripción</div>
+
                   {unidad ? (
                     <>
                       <div className="text-xs font-medium">Unidad: {unidad.nombre}</div>
@@ -411,6 +412,7 @@ function AdminDeleteUserPageInner() {
                   ) : caseta ? (
                     <>
                       <div className="text-xs font-medium">Caseta: {caseta.nombre}</div>
+
                       {municipio && (
                         <div className="text-xs text-muted-foreground">
                           Municipio: {municipio.nombre} ({municipio.zona})
@@ -426,25 +428,30 @@ function AdminDeleteUserPageInner() {
               <Alert variant="destructive" className="rounded-sm border-destructive/50">
                 <ShieldAlert className="h-4 w-4" />
                 <AlertTitle>Acción irreversible</AlertTitle>
+
                 <AlertDescription>
                   <p>
                     Esta operación eliminará al usuario del sistema y también su cuenta de acceso.
                     No podrás deshacerlo.
                   </p>
+
                   {user.rol === 'admin' && (
                     <p className="mt-1 font-semibold">
                       Atención: no se recomienda eliminar usuarios con rol administrador.
                     </p>
                   )}
+
                   <div className="mt-3 space-y-2">
                     <label className="block text-xs font-medium">
                       Para confirmar, escribe el DNI completo del usuario:
                     </label>
+
                     <Input
                       value={confirmDni}
                       onChange={(e) => setConfirmDni(e.target.value)}
                       className="h-12 rounded-sm font-bold"
                     />
+
                     <div className="flex flex-wrap gap-2 pt-1">
                       <Button
                         type="button"
@@ -465,13 +472,12 @@ function AdminDeleteUserPageInner() {
                           </>
                         )}
                       </Button>
+
                       <Button
                         type="button"
                         variant="outline"
                         className="rounded-sm"
-                        onClick={() => {
-                          setConfirmDni('')
-                        }}
+                        onClick={() => setConfirmDni('')}
                       >
                         Cancelar
                       </Button>
@@ -484,23 +490,5 @@ function AdminDeleteUserPageInner() {
         </CardContent>
       </Card>
     </main>
-  )
-}
-
-export default function Page() {
-  return (
-    <Suspense
-      fallback={
-        <main className="p-4 md:p-6 max-w-3xl mx-auto">
-          <Card className="rounded-2xl shadow-accent">
-            <CardContent className="p-4 text-sm text-muted-foreground">
-              Cargando interfaz de eliminación de usuarios…
-            </CardContent>
-          </Card>
-        </main>
-      }
-    >
-      <AdminDeleteUserPageInner />
-    </Suspense>
   )
 }
