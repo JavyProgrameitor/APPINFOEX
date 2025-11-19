@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/Sheet'
 import { Button } from '@/components/ui/Button'
 import { Menu } from 'lucide-react'
+import { Suspense } from 'react'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -78,7 +79,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </div>
       <div className="flex min-h-full">
-        <SidebarAdmin />
+        <Suspense fallback={null}>
+          <SidebarAdmin />
+        </Suspense>
         <div className="flex-1">{children}</div>
       </div>
     </>
