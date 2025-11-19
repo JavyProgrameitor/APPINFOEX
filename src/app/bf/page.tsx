@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { useToast } from '@/components/ui/Use-toast'
 import { getSupabaseBrowser } from '@/server/client'
+import { Flame } from 'lucide-react'
 
 export default function BFHome() {
   const router = useRouter()
@@ -94,16 +95,22 @@ export default function BFHome() {
   }
 
   return (
-    <div className="flex items-center justify-center h-96">
-      <div className="w-full max-w-md space-y-4">
+    <div className="flex items-center justify-center mt-3">
+      <div className="max-w-md">
+        <CardTitle className="text-xl font-black text-center text-accent flex items-center gap-1 m-3">
+          <Flame color="#F52121" className="bg-amber-400 rounded-full" />
+          Bienvenido al panel del Bombero Forestal de Extremadura
+        </CardTitle>
         <Card className="rounded-2xl shadow-2xl shadow-accent">
           <CardHeader>
-            <CardTitle className="text-lg text-center">Cambiar contraseña</CardTitle>
+            <CardTitle className="text-lg text-center">
+              Puede cambiar contraseña o continuar :
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={onSubmit} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-sm font-medium">Nueva contraseña</label>
+          <CardContent className="flex items-center justify-center">
+            <form onSubmit={onSubmit}>
+              <label className="text-sm font-bold">Nueva contraseña</label>
+              <div className="m-2">
                 <Input
                   type="password"
                   value={newPass}
@@ -112,9 +119,8 @@ export default function BFHome() {
                   required
                 />
               </div>
-
-              <div className="space-y-1">
-                <label className="text-sm font-medium">Repite la nueva contraseña</label>
+              <label className="text-sm font-bold">Repite la nueva contraseña</label>
+              <div className="m-2">
                 <Input
                   type="password"
                   value={newPass2}
@@ -124,24 +130,24 @@ export default function BFHome() {
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
-              <div className="flex justify-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <Button
                   type="submit"
                   className="font-bold border-2 border-lime-50 cursor-pointer transition-colors hover:bg-lime-200 hover:text-lime-900"
                   disabled={saving}
                 >
-                  {saving ? 'Guardando...' : 'Guardar nueva contraseña'}
+                  {saving ? 'Guardando...' : 'Actualizar'}
+                </Button>
+                <Button
+                  className="font-bold border-2 border-lime-50 cursor-pointer transition-colors hover:bg-lime-200 hover:text-lime-900"
+                  onClick={() => router.push('/bf/list')}
+                >
+                  Continuar
                 </Button>
               </div>
             </form>
           </CardContent>
         </Card>
-        <Button
-          className="font-bold border-2 border-lime-50 cursor-pointer transition-colors hover:bg-lime-200 hover:text-lime-900"
-          onClick={() => router.push('/bf/list')}
-        >
-          Continuar
-        </Button>
       </div>
     </div>
   )

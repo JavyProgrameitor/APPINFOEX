@@ -151,22 +151,18 @@ function AdminMonthPageInner() {
   return (
     <main className="p-4 md:p-6 max-w-4xl mx-auto">
       <Card className="rounded-2xl shadow-2xl shadow-accent">
-        <CardHeader className="flex flex-row items-center justify-between gap-2">
+        <CardHeader className="flex flex-row items-center justify-center gap-2">
           <div>
             <CardTitle className="text-lg md:text-xl text-accent flex items-center gap-2">
               <CalendarDays className="h-5 w-5" />
-              Resumen mensual de anotaciones (Admin)
+              Administrador, resumen mensual de :
             </CardTitle>
             {user && (
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xl text-center font-black mt-1">
                 {user.apellidos}, {user.nombre}
               </p>
             )}
           </div>
-          <Button variant="ghost" size="sm" onClick={() => router.push('/admin')}>
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Volver al listado
-          </Button>
         </CardHeader>
 
         <CardContent className="space-y-4 p-4">
@@ -182,16 +178,16 @@ function AdminMonthPageInner() {
           ) : (
             <>
               {/* Selector mes/año */}
-              <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center justify-center flex-wrap gap-2">
                 <div className="flex items-center gap-2">
                   <Button type="button" variant="outline" size="sm" onClick={() => cambiarMes(-1)}>
                     ‹ Mes anterior
                   </Button>
+                  <div className="text-amber-600 font-black capitalize">{nombreMes}</div>
                   <Button type="button" variant="outline" size="sm" onClick={() => cambiarMes(1)}>
                     Mes siguiente ›
                   </Button>
                 </div>
-                <div className="text-sm font-semibold capitalize">{nombreMes}</div>
               </div>
 
               <Separator />
@@ -200,7 +196,7 @@ function AdminMonthPageInner() {
               {loadingMes ? (
                 <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
                   {Array.from({ length: daysInMonth }).map((_, i) => (
-                    <div key={i} className="h-16 rounded bg-muted/50 animate-pulse" />
+                    <div key={i} className="h-20 rounded bg-muted/50 animate-pulse" />
                   ))}
                 </div>
               ) : (
@@ -213,18 +209,42 @@ function AdminMonthPageInner() {
 
                     const codigo = codigosPorFecha.get(fechaStr) || ''
 
+                    // Día de la semana (lun, mar, mié...)
+                    const dateObj = new Date(year, month - 1, day)
+                    const weekday = dateObj.toLocaleDateString('es-ES', {
+                      weekday: 'short',
+                    })
+
+                    // descripción legible para algunos códigos
                     let label = ''
                     if (codigo === 'V') label = 'Vacaciones'
                     else if (codigo === 'AP') label = 'Asuntos propios'
                     else if (codigo === 'H') label = 'Día por horas extra'
 
+                    // colores según código
+                    let cellClasses = 'border rounded-md p-2 text-center text-xs bg-card shadow-sm'
+                    let codigoClasses = 'mt-1 font-mono text-[0.75rem]'
+                    if (codigo === 'V') {
+                      cellClasses =
+                        'border border-emerald-300 bg-emerald-50 rounded-md p-2 text-center text-xs shadow-sm'
+                      codigoClasses = 'mt-1 font-mono text-[0.75rem] text-emerald-700 font-semibold'
+                    } else if (codigo === 'AP') {
+                      cellClasses =
+                        'border border-sky-300 bg-sky-50 rounded-md p-2 text-center text-xs shadow-sm'
+                      codigoClasses = 'mt-1 font-mono text-[0.75rem] text-sky-700 font-semibold'
+                    } else if (codigo === 'H') {
+                      cellClasses =
+                        'border border-amber-300 bg-amber-50 rounded-md p-2 text-center text-xs shadow-sm'
+                      codigoClasses = 'mt-1 font-mono text-[0.75rem] text-yellow-700 font-semibold'
+                    }
+
                     return (
-                      <div
-                        key={fechaStr}
-                        className="border rounded-md p-2 text-center text-xs bg-card shadow-sm"
-                      >
+                      <div key={fechaStr} className={cellClasses}>
                         <div className="text-sm font-semibold">{day}</div>
-                        <div className="mt-1 font-mono text-[0.75rem]">{codigo || '—'}</div>
+                        <div className="text-[0.7rem] text-muted-foreground capitalize">
+                          {weekday}
+                        </div>
+                        <div className={codigoClasses}>{codigo || '—'}</div>
                         {label && (
                           <div className="mt-0.5 text-[0.65rem] text-muted-foreground">{label}</div>
                         )}
@@ -236,6 +256,10 @@ function AdminMonthPageInner() {
             </>
           )}
         </CardContent>
+        <Button variant="ghost" className="w-38 m-3" onClick={() => router.push('/admin')}>
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Volver al listado
+        </Button>
       </Card>
     </main>
   )

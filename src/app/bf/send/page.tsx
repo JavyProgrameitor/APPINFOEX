@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Separator } from '@/components/ui/Separator'
 import { getSupabaseBrowser } from '@/server/client'
-import { ArrowLeft, CalendarDays, Flame, Clock } from 'lucide-react'
+import { ArrowLeft, CalendarDays, Flame, Clock, ArrowRight } from 'lucide-react'
 import { Input } from '@/components/ui/Input'
 
 type Rol = 'bf' | 'jr'
@@ -296,16 +296,11 @@ function BFSendPageInner() {
   return (
     <main className="p-4 md:p-6 max-w-3xl mx-auto">
       <Card className="rounded-2xl shadow-2xl shadow-accent">
-        <CardHeader className="flex flex-row items-center justify-between gap-2">
-          <div>
-            <CardTitle className="text-lg md:text-xl text-accent flex items-center gap-2">
-              <Flame color="#F52121" className="bg-amber-400 rounded-full" />
-              Solicitud de días (Vacaciones / AP / Horas extra)
-            </CardTitle>
-            <p className="text-xs text-muted-foreground mt-1">
-              Solicita días de vacaciones, asuntos propios o días generados por horas extra.
-            </p>
-          </div>
+        <CardHeader className="flex items-center justify-center gap-2">
+          <CardTitle className="text-lg md:text-xl text-accent flex items-center gap-2">
+            <Flame color="#F52121" className="bg-amber-400 rounded-full" />
+            Solicitud de días
+          </CardTitle>
           <Button
             variant="ghost"
             size="sm"
@@ -508,10 +503,14 @@ function BFSendPageInner() {
                 </div>
               </div>
 
-              <div className="flex justify-start pt-1 sm:hidden">
+              <div className="flex justify-between pt-1 sm:hidden">
                 <Button variant="ghost" size="sm" onClick={() => router.push('/bf/list')}>
                   <ArrowLeft className="h-4 w-4 mr-1" />
                   Mis Datos
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => router.push('/bf/month')}>
+                  Resumen
+                  <ArrowRight className="h-4 w-4 mr-1" />
                 </Button>
               </div>
             </>

@@ -528,7 +528,7 @@ function BFListPageInner() {
                       <strong>Horas extra acumuladas:</strong> {horas.total.toFixed(2)} h
                     </p>
                     <p>
-                      <strong>Días libres generados:</strong> {horas.dias}
+                      <strong>Días libres de Horas extra por solicitar:</strong> {horas.dias}
                     </p>
                     <p>
                       <strong>Horas acumuladas hacia el próximo día libre:</strong>{' '}
@@ -554,7 +554,7 @@ function BFListPageInner() {
                   {/* Detalle de horas extra por día */}
                   <div className="mt-3 text-xs sm:text-sm space-y-2">
                     <div className="text-xs uppercase text-muted-foreground">
-                      Detalle de horas extra (últimos días)
+                      HORAS EXTRAS GENERADAS
                     </div>
 
                     {loadingHorasExtras ? (
@@ -644,10 +644,14 @@ function BFListPageInner() {
                 </div>
               </div>
 
-              <div className="flex justify-start pt-1 sm:hidden">
+              <div className="flex justify-between pt-1 sm:hidden">
                 <Button variant="ghost" size="sm" onClick={() => router.push('/bf')}>
                   <ArrowLeft className="h-4 w-4 mr-1" />
-                  Volver al panel
+                  Inicio
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => router.push('/bf/send')}>
+                  Solicitudes
+                  <ArrowRight className="h-4 w-4 mr-1" />
                 </Button>
               </div>
             </>

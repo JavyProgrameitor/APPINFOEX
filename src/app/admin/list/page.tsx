@@ -5,7 +5,7 @@ import { Suspense, useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Separator } from '@/components/ui/Separator'
-import { Copy } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Copy } from 'lucide-react'
 import { getSupabaseBrowser } from '@/server/client'
 
 interface Unidad {
@@ -43,14 +43,12 @@ interface Anotacion {
   codigo: string
 }
 
-// resumen horas extra para admin (mismo formato que /supabase/horas)
 interface ResumenHoras {
   total_horas: number
   dias_libres: number
   horas_restantes: number
 }
 
-// resumen días V / AP (mismo formato que /supabase/dias)
 interface ResumenDias {
   year: number
   vacaciones: { total: number; usados: number; restantes: number }
@@ -160,7 +158,7 @@ function AdminListBFPageInner() {
     })()
   }, [id])
 
-  // Cargar últimas anotaciones (incluyendo código, para ver V/AP/H/Horas)
+  // Cargar últimas anotaciones (incluyendo código)
   useEffect(() => {
     ;(async () => {
       if (!user) return
@@ -184,10 +182,9 @@ function AdminListBFPageInner() {
     })()
   }, [user])
 
-  // Cargar resumen horas extra (total, días libres, horas restantes)
+  // Resumen horas extra
   useEffect(() => {
     if (!user) return
-
     const fetchHoras = async () => {
       try {
         const res = await fetch(`/supabase/horas?userId=${user.id}`)
@@ -205,14 +202,12 @@ function AdminListBFPageInner() {
         console.error(e)
       }
     }
-
     fetchHoras()
   }, [user])
 
-  // Cargar días de vacaciones (V) y asuntos propios (AP)
+  // Resumen días V/AP
   useEffect(() => {
     if (!user) return
-
     const fetchDias = async () => {
       try {
         const res = await fetch(`/supabase/dias?userId=${user.id}`)
@@ -230,7 +225,6 @@ function AdminListBFPageInner() {
         console.error(e)
       }
     }
-
     fetchDias()
   }, [user])
 
@@ -275,26 +269,28 @@ function AdminListBFPageInner() {
           ) : (
             <>
               {/* Cabecera usuario */}
-              <div>
-                <div className="text-center text-xl font-semibold">
-                  {user.apellidos}, {user.nombre}
-                </div>
-                <div className="text-center text-xs text-muted-foreground">
-                  <span className="font-medium">{tituloRol}</span>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Creado el{' '}
-                  {new Date(user.creado_en).toLocaleDateString('es-ES', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                  })}
-                </div>
-                {user.email && (
-                  <div className="text-xs font-semibold">
-                    Email: <span className="text-primary">{user.email}</span>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="text-xl font-semibold">
+                    {user.apellidos}, {user.nombre}
                   </div>
-                )}
+                  <div className="text-xs text-muted-foreground">
+                    <span className="font-medium">{tituloRol}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Creado el{' '}
+                    {new Date(user.creado_en).toLocaleDateString('es-ES', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                    })}
+                  </div>
+                  {user.email && (
+                    <div className="text-xs font-semibold">
+                      Email: <span className="text-primary">{user.email}</span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* DNI */}
@@ -486,10 +482,17 @@ function AdminListBFPageInner() {
                 </div>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex items-center justify-between gap-2">
                 <Button variant="ghost" onClick={() => router.push('/admin')}>
+                  <ArrowLeft></ArrowLeft>
                   Volver al listado
                 </Button>
+                <div className="flex flex-col items-end gap-2">
+                  <Button variant="ghost" onClick={() => router.push(`/admin/month?id=${user.id}`)}>
+                    Ver resumen mensual
+                    <ArrowRight></ArrowRight>
+                  </Button>
+                </div>
               </div>
             </>
           )}

@@ -3,12 +3,13 @@
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { usePathname } from 'next/navigation'
-import { Database, Home, LucideIcon, Send } from 'lucide-react'
+import { Calendar, Database, Home, LucideIcon, Send } from 'lucide-react'
 
 const links = [
   { href: '/bf', label: 'Inicio', icon: Home },
   { href: '/bf/list', label: 'Mis Datos', icon: Database },
   { href: '/bf/send', label: 'Solicitudes', icon: Send },
+  { href: '/bf/month', label: 'Resumen', icon: Calendar },
 ]
 
 export function SidebarBF({ className }: { className?: string }) {
