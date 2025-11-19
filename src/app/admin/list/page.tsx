@@ -40,6 +40,21 @@ interface Anotacion {
   hora_entrada: string
   hora_salida: string
   horas_extras: number
+  codigo: string
+}
+
+// resumen horas extra para admin (mismo formato que /supabase/horas)
+interface ResumenHoras {
+  total_horas: number
+  dias_libres: number
+  horas_restantes: number
+}
+
+// resumen días V / AP (mismo formato que /supabase/dias)
+interface ResumenDias {
+  year: number
+  vacaciones: { total: number; usados: number; restantes: number }
+  asuntosPropios: { total: number; usados: number; restantes: number }
 }
 
 function AdminListBFPageInner() {
@@ -56,13 +71,12 @@ function AdminListBFPageInner() {
   const [anotaciones, setAnotaciones] = useState<Anotacion[] | null>(null)
   const [loadingAnot, setLoadingAnot] = useState(false)
 
-  const [horas, setHoras] = useState({
-    total: 0,
-    dias: 0,
-    restantes: 0,
+  const [horas, setHoras] = useState<ResumenHoras>({
+    total_horas: 0,
+    dias_libres: 0,
+    horas_restantes: 0,
   })
-
-  const [dias, setDias] = useState({
+  const [dias, setDias] = useState<ResumenDias>({
     year: new Date().getFullYear(),
     vacaciones: { total: 22, usados: 0, restantes: 22 },
     asuntosPropios: { total: 7, usados: 0, restantes: 7 },
@@ -146,7 +160,7 @@ function AdminListBFPageInner() {
     })()
   }, [id])
 
-  // Cargar últimas anotaciones
+  // Cargar últimas anotaciones (incluyendo código, para ver V/AP/H/Horas)
   useEffect(() => {
     ;(async () => {
       if (!user) return
@@ -156,7 +170,7 @@ function AdminListBFPageInner() {
       try {
         const { data } = await supa
           .from('anotaciones')
-          .select('id,fecha,hora_entrada,hora_salida,horas_extras')
+          .select('id,fecha,hora_entrada,hora_salida,horas_extras,codigo')
           .eq('users_id', user.id)
           .order('fecha', { ascending: false })
           .limit(8)
@@ -170,7 +184,7 @@ function AdminListBFPageInner() {
     })()
   }, [user])
 
-  // Cargar horas extras acumuladas
+  // Cargar resumen horas extra (total, días libres, horas restantes)
   useEffect(() => {
     if (!user) return
 
@@ -183,18 +197,19 @@ function AdminListBFPageInner() {
           return
         }
         setHoras({
-          total: data.total_horas,
-          dias: data.dias_libres,
-          restantes: data.horas_restantes,
+          total_horas: data.total_horas,
+          dias_libres: data.dias_libres,
+          horas_restantes: data.horas_restantes,
         })
       } catch (e) {
         console.error(e)
       }
     }
+
     fetchHoras()
   }, [user])
 
-  // Cargar días V/AP del bombero
+  // Cargar días de vacaciones (V) y asuntos propios (AP)
   useEffect(() => {
     if (!user) return
 
@@ -219,6 +234,7 @@ function AdminListBFPageInner() {
     fetchDias()
   }, [user])
 
+  const zona = unidad?.zona || municipio?.zona || '—'
   const tituloRol =
     user?.rol === 'jr'
       ? 'Jefe de Servicio'
@@ -227,7 +243,7 @@ function AdminListBFPageInner() {
         : 'Administrador'
 
   const PROGRESO_UMBRAL = 3.15
-  const progreso = PROGRESO_UMBRAL > 0 ? Math.min(horas.restantes / PROGRESO_UMBRAL, 1) : 0
+  const progreso = PROGRESO_UMBRAL > 0 ? Math.min(horas.horas_restantes / PROGRESO_UMBRAL, 1) : 0
 
   const progresoVac =
     dias.vacaciones.total > 0 ? Math.min(dias.vacaciones.usados / dias.vacaciones.total, 1) : 0
@@ -258,6 +274,7 @@ function AdminListBFPageInner() {
             </div>
           ) : (
             <>
+              {/* Cabecera usuario */}
               <div>
                 <div className="text-center text-xl font-semibold">
                   {user.apellidos}, {user.nombre}
@@ -266,7 +283,12 @@ function AdminListBFPageInner() {
                   <span className="font-medium">{tituloRol}</span>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Creado el {new Date(user.creado_en).toLocaleDateString()}
+                  Creado el{' '}
+                  {new Date(user.creado_en).toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                  })}
                 </div>
                 {user.email && (
                   <div className="text-xs font-semibold">
@@ -275,6 +297,7 @@ function AdminListBFPageInner() {
                 )}
               </div>
 
+              {/* DNI */}
               <div className="rounded-sm border bg-card text-card-foreground shadow-sm hover:shadow-md transition cursor-pointer shadow-accent h-full">
                 <div className="text-xs m-1">DNI</div>
                 <div className="flex items-center gap-2 font-mono m-1">
@@ -295,6 +318,7 @@ function AdminListBFPageInner() {
                 </div>
               </div>
 
+              {/* Adscripción */}
               <div className="rounded-sm border bg-card text-card-foreground shadow-sm hover:shadow-md transition cursor-pointer shadow-accent h-full">
                 <div className="text-xs uppercase text-muted-foreground m-1">Adscripción</div>
                 <div className="text-sm m-1">
@@ -322,12 +346,13 @@ function AdminListBFPageInner() {
                 </div>
               </div>
 
+              {/* Últimas anotaciones + resumen horas extra */}
               <div className="rounded-sm border bg-card text-card-foreground shadow-sm hover:shadow-md transition cursor-pointer shadow-accent h-full">
                 <div className="p-3">
                   <div className="text-xs uppercase text-muted-foreground">Últimas anotaciones</div>
                 </div>
                 <Separator />
-                <div className="p-3 space-y-2">
+                <div className="p-3 space-y-3">
                   {loadingAnot ? (
                     <div className="space-y-2">
                       {Array.from({ length: 4 }).map((_, i) => (
@@ -338,43 +363,67 @@ function AdminListBFPageInner() {
                     <div className="text-sm text-muted-foreground">Sin anotaciones recientes.</div>
                   ) : (
                     <ul className="space-y-2">
-                      {anotaciones.map((a) => (
-                        <li key={a.id} className="text-sm flex items-center justify-between">
-                          <div>
-                            <div className="font-medium">
-                              {new Date(a.fecha).toLocaleDateString()}
+                      {anotaciones.map((a) => {
+                        const horasNumber = Number(a.horas_extras || 0)
+                        let rightLabel = ''
+                        if (horasNumber > 0) {
+                          rightLabel = `${horasNumber.toFixed(2)} h extra`
+                        } else if (a.codigo === 'V') {
+                          rightLabel = 'Vacaciones'
+                        } else if (a.codigo === 'AP') {
+                          rightLabel = 'Asuntos propios'
+                        } else if (a.codigo === 'H') {
+                          rightLabel = 'Día por horas extra'
+                        } else if (a.codigo) {
+                          rightLabel = a.codigo
+                        }
+
+                        return (
+                          <li
+                            key={a.id}
+                            className="text-sm flex items-center justify-between rounded-sm border bg-background/60 px-2 py-1"
+                          >
+                            <div>
+                              <div className="font-medium">
+                                {new Date(a.fecha).toLocaleDateString('es-ES', {
+                                  weekday: 'short',
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                })}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Entrada {a.hora_entrada} · Salida {a.hora_salida}
+                              </div>
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              Entrada {a.hora_entrada} · Salida {a.hora_salida}
-                            </div>
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Extras: {a.horas_extras}
-                          </div>
-                        </li>
-                      ))}
+                            {rightLabel && (
+                              <div className="text-xs text-muted-foreground text-right">
+                                {rightLabel}
+                              </div>
+                            )}
+                          </li>
+                        )
+                      })}
                     </ul>
                   )}
 
-                  {/* Resumen de horas extra */}
-                  <div className="mt-3 text-sm space-y-1">
+                  {/* Resumen horas extra */}
+                  <div className="mt-2 text-xs sm:text-sm space-y-1">
                     <p>
-                      <strong>Horas extra acumuladas:</strong> {horas.total.toFixed(2)} h
+                      <strong>Horas extra acumuladas:</strong> {horas.total_horas.toFixed(2)} h
                     </p>
                     <p>
-                      <strong>Días libres generados:</strong> {horas.dias}
+                      <strong>Días por horas extra disponibles:</strong> {horas.dias_libres}
                     </p>
                     <p>
-                      <strong>Horas acumuladas para el próximo día libre:</strong>{' '}
-                      {horas.restantes.toFixed(2)} h
+                      <strong>Horas acumuladas hacia el próximo día libre:</strong>{' '}
+                      {horas.horas_restantes.toFixed(2)} h
                     </p>
 
-                    {/* Barra de progreso visual */}
                     <div className="mt-2">
-                      <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                      <div className="flex justify-between text-[0.7rem] text-muted-foreground mb-1">
                         <span>Progreso próximo día libre</span>
                         <span>
-                          {horas.restantes.toFixed(2)} / {PROGRESO_UMBRAL} h
+                          {horas.horas_restantes.toFixed(2)} / {PROGRESO_UMBRAL} h
                         </span>
                       </div>
                       <div className="w-full h-2 rounded-full bg-muted">
@@ -388,14 +437,14 @@ function AdminListBFPageInner() {
                 </div>
               </div>
 
-              <div className="mt-3 text-xs sm:text-sm space-y-2">
+              {/* Resumen vacaciones y asuntos propios */}
+              <div className="rounded-sm border bg-card text-card-foreground shadow-sm hover:shadow-md transition cursor-pointer shadow-accent h-full p-3 space-y-2 text-xs sm:text-sm">
                 <p className="font-semibold">Año {dias.year}</p>
 
                 <div>
                   <p>
                     <strong>Vacaciones:</strong> {dias.vacaciones.usados} / {dias.vacaciones.total}{' '}
-                    usadas
-                    {' · '}
+                    usadas ·{' '}
                     <span className="font-medium">{dias.vacaciones.restantes} restantes</span>
                   </p>
                   <div className="mt-1">
@@ -417,8 +466,7 @@ function AdminListBFPageInner() {
                 <div>
                   <p>
                     <strong>Asuntos propios:</strong> {dias.asuntosPropios.usados} /{' '}
-                    {dias.asuntosPropios.total} usados
-                    {' · '}
+                    {dias.asuntosPropios.total} usados ·{' '}
                     <span className="font-medium">{dias.asuntosPropios.restantes} restantes</span>
                   </p>
                   <div className="mt-1">

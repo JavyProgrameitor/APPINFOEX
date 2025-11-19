@@ -6,9 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Separator } from '@/components/ui/Separator'
 import { getSupabaseBrowser } from '@/server/client'
-import { Copy, Flame, IdCard, MapPin, Clock, ArrowLeft } from 'lucide-react'
+import { Copy, Flame, IdCard, MapPin, Clock, ArrowLeft, ArrowRight } from 'lucide-react'
 
-type Rol = 'admin' | 'bf' | 'jr'
+type Rol = 'bf' | 'jr'
 
 interface Unidad {
   id: string
@@ -46,6 +46,14 @@ interface Anotacion {
   hora_entrada: string
   hora_salida: string
   horas_extras: number
+  codigo: string
+}
+
+// Detalle simple para listado de horas extra por día
+interface HorasExtraDetalle {
+  id: string
+  fecha: string
+  horas_extras: number
 }
 
 /** Página envuelta en Suspense igual que en admin/list */
@@ -80,17 +88,22 @@ function BFListPageInner() {
   const [loadingAnot, setLoadingAnot] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // 👉 NUEVO: estado para horas acumuladas y días libres
+  // estado para horas acumuladas y días libres
   const [horas, setHoras] = useState({
     total: 0,
     dias: 0,
     restantes: 0,
   })
+
   const [dias, setDias] = useState({
     year: new Date().getFullYear(),
     vacaciones: { total: 22, usados: 0, restantes: 22 },
     asuntosPropios: { total: 7, usados: 0, restantes: 7 },
   })
+
+  // detalle de horas extra por día
+  const [horasExtrasDetalle, setHorasExtrasDetalle] = useState<HorasExtraDetalle[]>([])
+  const [loadingHorasExtras, setLoadingHorasExtras] = useState(false)
 
   // 1) Cargar datos del propio usuario BF
   useEffect(() => {
@@ -180,7 +193,7 @@ function BFListPageInner() {
     })()
   }, [])
 
-  // 2) Cargar últimas anotaciones asociadas al usuario (igual que en admin/list)
+  // 2) Cargar últimas anotaciones asociadas al usuario (incluyendo codigo)
   useEffect(() => {
     ;(async () => {
       if (!user) return
@@ -190,7 +203,7 @@ function BFListPageInner() {
       try {
         const { data } = await supa
           .from('anotaciones')
-          .select('id,fecha,hora_entrada,hora_salida,horas_extras')
+          .select('id,fecha,hora_entrada,hora_salida,horas_extras,codigo')
           .eq('users_id', user.id)
           .order('fecha', { ascending: false })
           .limit(8)
@@ -204,7 +217,7 @@ function BFListPageInner() {
     })()
   }, [user])
 
-  // 👉 NUEVO: cargar horas extras acumuladas + días libres desde /supabase/horas
+  // Cargar horas extras acumuladas + días libres desde /supabase/horas
   useEffect(() => {
     if (!user) return
 
@@ -228,6 +241,7 @@ function BFListPageInner() {
 
     fetchHoras()
   }, [user])
+
   // Cargar días de vacaciones (V) y asuntos propios (AP)
   useEffect(() => {
     if (!user) return
@@ -253,9 +267,42 @@ function BFListPageInner() {
     fetchDias()
   }, [user])
 
+  // Detalle de horas extra (solo las que tienen horas_extras > 0)
+  useEffect(() => {
+    ;(async () => {
+      if (!user) return
+      if (typeof window === 'undefined') return
+
+      const supa = getSupabaseBrowser()
+      setLoadingHorasExtras(true)
+      try {
+        const { data, error } = await supa
+          .from('anotaciones')
+          .select('id,fecha,horas_extras')
+          .eq('users_id', user.id)
+          .gt('horas_extras', 0)
+          .order('fecha', { ascending: false })
+          .limit(10) // últimas 10 con horas extra
+
+        if (error) {
+          console.error('Error cargando detalle de horas extra:', error.message)
+          setHorasExtrasDetalle([])
+          return
+        }
+
+        setHorasExtrasDetalle((data as HorasExtraDetalle[]) || [])
+      } catch (e) {
+        console.error(e)
+        setHorasExtrasDetalle([])
+      } finally {
+        setLoadingHorasExtras(false)
+      }
+    })()
+  }, [user])
+
   const zona = unidad?.zona || municipio?.zona || '—'
 
-  const PROGRESO_UMBRAL = 3.15 // para horas extra (si lo usas)
+  const PROGRESO_UMBRAL = 3.15 // para horas extra
   const progreso = PROGRESO_UMBRAL > 0 ? Math.min(horas.restantes / PROGRESO_UMBRAL, 1) : 0
 
   const progresoVac =
@@ -269,25 +316,14 @@ function BFListPageInner() {
   return (
     <main className="p-4 md:p-6 max-w-3xl mx-auto">
       <Card className="rounded-2xl shadow-2xl shadow-accent">
-        <CardHeader className="flex flex-row items-center justify-between gap-2">
-          <div>
-            <CardTitle className="text-lg md:text-xl text-accent flex items-center gap-2">
-              <Flame color="#F52121" className="bg-amber-400 rounded-full" />
-              Mi ficha de Bombero Forestal
-            </CardTitle>
-            <p className="text-xs text-muted-foreground mt-1">
-              Aquí puedes consultar todos los datos de Bombero Forestal.
-            </p>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="hidden sm:inline-flex"
-            onClick={() => router.push('/bf')}
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Inicio
-          </Button>
+        <CardHeader className="flex flex-col items-center justify-between gap-2">
+          <CardTitle className="text-lg md:text-xl text-accent flex items-center gap-2">
+            <Flame color="#F52121" className="bg-amber-400 rounded-full" />
+            Mi ficha de Bombero Forestal
+          </CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Aquí puedes consultar todos los datos de Bombero Forestal.
+          </p>
         </CardHeader>
 
         <CardContent className="space-y-4 p-4">
@@ -393,7 +429,7 @@ function BFListPageInner() {
                 </div>
               </div>
 
-              {/* DNI rápido para copiar en movil */}
+              {/* DNI rápido para copiar en móvil */}
               <div className="rounded-sm border bg-card text-card-foreground shadow-sm hover:shadow-md transition cursor-pointer shadow-accent">
                 <div className="flex items-center justify-between p-3">
                   <div>
@@ -416,7 +452,7 @@ function BFListPageInner() {
                 </div>
               </div>
 
-              {/* Últimas anotaciones + resumen de horas extra */}
+              {/* Últimas anotaciones + resumen de horas extra + detalle de horas extra */}
               <div className="rounded-sm border bg-card text-card-foreground shadow-sm hover:shadow-md transition shadow-accent">
                 <div className="p-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -457,17 +493,36 @@ function BFListPageInner() {
                               {a.hora_entrada} - {a.hora_salida}
                             </span>
                           </div>
+
+                          {/* Derecha: o bien horas extra, o bien Vacaciones / AP */}
                           <div className="text-right">
-                            <div className="text-[0.7rem] text-muted-foreground">Extras</div>
-                            <div className="text-xs font-semibold">
-                              {a.horas_extras?.toFixed?.(2) ?? a.horas_extras ?? 0} h
-                            </div>
+                            {a.horas_extras > 0 ? (
+                              <>
+                                <div className="text-[0.7rem] text-muted-foreground">Extras</div>
+                                <div className="text-xs font-semibold">
+                                  {a.horas_extras.toFixed(2)} h
+                                </div>
+                              </>
+                            ) : a.codigo === 'V' ? (
+                              <div className="text-xs font-semibold text-emerald-700">
+                                Vacaciones
+                              </div>
+                            ) : a.codigo === 'AP' ? (
+                              <div className="text-xs font-semibold text-sky-700">
+                                Asuntos propios
+                              </div>
+                            ) : a.codigo === 'H' ? (
+                              <div className="text-xs font-semibold text-yellow-700">
+                                Horas Extras
+                              </div>
+                            ) : null}
                           </div>
                         </li>
                       ))}
                     </ul>
                   )}
 
+                  {/* Resumen horas extra */}
                   <div className="mt-2 text-xs sm:text-sm space-y-1">
                     <p>
                       <strong>Horas extra acumuladas:</strong> {horas.total.toFixed(2)} h
@@ -495,9 +550,50 @@ function BFListPageInner() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Detalle de horas extra por día */}
+                  <div className="mt-3 text-xs sm:text-sm space-y-2">
+                    <div className="text-xs uppercase text-muted-foreground">
+                      Detalle de horas extra (últimos días)
+                    </div>
+
+                    {loadingHorasExtras ? (
+                      <div className="space-y-1">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                          <div key={i} className="h-6 rounded bg-muted/50 animate-pulse" />
+                        ))}
+                      </div>
+                    ) : !horasExtrasDetalle.length ? (
+                      <div className="text-xs text-muted-foreground">
+                        No hay horas extra registradas todavía.
+                      </div>
+                    ) : (
+                      <ul className="space-y-1">
+                        {horasExtrasDetalle.map((h) => (
+                          <li
+                            key={h.id}
+                            className="flex items-center justify-between rounded-sm border bg-background/60 px-2 py-1"
+                          >
+                            <div className="text-[0.75rem] sm:text-xs">
+                              {new Date(h.fecha).toLocaleDateString('es-ES', {
+                                weekday: 'short',
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: '2-digit',
+                              })}
+                            </div>
+                            <div className="text-[0.75rem] sm:text-xs font-semibold">
+                              {Number(h.horas_extras).toFixed(2)} h
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 </div>
               </div>
-              {/* 👉 Resumen de vacaciones y asuntos propios */}
+
+              {/* Resumen de vacaciones y asuntos propios */}
               <div className="mt-3 text-xs sm:text-sm space-y-2">
                 <p className="font-semibold">Año {dias.year}</p>
 
@@ -556,6 +652,26 @@ function BFListPageInner() {
               </div>
             </>
           )}
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hidden sm:inline-flex"
+              onClick={() => router.push('/bf')}
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Inicio
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hidden sm:inline-flex"
+              onClick={() => router.push('/bf/send')}
+            >
+              Solicitudes
+              <ArrowRight className="h-4 w-4 mr-1" />
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </main>

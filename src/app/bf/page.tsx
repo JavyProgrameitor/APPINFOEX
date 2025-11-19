@@ -94,7 +94,7 @@ export default function BFHome() {
   }
 
   return (
-    <div className="h-screen flex items-center justify-center">
+    <div className="flex items-center justify-center h-96">
       <div className="w-full max-w-md space-y-4">
         <Card className="rounded-2xl shadow-2xl shadow-accent">
           <CardHeader>

@@ -276,6 +276,7 @@ function AgregarBomberos() {
     } catch {}
   }
   const goNext = () => router.push('/jr/note' + (ctx ? buildQueryFromCtx(ctx) : ''))
+  const goInit = () => router.push('/jr')
 
   function buildQueryFromCtx(c: JRContext) {
     const p = new URLSearchParams()
@@ -334,6 +335,9 @@ function AgregarBomberos() {
                 )}
 
                 <div className="flex items-center gap-2">
+                  <Button type="button" variant="outline" onClick={goInit}>
+                    Inicio
+                  </Button>
                   <Button type="button" variant="outline" onClick={goNext}>
                     Continuar
                   </Button>

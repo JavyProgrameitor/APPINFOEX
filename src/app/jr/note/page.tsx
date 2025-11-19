@@ -595,7 +595,7 @@ function NoteJR() {
                             </div>
                           </div>
                           <div className="space-y-1">
-                            <label className="lg:hidden text-lg font-bold text-muted-foreground">
+                            <label className="lg:hidden text-lg font-bold text-muted-foreground shadow-2xl">
                               Código de trabajo
                             </label>
                             <select
@@ -646,7 +646,7 @@ function NoteJR() {
                               step={0.25}
                               min={0}
                               // ancho contenido y sin márgenes que lo saquen fuera
-                              className="w-14 lg:w-16 xl:w-20 rounded border px-2 py-1 text-right text-sm bg-background appearance-auto h-9 m-1"
+                              className="w-16 lg:w-16 xl:w-20 rounded-2xl border-2 shadow-2xl  px-2 py-1 text-right text-sm  h-9 m-1"
                               value={uiHX}
                               onChange={(e) => {
                                 const v = e.target.value
