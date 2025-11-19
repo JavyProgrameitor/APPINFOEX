@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { usePathname, useSearchParams } from 'next/navigation'
-import type { LucideIcon } from 'lucide-react'
 import { Calendar, FileText, Home, Users, UserX } from 'lucide-react'
 
 const links = [
@@ -16,8 +15,11 @@ const links = [
 
 export function SidebarAdmin({ className }: { className?: string }) {
   const pathname = usePathname()
-  const searchParams = useSearchParams()
-  const id = searchParams.get('id')
+  const params = useSearchParams()
+
+  // si hay id en la URL, lo mantenemos
+  const id = params.get('id')
+  const suffix = id ? `?id=${id}` : ''
 
   return (
     <aside
@@ -28,26 +30,19 @@ export function SidebarAdmin({ className }: { className?: string }) {
         className,
       )}
     >
-      {/* Cabecera del sidebar */}
       <div className="p-4 font-black tracking-tight text-xl border-b-2 border-white/60">
         ADMINISTRACIÓN
       </div>
 
-      {/* Navegación */}
       <nav className="px-3 py-3 space-y-2">
-        {links.map((l: { href: string; label: string; icon: LucideIcon }) => {
-          // si tenemos id y el link es list o month, lo añadimos como query
-          let href = l.href
-          if (id && (l.href === '/admin/list' || l.href === '/admin/month')) {
-            href = `${l.href}?id=${id}`
-          }
-
+        {links.map((l) => {
+          const fullHref = `${l.href}${suffix}`
           const active = pathname === l.href
 
           return (
             <Link
               key={l.href}
-              href={href}
+              href={fullHref}
               className={cn(
                 'group flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2',
