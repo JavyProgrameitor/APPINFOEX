@@ -1,7 +1,7 @@
 'use client'
 
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useEffect, useMemo, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -42,7 +42,8 @@ interface UsuarioBasic {
   email?: string | null
 }
 
-export default function AdminDeleteUserPageInner() {
+// 🔹 Componente interno que usa hooks de navegación y search params
+function AdminDeleteUserPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
@@ -59,21 +60,26 @@ export default function AdminDeleteUserPageInner() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [confirmDni, setConfirmDni] = useState('')
 
-  // --- FIX: derivamos valores estables sin romper nada ---
+  // --- derivamos valores estables ---
   const dniParam = useMemo(() => searchParams.get('dni'), [searchParams])
   const idParam = useMemo(() => searchParams.get('id'), [searchParams])
 
   useEffect(() => {
-    if (dniParam && dniParam !== dniQuery) {
-      setDniQuery(dniParam)
-      void handleSearch(dniParam)
-      return
+    async function run() {
+      if (dniParam && dniParam !== dniQuery) {
+        setDniQuery(dniParam)
+        await handleSearch(dniParam)
+        return
+      }
+
+      if (idParam && !user && !loadingUser) {
+        await loadById(idParam)
+      }
     }
 
-    if (idParam && !user && !loadingUser) {
-      void loadById(idParam)
-    }
-  }, [dniParam, idParam]) // ← ahora sin warnings
+    void run()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dniParam, idParam])
 
   async function loadById(id: string) {
     setLoadingUser(true)
@@ -151,7 +157,9 @@ export default function AdminDeleteUserPageInner() {
           setMunicipio((m as Municipio) || null)
         }
       }
-    } catch {}
+    } catch {
+      // silencioso
+    }
   }
 
   async function handleSearch(dniOverride?: string) {
@@ -490,5 +498,20 @@ export default function AdminDeleteUserPageInner() {
         </CardContent>
       </Card>
     </main>
+  )
+}
+
+// 🔹 Wrapper con Suspense: este es el default export que usará la ruta /admin/delete
+export default function AdminDeleteUserPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="p-4 md:p-6 max-w-3xl mx-auto">
+          <p className="text-sm text-muted-foreground">Cargando página de eliminación…</p>
+        </main>
+      }
+    >
+      <AdminDeleteUserPageInner />
+    </Suspense>
   )
 }
