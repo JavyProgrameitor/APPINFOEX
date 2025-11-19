@@ -1,7 +1,7 @@
 'use client'
 
-import { useSearchParams, useRouter } from 'next/navigation'
-import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -42,12 +42,16 @@ interface UsuarioBasic {
   email?: string | null
 }
 
-export default function AdminDeleteUserPageClient() {
+interface Props {
+  initialDni?: string
+  initialId?: string
+}
+
+export default function AdminDeleteUserPageClient({ initialDni, initialId }: Props) {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const { toast } = useToast()
 
-  const [dniQuery, setDniQuery] = useState('')
+  const [dniQuery, setDniQuery] = useState(initialDni ?? '')
   const [loadingUser, setLoadingUser] = useState(false)
   const [loadingDelete, setLoadingDelete] = useState(false)
 
@@ -59,27 +63,26 @@ export default function AdminDeleteUserPageClient() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [confirmDni, setConfirmDni] = useState('')
 
-  // Valores derivados de los search params
-  const dniParam = useMemo(() => searchParams.get('dni'), [searchParams])
-  const idParam = useMemo(() => searchParams.get('id'), [searchParams])
-
+  // ==========================
+  // Carga inicial por query param
+  // ==========================
   useEffect(() => {
-    // Evitamos bucles infinitos delegando en una función async interna
     const run = async () => {
-      if (dniParam && dniParam !== dniQuery) {
-        setDniQuery(dniParam)
-        await handleSearch(dniParam)
+      if (initialDni && initialDni.trim()) {
+        setDniQuery(initialDni)
+        await handleSearch(initialDni)
         return
       }
 
-      if (idParam && !user && !loadingUser) {
-        await loadById(idParam)
+      if (initialId && initialId.trim()) {
+        await loadById(initialId)
       }
     }
 
     void run()
+    // Solo al montar; no volver a ejecutar por cambios en props
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dniParam, idParam])
+  }, [])
 
   async function loadById(id: string) {
     setLoadingUser(true)

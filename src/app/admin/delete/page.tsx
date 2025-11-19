@@ -1,8 +1,18 @@
 // app/admin/delete/page.tsx
+// app/admin/delete/page.tsx
 import { Suspense } from 'react'
 import AdminDeleteUserPageClient from './deleteUserClient'
 
-export default function AdminDeleteUserPage() {
+type SearchParams = {
+  dni?: string | string[]
+  id?: string | string[]
+}
+
+export default function AdminDeleteUserPage({ searchParams }: { searchParams: SearchParams }) {
+  const dniParam = Array.isArray(searchParams.dni) ? searchParams.dni[0] : searchParams.dni
+
+  const idParam = Array.isArray(searchParams.id) ? searchParams.id[0] : searchParams.id
+
   return (
     <Suspense
       fallback={
@@ -11,7 +21,7 @@ export default function AdminDeleteUserPage() {
         </main>
       }
     >
-      <AdminDeleteUserPageClient />
+      <AdminDeleteUserPageClient initialDni={dniParam} initialId={idParam} />
     </Suspense>
   )
 }
