@@ -301,17 +301,7 @@ function BFSendPageInner() {
             <Flame color="#F52121" className="bg-amber-400 rounded-full" />
             Solicitud de días
           </CardTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="hidden sm:inline-flex"
-            onClick={() => router.push('/bf/list')}
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Mis Datos
-          </Button>
         </CardHeader>
-
         <CardContent className="space-y-4 p-4 shadow-accent">
           {loadingUser ? (
             <div className="space-y-3">
