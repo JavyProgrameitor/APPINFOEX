@@ -207,82 +207,73 @@ export default function AdminHomePage() {
 
   return (
     <main className="p-4 md:p-6 max-w-6xl mx-auto space-y-4 shadow-accent">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <h1 className="text-center text-xl md:text-2xl font-bold text-accent">
-          Bomberos y Jefes de Servicio
-        </h1>
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={refresh}
-            aria-label="Recargar"
-            className="rounded-sm"
-          >
-            <RefreshCcw className="h-4 w-4" />
-          </Button>
+      <h1 className="text-center text-xl md:text-2xl font-bold text-green-600">
+        Bomberos y Jefes de Servicio
+      </h1>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <Button size="icon" onClick={refresh} aria-label="Recargar" className="rounded-sm">
+          <RefreshCcw className="h-4 w-4" />
+        </Button>
+        {/* Select de Zona */}
+        <Select value={zona} onValueChange={setZona}>
+          <SelectTrigger className="min-w-40 rounded-2 border-green-600">
+            <SelectValue placeholder="Elegir zona" />
+          </SelectTrigger>
+          <SelectContent className="rounded-xs">
+            {zonas.map((z) => (
+              <SelectItem key={z} value={z} className="text-center text-green-600">
+                {z}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-          {/* Select de Zona */}
-          <Select value={zona} onValueChange={setZona}>
-            <SelectTrigger className="min-w-40 rounded-sm">
-              <SelectValue placeholder="Elegir zona" />
+        {/* Toggle de ámbito */}
+        <div className="inline-flex rounded-sm overflow-hidden ">
+          <Button
+            type="button"
+            variant={scope === 'unidad' ? 'default' : 'ghost'}
+            className={`rounded-sm  border-green-600 ${scope === 'unidad' ? '' : 'bg-transparent'}`}
+            onClick={() => setScope('unidad')}
+          >
+            Unidades
+          </Button>
+          <Button
+            type="button"
+            variant={scope === 'caseta' ? 'default' : 'ghost'}
+            className={`rounded-sm border-green-600 ${scope === 'caseta' ? '' : 'bg-transparent'}`}
+            onClick={() => setScope('caseta')}
+          >
+            Casetas
+          </Button>
+        </div>
+        {scope === 'unidad' ? (
+          <Select value={unidadId} onValueChange={setUnidadId} disabled={!zona}>
+            <SelectTrigger className="min-w-56 rounded-sm">
+              <SelectValue placeholder={zona ? 'Elegir unidad…' : 'Primero elige zona'} />
             </SelectTrigger>
-            <SelectContent className="rounded-xs">
-              {zonas.map((z) => (
-                <SelectItem key={z} value={z} className="text-center">
-                  {z}
+            <SelectContent className="rounded-xs max-h-64">
+              {unidadesEnZona.map((u) => (
+                <SelectItem key={u.id} value={u.id} className="text-center">
+                  {u.nombre}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-
-          {/* Toggle de ámbito */}
-          <div className="inline-flex rounded-sm border overflow-hidden ">
-            <Button
-              type="button"
-              variant={scope === 'unidad' ? 'default' : 'ghost'}
-              className={`rounded-sm ${scope === 'unidad' ? '' : 'bg-transparent'}`}
-              onClick={() => setScope('unidad')}
-            >
-              Unidades
-            </Button>
-            <Button
-              type="button"
-              variant={scope === 'caseta' ? 'default' : 'ghost'}
-              className={`rounded-sm border-l ${scope === 'caseta' ? '' : 'bg-transparent'}`}
-              onClick={() => setScope('caseta')}
-            >
-              Casetas
-            </Button>
-          </div>
-          {scope === 'unidad' ? (
-            <Select value={unidadId} onValueChange={setUnidadId} disabled={!zona}>
-              <SelectTrigger className="min-w-56 rounded-sm">
-                <SelectValue placeholder={zona ? 'Elegir unidad…' : 'Primero elige zona'} />
-              </SelectTrigger>
-              <SelectContent className="rounded-xs max-h-64">
-                {unidadesEnZona.map((u) => (
-                  <SelectItem key={u.id} value={u.id} className="text-center">
-                    {u.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <Select value={casetaId} onValueChange={setCasetaId} disabled={!zona}>
-              <SelectTrigger className="min-w-56 rounded-sm">
-                <SelectValue placeholder={zona ? 'Elegir caseta…' : 'Primero elige zona'} />
-              </SelectTrigger>
-              <SelectContent className="rounded-sm max-h-64">
-                {casetasEnZona.map((c) => (
-                  <SelectItem key={c.id} value={c.id} className="text-center">
-                    {c.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </div>
+        ) : (
+          <Select value={casetaId} onValueChange={setCasetaId} disabled={!zona}>
+            <SelectTrigger className="min-w-56 rounded-sm border-green-600">
+              <SelectValue placeholder={zona ? 'Elegir caseta…' : 'Primero elige zona'} />
+            </SelectTrigger>
+            <SelectContent className="rounded-sm max-h-64">
+              {casetasEnZona.map((c) => (
+                <SelectItem key={c.id} value={c.id} className="text-center">
+                  {c.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       <Card className="rounded-2xl shadow-2xl shadow-accent">
@@ -387,7 +378,6 @@ export default function AdminHomePage() {
             </div>
             <div className="flex items-center gap-2">
               <Button
-                variant="outline"
                 size="sm"
                 className={cn('rounded-sm')}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -397,7 +387,6 @@ export default function AdminHomePage() {
                 Anterior
               </Button>
               <Button
-                variant="outline"
                 size="sm"
                 className={cn('rounded-sm')}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}

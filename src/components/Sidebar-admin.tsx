@@ -48,7 +48,7 @@ export function SidebarAdmin({ className }: { className?: string }) {
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2',
                 'shadow-[0_1px_6px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.45)]',
                 active
-                  ? 'bg-primary text-primary-foreground shadow-[0_6px_20px_rgba(0,0,0,0.18)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.6)]'
+                  ? 'bg-green-600 text-primary-foreground shadow-[0_6px_20px_rgba(0,0,0,0.18)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.6)]'
                   : 'bg-background/70 text-foreground/80 hover:bg-muted/70 dark:text-foreground/70 dark:hover:bg-muted/50',
                 !active &&
                   'hover:translate-y-px hover:shadow-[0_4px_14px_rgba(0,0,0,0.14)] dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.6)]',

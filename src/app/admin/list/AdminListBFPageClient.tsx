@@ -267,7 +267,7 @@ export default function AdminListBFPageClient({ userId }: Props) {
     <main className="p-4 md:p-6 max-w-3xl mx-auto">
       <Card className="rounded-2xl shadow-2xl shadow-accent">
         <CardHeader>
-          <CardTitle className="text-center text-lg md:text-xl text-accent">
+          <CardTitle className="text-center text-lg md:text-xl text-green-600">
             Detalle del Bombero
           </CardTitle>
         </CardHeader>
@@ -499,12 +499,12 @@ export default function AdminListBFPageClient({ userId }: Props) {
               </div>
 
               <div className="flex items-center justify-between gap-2">
-                <Button variant="ghost" onClick={() => router.push('/admin')}>
+                <Button onClick={() => router.push('/admin')}>
                   <ArrowLeft />
                   Volver al listado
                 </Button>
                 <div className="flex flex-col items-end gap-2">
-                  <Button variant="ghost" onClick={() => router.push(`/admin/month?id=${user.id}`)}>
+                  <Button onClick={() => router.push(`/admin/month?id=${user.id}`)}>
                     Ver resumen mensual
                     <ArrowRight />
                   </Button>

@@ -317,7 +317,7 @@ function BFListPageInner() {
     <main className="p-4 md:p-6 max-w-3xl mx-auto">
       <Card className="rounded-2xl shadow-2xl shadow-accent">
         <CardHeader className="flex flex-col items-center justify-between gap-2">
-          <CardTitle className="text-lg md:text-xl text-accent flex items-center gap-2">
+          <CardTitle className="text-lg md:text-xl text-green-600 flex items-center gap-2">
             <Flame color="#F52121" className="bg-amber-400 rounded-full" />
             Mi ficha de Bombero Forestal
           </CardTitle>
@@ -657,17 +657,11 @@ function BFListPageInner() {
             </>
           )}
           <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="hidden sm:inline-flex"
-              onClick={() => router.push('/bf')}
-            >
+            <Button size="sm" className="hidden sm:inline-flex" onClick={() => router.push('/bf')}>
               <ArrowLeft className="h-4 w-4 mr-1" />
               Inicio
             </Button>
             <Button
-              variant="ghost"
               size="sm"
               className="hidden sm:inline-flex"
               onClick={() => router.push('/bf/send')}

@@ -111,7 +111,7 @@ export default function AuthPage() {
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="flex flex-col gap-1">
-              <label htmlFor="email" className="text-primary text-lg font-black">
+              <label htmlFor="email" className="text-green-500 text-lg font-black">
                 Correo :
               </label>
               <Input
@@ -125,7 +125,7 @@ export default function AuthPage() {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label htmlFor="pass" className="text-primary text-lg font-black">
+              <label htmlFor="pass" className="text-green-500 text-lg font-black">
                 Contraseña :
               </label>
               <Input
@@ -142,7 +142,7 @@ export default function AuthPage() {
 
             <Button
               type="submit"
-              className="w-full text-sm font-black cursor-pointer"
+              className="w-full text-sm font-black cursor-pointer  border-lime-50  bg-green-500"
               disabled={loading}
             >
               {loading ? 'Entrando...' : 'Entrar'}

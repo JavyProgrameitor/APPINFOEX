@@ -335,13 +335,13 @@ function AgregarBomberos() {
                 )}
 
                 <div className="flex items-center gap-2">
-                  <Button type="button" variant="outline" onClick={goInit}>
+                  <Button type="button" onClick={goInit}>
                     Inicio
                   </Button>
-                  <Button type="button" variant="outline" onClick={goNext}>
+                  <Button type="button" onClick={goNext}>
                     Continuar
                   </Button>
-                  <Button type="button" variant="outline" onClick={limpiar}>
+                  <Button type="button" onClick={limpiar}>
                     Limpiar selección
                   </Button>
                 </div>

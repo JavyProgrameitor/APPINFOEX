@@ -200,9 +200,6 @@ function BFSendPageInner() {
       setEnviando(true)
       const supa = getSupabaseBrowser()
 
-      // ⚠️ VERIFICACIÓN:
-      // 1) un mismo día no puede tener V/AP/H a la vez
-      // 2) si ese día ya tiene horas extra (> 0), no se puede pedir nada (se ha trabajado)
       const { data: existentes, error: errExistentes } = await supa
         .from('anotaciones')
         .select('id,codigo,horas_extras')
@@ -297,7 +294,7 @@ function BFSendPageInner() {
     <main className="p-4 md:p-6 max-w-3xl mx-auto">
       <Card className="rounded-2xl shadow-2xl shadow-accent">
         <CardHeader className="flex items-center justify-center gap-2">
-          <CardTitle className="text-lg md:text-xl text-accent flex items-center gap-2">
+          <CardTitle className="text-lg md:text-xl text-green-600 flex items-center gap-2">
             <Flame color="#F52121" className="bg-amber-400 rounded-full" />
             Solicitud de días
           </CardTitle>

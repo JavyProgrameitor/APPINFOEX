@@ -130,7 +130,7 @@ export default function StartJR() {
       <div className="mx-auto w-full max-w-3xl">
         <Card className="shadow-accent rounded-xl">
           <CardHeader className="text-center">
-            <CardTitle className="text-xl">DESTINO ASIGNADO</CardTitle>
+            <CardTitle className="text-xl text-green-600">DESTINO ASIGNADO</CardTitle>
           </CardHeader>
 
           <CardContent className="space-y-6 text-center">
@@ -162,12 +162,8 @@ export default function StartJR() {
                 )}
 
                 <div className="flex justify-center gap-3">
-                  <Button variant="ghost" onClick={goNext}>
-                    Continuar como JR
-                  </Button>
-                  <Button variant="ghost" onClick={goBF}>
-                    Ver mi panel de BF
-                  </Button>
+                  <Button onClick={goNext}>Continuar como JR</Button>
+                  <Button onClick={goBF}> Ver mi panel de BF </Button>
                 </div>
               </>
             ) : null}

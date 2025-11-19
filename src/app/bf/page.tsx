@@ -96,10 +96,10 @@ export default function BFHome() {
 
   return (
     <div className="flex items-center justify-center mt-3">
-      <div className="max-w-md">
-        <CardTitle className="text-xl font-black text-center text-accent flex items-center gap-1 m-3">
+      <div className="max-w-sm">
+        <CardTitle className="text-xl font-bold text-center text-green-600 flex items-center gap-3 ">
           <Flame color="#F52121" className="bg-amber-400 rounded-full" />
-          Bienvenido al panel del Bombero Forestal de Extremadura
+          Panel del B.F de Extremadura
         </CardTitle>
         <Card className="rounded-2xl shadow-2xl shadow-accent">
           <CardHeader>
@@ -110,7 +110,7 @@ export default function BFHome() {
           <CardContent className="flex items-center justify-center">
             <form onSubmit={onSubmit}>
               <label className="text-sm font-bold">Nueva contraseña</label>
-              <div className="m-2">
+              <div>
                 <Input
                   type="password"
                   value={newPass}
@@ -120,7 +120,7 @@ export default function BFHome() {
                 />
               </div>
               <label className="text-sm font-bold">Repite la nueva contraseña</label>
-              <div className="m-2">
+              <div>
                 <Input
                   type="password"
                   value={newPass2}

@@ -47,7 +47,7 @@ export function SidebarBF({ className }: { className?: string }) {
 
                 // Colores por estado
                 active
-                  ? 'bg-primary text-primary-foreground shadow-[0_6px_20px_rgba(0,0,0,0.18)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.6)]'
+                  ? 'bg-green-600 text-primary-foreground shadow-[0_6px_20px_rgba(0,0,0,0.18)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.6)]'
                   : 'bg-background/70 text-foreground/80 hover:bg-muted/70 dark:text-foreground/70 dark:hover:bg-muted/50',
 
                 // Micro-animación en hover (no en activo)

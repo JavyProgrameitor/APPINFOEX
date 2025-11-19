@@ -153,7 +153,7 @@ function AdminMonthPageInner() {
       <Card className="rounded-2xl shadow-2xl shadow-accent">
         <CardHeader className="flex flex-row items-center justify-center gap-2">
           <div>
-            <CardTitle className="text-lg md:text-xl text-accent flex items-center gap-2">
+            <CardTitle className="text-lg md:text-xl text-green-600 flex items-center gap-2">
               <CalendarDays className="h-5 w-5" />
               Administrador, resumen mensual de :
             </CardTitle>
@@ -180,11 +180,11 @@ function AdminMonthPageInner() {
               {/* Selector mes/año */}
               <div className="flex items-center justify-center flex-wrap gap-2">
                 <div className="flex items-center gap-2">
-                  <Button type="button" variant="outline" size="sm" onClick={() => cambiarMes(-1)}>
+                  <Button type="button" size="sm" onClick={() => cambiarMes(-1)}>
                     ‹ Mes anterior
                   </Button>
                   <div className="text-amber-600 font-black capitalize">{nombreMes}</div>
-                  <Button type="button" variant="outline" size="sm" onClick={() => cambiarMes(1)}>
+                  <Button type="button" size="sm" onClick={() => cambiarMes(1)}>
                     Mes siguiente ›
                   </Button>
                 </div>
@@ -226,15 +226,15 @@ function AdminMonthPageInner() {
                     let codigoClasses = 'mt-1 font-mono text-[0.75rem]'
                     if (codigo === 'V') {
                       cellClasses =
-                        'border border-emerald-300 bg-emerald-50 rounded-md p-2 text-center text-xs shadow-sm'
+                        'border border-emerald-300 bg-emerald-600 rounded-md p-2 text-center text-xs shadow-sm'
                       codigoClasses = 'mt-1 font-mono text-[0.75rem] text-emerald-700 font-semibold'
                     } else if (codigo === 'AP') {
                       cellClasses =
-                        'border border-sky-300 bg-sky-50 rounded-md p-2 text-center text-xs shadow-sm'
+                        'border border-sky-300 bg-sky-600 rounded-md p-2 text-center text-xs shadow-sm'
                       codigoClasses = 'mt-1 font-mono text-[0.75rem] text-sky-700 font-semibold'
                     } else if (codigo === 'H') {
                       cellClasses =
-                        'border border-amber-300 bg-amber-50 rounded-md p-2 text-center text-xs shadow-sm'
+                        'border border-amber-300 bg-amber-600 rounded-md p-2 text-center text-xs shadow-sm'
                       codigoClasses = 'mt-1 font-mono text-[0.75rem] text-yellow-700 font-semibold'
                     }
 
@@ -256,7 +256,7 @@ function AdminMonthPageInner() {
             </>
           )}
         </CardContent>
-        <Button variant="ghost" className="w-38 m-3" onClick={() => router.push('/admin')}>
+        <Button className="w-38 m-3" onClick={() => router.push('/admin')}>
           <ArrowLeft className="h-4 w-4 mr-1" />
           Volver al listado
         </Button>

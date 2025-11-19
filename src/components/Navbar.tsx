@@ -73,7 +73,6 @@ export default function NavBar() {
 
   useEffect(() => {
     fetchMe({ redirectOn401: isRoleRoute })
-    setOpen(false)
   }, [fetchMe, isRoleRoute, pathname])
 
   useEffect(() => {
@@ -106,22 +105,10 @@ export default function NavBar() {
   return (
     <header className="sticky top-0 z-50 w-full border-8 bg-[--card]/90 backdrop-blur supports-backdrop-filter:bg-[--card]/80">
       <nav className="mx-auto max-w-6xl px-3 sm:px-4">
-        {/* 3 columnas reales: izquierda (hamburguesa), centro (título), derecha (acciones) */}
-        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 h-14">
-          {/* Izquierda: hamburguesa (solo móvil) */}
-          <div className="flex md:hidden">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
-              onClick={() => setOpen((v) => !v)}
-            >
-              {open ? <X size={18} /> : <Menu size={18} />}
-            </Button>
-          </div>
-
-          {/* Centro: logo + título centrados y truncados (no solapa nunca) */}
-          <div className="min-w-0 justify-self-center">
+        {/* Contenedor principal: logo a la izquierda, acciones/hamburguesa a la derecha */}
+        <div className="flex items-center justify-between h-14">
+          {/* Izquierda: logo + título */}
+          <div className="min-w-0">
             <Link href="/" className="flex items-center gap-2 max-w-full">
               <Image
                 src="/img/logoGreen.svg"
@@ -132,8 +119,7 @@ export default function NavBar() {
                 priority
               />
               <span
-                className="truncate font-black leading-tight
-                           text-base sm:text-lg md:text-xl"
+                className="truncate font-black leading-tight text-base sm:text-lg md:text-xl"
                 title="APP CONTROL-DIARIO"
               >
                 APP CONTROL-DIARIO
@@ -141,52 +127,62 @@ export default function NavBar() {
             </Link>
           </div>
 
-          {/* Derecha: acciones desktop */}
-          <div className="hidden md:flex items-center gap-2 justify-self-end">
-            {isRoleRoute && !loading && email && (
-              <span className="flex text-sm items-center gap-2 px-3 py-1 rounded-xl border border-/40">
-                <span className="inline-flex items-center gap-1">
-                  <span className="rounded-full w-2 h-2 bg-destructive" />
-                  <span className="font-semibold">{roleLabel(rol)}</span>
+          {/* Derecha: acciones (desktop) + hamburguesa (móvil) */}
+          <div className="flex items-center gap-2">
+            {/* Acciones desktop */}
+            <div className="hidden md:flex items-center gap-2">
+              {isRoleRoute && !loading && email && (
+                <span className="flex text-sm items-center gap-2 px-3 py-1 rounded-xl border border-/40">
+                  <span className="inline-flex items-center gap-1">
+                    <span className="rounded-full w-2 h-2 bg-destructive" />
+                    <span className="font-semibold">{roleLabel(rol)}</span>
+                  </span>
+                  <span className="text-primary/70">✓</span>
+                  <span className="opacity-80">{email}</span>
                 </span>
-                <span className="text-primary/70">✓</span>
-                <span className="opacity-80">{email}</span>
-              </span>
-            )}
-
-            {isRoleRoute && !loading && email && (
-              <Button size="sm" variant="destructive" onClick={onLogout}>
-                Salir
-              </Button>
-            )}
-
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => mounted && setTheme(isLight ? 'dark' : 'light')}
-              aria-label="Cambiar tema"
-              suppressHydrationWarning
-            >
-              {!mounted ? (
-                <span className="inline-block w-4 h-4" />
-              ) : isLight ? (
-                <Moon size={16} />
-              ) : (
-                <Sun size={16} />
               )}
+
+              {isRoleRoute && !loading && email && (
+                <Button size="sm" variant="destructive" onClick={onLogout}>
+                  Salir
+                </Button>
+              )}
+
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => mounted && setTheme(isLight ? 'dark' : 'light')}
+                aria-label="Cambiar tema"
+                suppressHydrationWarning
+              >
+                {!mounted ? (
+                  <span className="inline-block w-4 h-4" />
+                ) : isLight ? (
+                  <Moon size={16} />
+                ) : (
+                  <Sun size={16} />
+                )}
+              </Button>
+            </div>
+
+            {/* Hamburguesa móvil a la derecha */}
+            <Button
+              className="md:hidden"
+              variant="ghost"
+              size="icon"
+              aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
+              aria-expanded={open}
+              aria-controls="mobile-menu"
+              onClick={() => setOpen((v) => !v)}
+            >
+              {open ? <X size={18} /> : <Menu size={18} />}
             </Button>
           </div>
         </div>
 
-        {/* Panel móvil colapsable */}
-        <div
-          className={[
-            'md:hidden overflow-hidden transition-[max-height,opacity] duration-200 ease-out',
-            open ? 'max-h-[60dvh] opacity-100' : 'max-h-0 opacity-0',
-          ].join(' ')}
-          aria-hidden={!open}
-        >
-          <div className="border-t py-2">
+        {/* Panel móvil (solo se renderiza cuando está abierto) */}
+        {open && (
+          <div id="mobile-menu" className="md:hidden overflow-hidden border-t py-2">
             <div className="flex items-center justify-between gap-2">
               {isRoleRoute && !loading && email && (
                 <span className="text-xs inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-amber/40 bg-white/10 ">
@@ -223,7 +219,7 @@ export default function NavBar() {
               </div>
             </div>
           </div>
-        </div>
+        )}
       </nav>
     </header>
   )
