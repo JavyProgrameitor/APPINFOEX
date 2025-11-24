@@ -106,7 +106,7 @@ export default function NavBar() {
     <header className="sticky top-0 z-50 w-full border-8 bg-[--card]/90 backdrop-blur supports-backdrop-filter:bg-[--card]/80">
       <nav className="mx-auto max-w-6xl px-3 sm:px-4">
         {/* Contenedor principal: logo a la izquierda, acciones/hamburguesa a la derecha */}
-        <div className="flex items-center justify-between h-14">
+        <div className="flex items-center justify-evenly h-14">
           {/* Izquierda: logo + título */}
           <div className="min-w-0">
             <Link href="/" className="flex items-center gap-2 max-w-full">
@@ -126,19 +126,17 @@ export default function NavBar() {
               </span>
             </Link>
           </div>
-
-          {/* Derecha: acciones (desktop) + hamburguesa (móvil) */}
           <div className="flex items-center gap-2">
             {/* Acciones desktop */}
             <div className="hidden md:flex items-center gap-2">
               {isRoleRoute && !loading && email && (
-                <span className="flex text-sm items-center gap-2 px-3 py-1 rounded-xl border border-/40">
+                <span className="flex text-sm items-center gap-2 px-3 py-1 rounded-xl border-2">
                   <span className="inline-flex items-center gap-1">
-                    <span className="rounded-full w-2 h-2 bg-destructive" />
-                    <span className="font-semibold">{roleLabel(rol)}</span>
+                    <span className="rounded-full w-3 h-3 bg-destructive" />
+                    <span className="font-black">{roleLabel(rol)}</span>
                   </span>
-                  <span className="text-primary/70">✓</span>
-                  <span className="opacity-80">{email}</span>
+                  <span className="text-green-600">✓</span>
+                  <span className="opacity-80 font-semibold">{email}</span>
                 </span>
               )}
 
@@ -149,7 +147,7 @@ export default function NavBar() {
               )}
 
               <Button
-                variant="outline"
+                variant="ghost"
                 size="icon"
                 onClick={() => mounted && setTheme(isLight ? 'dark' : 'light')}
                 aria-label="Cambiar tema"
@@ -182,12 +180,12 @@ export default function NavBar() {
 
         {/* Panel móvil (solo se renderiza cuando está abierto) */}
         {open && (
-          <div id="mobile-menu" className="md:hidden overflow-hidden border-t py-2">
+          <div id="mobile-menu" className="md:hidden overflow-hidden border-t py-2 cursor-pointer">
             <div className="flex items-center justify-between gap-2">
               {isRoleRoute && !loading && email && (
                 <span className="text-xs inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-amber/40 bg-white/10 ">
                   <span className="inline-flex items-center gap-1">
-                    <span className="rounded-full w-2 h-2 bg-destructive" />
+                    <span className="rounded-full w-2 h-2 bg-destructive cursor-pointer" />
                     <span className="font-semibold">{roleLabel(rol)}</span>
                   </span>
                   <span className="text-primary/70">✓</span>
@@ -197,12 +195,17 @@ export default function NavBar() {
 
               <div className="flex items-center gap-2">
                 {isRoleRoute && !loading && email && (
-                  <Button size="sm" variant="destructive" onClick={onLogout}>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="cursor-pointer"
+                    onClick={onLogout}
+                  >
                     Salir
                   </Button>
                 )}
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="icon"
                   onClick={() => mounted && setTheme(isLight ? 'dark' : 'light')}
                   aria-label="Cambiar tema"

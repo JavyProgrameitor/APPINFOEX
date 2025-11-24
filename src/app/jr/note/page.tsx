@@ -16,6 +16,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/Dialog'
+import { ArrowLeft, ArrowRight, CalendarClock } from 'lucide-react'
 
 type BomberoItem = { dni: string; nombre: string; apellidos: string }
 
@@ -291,7 +292,7 @@ function NoteJR() {
     return () => {
       cancelled = true
     }
-  }, [bomberos]) // 👈 SOLO depende de bomberos
+  }, [bomberos])
 
   // Persistencia
   useEffect(() => {
@@ -502,30 +503,12 @@ function NoteJR() {
   return (
     <main className="min-h-dvh w-full p-4">
       <div className="mx-auto max-w-6xl space-y-4">
-        <div className="flex gap-2 mb-2">
-          <Button
-            variant="ghost"
-            className="font-bold border-2 border-lime-50"
-            onClick={volverABomberos}
-          >
-            Bomberos
-          </Button>
-          <Button variant="ghost" className="font-bold border-2 border-lime-50">
-            Diario
-          </Button>
-          <Button
-            variant="ghost"
-            className="font-bold border-2 border-lime-50"
-            onClick={irASalidas}
-          >
-            Salidas
-          </Button>
-        </div>
-
-        <Card className="shadow-xl rounded-2xl shadow-accent">
-          <CardHeader className="space-y-2">
-            <CardTitle className="text-center font-black text-2xl">Control Diario</CardTitle>
-            <span className="font-black text-primary text-center text-xl">Fecha:{fechaDia}</span>
+        <Card className="rounded-2xl shadow-accent">
+          <CardHeader className="flex items-center justify-center">
+            <CalendarClock></CalendarClock>
+            <CardTitle className="text-animate text-center font-black text-2xl">
+              Control Diario : {fechaDia}
+            </CardTitle>
           </CardHeader>
 
           <CardContent className="space-y-4">
@@ -675,29 +658,17 @@ function NoteJR() {
                     <AlertDescription className="text-base">{msg}</AlertDescription>
                   </Alert>
                 )}
-
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="secondary"
-                    className="font-bold border-2 border-lime-50 cursor-pointer transition-colors hover:bg-lime-200 hover:text-lime-900"
-                    onClick={volverABomberos}
-                  >
+                <div className="flex justify-center gap-3">
+                  <Button variant="ghost" onClick={volverABomberos}>
+                    <ArrowLeft></ArrowLeft>
                     Atrás
                   </Button>
-
-                  <Button
-                    className="font-bold border-2 border-lime-50 cursor-pointer transition-colors hover:bg-lime-200 hover:text-lime-900"
-                    onClick={guardarAnotacionesAhora}
-                    disabled={saving}
-                  >
+                  <Button variant="ghost" onClick={guardarAnotacionesAhora} disabled={saving}>
                     {saving ? 'Guardando…' : 'Guardar diario '}
                   </Button>
-
-                  <Button
-                    className="font-bold border-2 border-lime-50 cursor-pointer transition-colors hover:bg-lime-200 hover:text-lime-900"
-                    onClick={irASalidas}
-                  >
+                  <Button variant="ghost" onClick={irASalidas}>
                     Siguiente: Salidas
+                    <ArrowRight></ArrowRight>
                   </Button>
                 </div>
               </>

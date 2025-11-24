@@ -167,10 +167,10 @@ function BFMonthPageInner() {
 
   return (
     <main className="p-4 md:p-6 max-w-4xl mx-auto">
-      <Card className="rounded-2xl shadow-2xl shadow-accent">
+      <Card className="rounded-2xl shadow-accent">
         <CardHeader className="flex items-center justify-center gap-2">
-          <CardTitle className="text-lg md:text-xl text-green-600 flex items-center gap-2">
-            <CalendarDays className="h-5 w-5" />
+          <CalendarDays className="h-5 w-5" />
+          <CardTitle className="text-lg md:text-xl text-animate flex items-center gap-2">
             Resumen mensual de anotaciones
           </CardTitle>
         </CardHeader>
@@ -192,11 +192,11 @@ function BFMonthPageInner() {
               {/* Selector de mes/año */}
               <div className="flex items-center justify-center flex-wrap gap-2">
                 <div className="flex items-center gap-2">
-                  <Button type="button" variant="outline" size="sm" onClick={() => cambiarMes(-1)}>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => cambiarMes(-1)}>
                     ‹ Mes anterior
                   </Button>
-                  <div className="text-amber-600 font-black capitalize">{nombreMes}</div>
-                  <Button type="button" variant="outline" size="sm" onClick={() => cambiarMes(1)}>
+                  <div className="text-animate font-black capitalize">{nombreMes}</div>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => cambiarMes(1)}>
                     Mes siguiente ›
                   </Button>
                 </div>
@@ -208,7 +208,7 @@ function BFMonthPageInner() {
               {loadingMes ? (
                 <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
                   {Array.from({ length: daysInMonth }).map((_, i) => (
-                    <div key={i} className="h-20 rounded bg-muted/50 animate-pulse" />
+                    <div key={i} className="h-20 rounded-sm" />
                   ))}
                 </div>
               ) : (
@@ -231,44 +231,44 @@ function BFMonthPageInner() {
                     let label = ''
                     if (codigo === 'V') label = 'Vacaciones'
                     else if (codigo === 'AP') label = 'Asuntos propios'
-                    else if (codigo === 'H') label = 'Día por horas extra'
+                    else if (codigo === 'H') label = 'Horas extras'
 
                     // colores según código
                     let cellClasses = 'border rounded-md p-2 text-center text-xs bg-card shadow-sm'
-                    let codigoClasses = 'mt-1 font-mono text-[0.75rem]'
+                    let codigoClasses = 'mt-1 font-mono text-xs'
                     if (codigo === 'V') {
                       cellClasses =
-                        'border border-emerald-300 bg-green-600 rounded-md p-2 text-center text-xs shadow-sm'
-                      codigoClasses = 'mt-1 font-mono text-[0.75rem] text-emerald-700 font-semibold'
+                        'bg-success text-success-foreground rounded-md p-2 text-center text-xs shadow-sm'
+                      codigoClasses = 'mt-1 font-black text-sm text-success'
                     } else if (codigo === 'AP') {
                       cellClasses =
-                        'border border-sky-300 bg-sky-600 rounded-md p-2 text-center text-xs shadow-sm'
-                      codigoClasses = 'mt-1 font-mono text-[0.75rem] text-sky-700 font-semibold'
+                        'bg-info text-info-foreground rounded-md p-2 text-center text-xs shadow-sm'
+                      codigoClasses = 'mt-1 font-black text-sm text-info'
                     } else if (codigo === 'H') {
                       cellClasses =
-                        'border border-amber-300 bg-amber-600 rounded-md p-2 text-center text-xs shadow-sm'
-                      codigoClasses = 'mt-1 font-mono text-[0.75rem] text-yellow-700 font-semibold'
+                        'bg-warning text-warning-foreground rounded-md p-2 text-center text-xs shadow-sm'
+                      codigoClasses = 'mt-1 font-black text-sm text-warning'
                     }
 
                     return (
                       <div key={fechaStr} className={cellClasses}>
                         <div className="text-sm font-semibold">{day}</div>
-                        <div className="text-[0.7rem] text-muted-foreground capitalize">
-                          {weekday}
-                        </div>
+                        <div className="text-sm text-muted-foreground capitalize">{weekday}</div>
                         <div className={codigoClasses}>{codigo || '—'}</div>
                         {label && (
-                          <div className="mt-0.5 text-[0.65rem] text-muted-foreground">{label}</div>
+                          <div className="mt-0.5 text-xs text-muted-foreground">{label}</div>
                         )}
                       </div>
                     )
                   })}
                 </div>
               )}
-              <Button size="sm" onClick={() => router.push('/bf/list')}>
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Mis Datos
-              </Button>
+              <div className="flex items-center justify-center">
+                <Button variant="ghost" size="sm" onClick={() => router.push('/bf/list')}>
+                  <ArrowLeft></ArrowLeft>
+                  Mis Datos
+                </Button>
+              </div>
             </>
           )}
         </CardContent>

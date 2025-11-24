@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { useToast } from '@/components/ui/Use-toast'
+import { ArrowLeft, DoorOpen } from 'lucide-react'
 
 type BomberoItem = { dni: string; nombre: string; apellidos: string }
 type Anotacion = {
@@ -296,39 +297,16 @@ function ExitJR() {
   return (
     <main className="min-h-dvh w-full p-4">
       <div className="mx-auto max-w-6xl space-y-4">
-        <div className="flex gap-2 mb-2">
-          <Button
-            variant="ghost"
-            className="font-bold border-2 border-lime-50"
-            onClick={volverAAnotaciones}
-          >
-            Diario
-          </Button>
-          <Button variant="ghost" className="font-bold border-2 border-lime-50">
-            Salidas
-          </Button>
-        </div>
-
-        <Card className="shadow-xl rounded-2xl shadow-accent">
-          <CardHeader>
-            <CardTitle className="text-center text-2xl font-black">Salidas del día</CardTitle>
-            <b className="text-primary text-center text-xl">Fecha: {fecha}</b>
-            <div className="text-lg font-bold text-center">
-              Bomberos disponibles: <b className="text-primary">{totalBomberos}</b>
-            </div>
+        <Card className="rounded-2xl shadow-accent">
+          <CardHeader className="flex items-center justify-center">
+            <DoorOpen></DoorOpen>
+            <CardTitle className="text-center text-animate text-2xl font-black">
+              Salidas del día: <b className="text-center text-xl">{fecha}</b>
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 rounded-2xl">
-            <div className="overflow-x-auto rounded-2xl cursor-pointer">
-              {/* Cabecera solo en escritorio (lg+) */}
-              <div className="hidden lg:grid lg:grid-cols-[minmax(110px,150px)_minmax(110px,150px)_minmax(110px,150px)_minmax(110px,150px)_minmax(90px,140px)] gap-2 bg-muted text-sm font-bold px-2 py-2 rounded-xl text-center">
-                <div>Tipo salida</div>
-                <div>Hora salida</div>
-                <div>Hora entrada</div>
-                <div>Nº intervinientes</div>
-                <div></div>
-              </div>
-
-              {/* Filas */}
+          <CardContent className="rounded-2xl">
+            <div className="rounded-2xl cursor-pointer">
+              {/* Filas (siempre como cards, en todas las vistas) */}
               <div className="space-y-1 mt-2 lg:space-y-2">
                 {salidas.map((s, idx) => {
                   const touched = isTouched(s)
@@ -342,13 +320,8 @@ function ExitJR() {
                           : 'bg-background hover:bg-muted/40 dark:hover:bg-muted/20 border-border hover:border-primary/30 focus-within:ring-1 focus-within:ring-primary/30',
                       ].join(' ')}
                     >
-                      {/* Bloque tabla (PC) + layout compacto (móvil) */}
-                      <div
-                        className={[
-                          'grid gap-2 text-center',
-                          'lg:grid-cols-[minmax(110px,150px)_minmax(110px,150px)_minmax(110px,150px)_minmax(110px,150px)_minmax(90px,140px)] lg:items-center',
-                        ].join(' ')}
-                      >
+                      {/* Layout tipo card en todas las resoluciones */}
+                      <div className="grid gap-2 text-center">
                         {/* Tipo */}
                         <div className="gap-3">
                           <label className="text-lg font-bold text-muted-foreground">Tipo</label>
@@ -374,7 +347,7 @@ function ExitJR() {
 
                         {/* Hora salida */}
                         <div className="space-y-1">
-                          <label className="lg:hidden text-lg font-bold text-muted-foreground">
+                          <label className="text-lg font-bold text-muted-foreground">
                             Hora salida
                           </label>
                           <Input
@@ -388,7 +361,7 @@ function ExitJR() {
 
                         {/* Hora entrada */}
                         <div className="space-y-1 min-w-0">
-                          <label className="lg:hidden text-lg font-bold text-muted-foreground">
+                          <label className="text-lg font-bold text-muted-foreground">
                             Hora entrada
                           </label>
                           <Input
@@ -402,8 +375,8 @@ function ExitJR() {
 
                         {/* Nº intervinientes */}
                         <div className="space-y-1 min-w-0">
-                          <label className="lg:hidden text-lg font-bold text-muted-foreground">
-                            Bomberos hoy {totalBomberos} :
+                          <label className="text-lg font-bold text-muted-foreground">
+                            Bomberos que intervienen:<p className="text-animate">{totalBomberos}</p>
                           </label>
                           <input
                             type="tel"
@@ -420,8 +393,9 @@ function ExitJR() {
                             aria-label="Número de intervinientes"
                           />
                         </div>
-                        {/* Zona intervención FUERA de la tabla en PC, pero visible también en móvil */}
-                        <div className="space-y-1 text-center lg:text-left">
+
+                        {/* Zona intervención (siempre visible) */}
+                        <div className="space-y-1 text-center">
                           <label className="text-lg font-bold text-muted-foreground lg:text-sm">
                             Zona de intervención
                           </label>
@@ -433,13 +407,16 @@ function ExitJR() {
                             aria-label="Lugar"
                           />
                         </div>
-                        {/* Acción */}
-                        <div className="flex justify-center">
-                          <Button
-                            variant="secondary"
-                            className="font-bold border-2 border-lime-50 cursor-pointer transition-colors hover:bg-lime-200 hover:text-lime-900"
-                            onClick={() => removeSalida(idx)}
-                          >
+
+                        {/* Botones */}
+                        <div className="flex items-center justify-center gap-3">
+                          <Button variant="ghost" onClick={addSalida}>
+                            Añadir
+                          </Button>
+                          <Button variant="ghost" onClick={guardarSalidas} disabled={loading}>
+                            {loading ? 'Guardando…' : 'Guardar salida'}
+                          </Button>
+                          <Button variant="ghost" onClick={() => removeSalida(idx)}>
                             Eliminar
                           </Button>
                         </div>
@@ -456,28 +433,10 @@ function ExitJR() {
                 <AlertDescription className="text-base font-semibold">{msg}</AlertDescription>
               </Alert>
             )}
-            <div className="flex justify-end gap-2">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <Button
-                  className="font-bold border-2 border-lime-50 cursor-pointer transition-colors hover:bg-lime-200 hover:text-lime-900"
-                  onClick={addSalida}
-                >
-                  Añadir salida
-                </Button>
-              </div>
-              <Button
-                variant="secondary"
-                className="font-bold border-2 border-lime-50 cursor-pointer transition-colors hover:bg-lime-200 hover:text-lime-900"
-                onClick={volverAAnotaciones}
-              >
+            <div className="flex justify-center m-3">
+              <Button variant="ghost" onClick={volverAAnotaciones}>
+                <ArrowLeft></ArrowLeft>
                 Atrás
-              </Button>
-              <Button
-                className="font-bold border-2 border-lime-50 cursor-pointer transition-colors hover:bg-lime-200 hover:text-lime-900"
-                onClick={guardarSalidas}
-                disabled={loading}
-              >
-                {loading ? 'Guardando…' : 'Guardar salidas'}
               </Button>
             </div>
           </CardContent>

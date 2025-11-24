@@ -2,8 +2,9 @@
 
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
+import { Card, CardTitle, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { ArrowLeft, ArrowRight, UserCheck2 } from 'lucide-react'
 
 type Bombero = {
   dni: string
@@ -294,60 +295,63 @@ function AgregarBomberos() {
     <>
       <main className="grid place-items-center p-4">
         <Card className=" w-full max-w-3xl rounded-2xl shadow-accent">
-          <CardHeader>
-            <CardTitle>Selecciona Bomberos de sus Unidades A y B</CardTitle>
+          <CardHeader className="flex items-center justify-center gap-2">
+            <UserCheck2 />
+            <CardTitle className="text-animate">Selecciona de sus Unidades A y B</CardTitle>
           </CardHeader>
-          <CardContent>
-            {!ctx ? (
-              <div>Cargando contexto…</div>
-            ) : cargando ? (
-              <div>Cargando miembros…</div>
-            ) : (
-              <>
-                {mensaje ? <div className="text-red-600 text-sm">{mensaje}</div> : null}
+          {!ctx ? (
+            <div>Cargando contexto…</div>
+          ) : cargando ? (
+            <div>Cargando miembros…</div>
+          ) : (
+            <>
+              {mensaje ? <div className="text-red-600 text-sm">{mensaje}</div> : null}
 
-                {grupos.length === 0 ? (
-                  <div>No hay miembros para mostrar.</div>
-                ) : (
-                  grupos.map((g) => (
-                    <div key={g.unidad_id} className="p-3">
-                      <div className="font-black mb-2 mr-4 text-primary">{g.unidad_nombre}</div>
-                      <div className="text-xl grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {g.miembros.map((m) => (
-                          <label key={m.dni} className="flex items-center gap-3">
-                            <input
-                              type="checkbox"
-                              checked={!!seleccion[m.dni]}
-                              onChange={() => toggle(m.dni)}
-                            />
-                            <span className="font-bold">
-                              {m.nombre} {m.apellidos}
-                            </span>
-                            <span className="text-sm text-gray-500 ml-2">
-                              <label>DNI : </label>
-                              {m.dni}
-                            </span>
-                          </label>
-                        ))}
-                      </div>
+              {grupos.length === 0 ? (
+                <div>No hay miembros para mostrar.</div>
+              ) : (
+                grupos.map((g) => (
+                  <div key={g.unidad_id} className="p-3">
+                    <div className="font-black mb-2 mr-4 text-center text-animate">
+                      {g.unidad_nombre}
                     </div>
-                  ))
-                )}
+                    <div className="text-xl grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {g.miembros.map((m) => (
+                        <label key={m.dni} className="flex items-baseline gap-3 ">
+                          <input
+                            type="checkbox"
+                            checked={!!seleccion[m.dni]}
+                            onChange={() => toggle(m.dni)}
+                          />
+                          <span className="font-bold">
+                            {m.nombre} {m.apellidos}
+                          </span>
+                          <span className="text-sm text-gray-500 ml-2">
+                            <label>DNI : </label>
+                            {m.dni}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
 
-                <div className="flex items-center gap-2">
-                  <Button type="button" onClick={goInit}>
-                    Inicio
-                  </Button>
-                  <Button type="button" onClick={goNext}>
-                    Continuar
-                  </Button>
-                  <Button type="button" onClick={limpiar}>
-                    Limpiar selección
-                  </Button>
-                </div>
-              </>
-            )}
-          </CardContent>
+              <div className="flex items-center justify-center gap-2">
+                <Button variant="ghost" type="button" onClick={goInit}>
+                  <ArrowLeft></ArrowLeft>
+                  Inicio
+                </Button>
+                <Button variant="ghost" type="button" onClick={limpiar}>
+                  Limpiar selección
+                </Button>
+                <Button variant="ghost" type="button" onClick={goNext}>
+                  Continuar
+                  <ArrowRight></ArrowRight>
+                </Button>
+              </div>
+            </>
+          )}
         </Card>
       </main>
     </>

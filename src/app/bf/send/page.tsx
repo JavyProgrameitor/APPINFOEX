@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Separator } from '@/components/ui/Separator'
 import { getSupabaseBrowser } from '@/server/client'
-import { ArrowLeft, CalendarDays, Flame, Clock, ArrowRight } from 'lucide-react'
+import { ArrowLeft, CalendarDays, Clock, ArrowRight, Send } from 'lucide-react'
 import { Input } from '@/components/ui/Input'
 
 type Rol = 'bf' | 'jr'
@@ -292,11 +292,11 @@ function BFSendPageInner() {
 
   return (
     <main className="p-4 md:p-6 max-w-3xl mx-auto">
-      <Card className="rounded-2xl shadow-2xl shadow-accent">
+      <Card className="rounded-2xl shadow-accent">
         <CardHeader className="flex items-center justify-center gap-2">
-          <CardTitle className="text-lg md:text-xl text-green-600 flex items-center gap-2">
-            <Flame color="#F52121" className="bg-amber-400 rounded-full" />
-            Solicitud de días
+          <Send></Send>
+          <CardTitle className="text-lg md:text-xl text-animate flex items-center gap-2">
+            Solicitudes
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 p-4 shadow-accent">
@@ -314,12 +314,86 @@ function BFSendPageInner() {
             </div>
           ) : (
             <>
+              {/* FORMULARIO DE SOLICITUD */}
+              <form
+                onSubmit={handleEnviar}
+                className="rounded-sm border bg-card text-center shadow-2xl hover:shadow-md transition shadow-accent"
+              >
+                <div className="p-3 flex items-center justify-center gap-2">
+                  <CalendarDays className="h-5 w-5" />
+                  <div className="text-xl font-bold text-animate">Nueva solicitud de día</div>
+                </div>
+                <Separator />
+                <div>
+                  <div className="flex flex-col md:flex-row items-center justify-center gap-4 p-3">
+                    {/* Tipo de día */}
+                    <div className="flex flex-col items-center gap-2">
+                      <label className="text-xl md:text-base font-bold">Tipo de solicitud</label>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        <Button
+                          type="button"
+                          variant={tipo === 'V' ? 'ghost' : 'ghost'}
+                          size="sm"
+                          onClick={() => setTipo('V')}
+                        >
+                          Vacaciones
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={tipo === 'AP' ? 'ghost' : 'ghost'}
+                          size="sm"
+                          onClick={() => setTipo('AP')}
+                        >
+                          Asuntos propios
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={tipo === 'H' ? 'ghost' : 'ghost'}
+                          size="sm"
+                          onClick={() => setTipo('H')}
+                        >
+                          Día por horas extras
+                        </Button>
+                      </div>
+                      <p className="text-sm text-muted-foreground max-w-xs">
+                        {tipo === 'V'
+                          ? 'Se descontará de tus días de vacaciones.'
+                          : tipo === 'AP'
+                            ? 'Se descontará de tus días de asuntos propios.'
+                            : 'Se descontará de los días generados por tus horas extras.'}
+                      </p>
+                    </div>
+
+                    {/* Fecha */}
+                    <div className="flex flex-col items-center gap-2">
+                      <label className="text-xl md:text-base font-bold">Fecha</label>
+                      <Input
+                        type="date"
+                        className="rounded-2xl border-accent w-36 shadow-2xl shadow-accent"
+                        value={fecha}
+                        onChange={(e) => setFecha(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {mensajeError && (
+                    <div className="text-xs text-destructive mt-1">{mensajeError}</div>
+                  )}
+                  {mensajeOk && <div className="text-xs text-emerald-600 mt-1">{mensajeOk}</div>}
+
+                  <div className="pt-2 flex justify-center m-2">
+                    <Button type="submit" variant="ghost" disabled={enviando}>
+                      {enviando ? 'Enviando…' : 'Enviar solicitud'}
+                    </Button>
+                  </div>
+                </div>
+              </form>
               {/* RESUMEN RÁPIDO DE HORAS EXTRA / DÍAS POR HORAS */}
               <div className="rounded-sm border bg-card text-card-foreground shadow-sm hover:shadow-md transition shadow-accent p-3 text-xs sm:text-sm">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-semibold">Resumen de horas extra</span>
+                <div className="flex items-center justify-center mb-1">
+                  <span className="text-sm text-animate font-bold">Resumen de horas Extras</span>
                   {loadingHoras && (
-                    <span className="text-[0.7rem] text-muted-foreground">Actualizando…</span>
+                    <span className="text-xl txt-muted-foreground">Actualizando…</span>
                   )}
                 </div>
                 {resumenHoras ? (
@@ -343,107 +417,11 @@ function BFSendPageInner() {
                 )}
               </div>
 
-              {/* FORMULARIO DE SOLICITUD */}
-              <form
-                onSubmit={handleEnviar}
-                className="rounded-sm border bg-card text-center shadow-2xl hover:shadow-md transition shadow-accent"
-              >
-                <div className="p-3 flex items-center justify-center gap-2">
-                  <CalendarDays className="h-4 w-4" />
-                  <div className="text-xl font-bold text-accent">Nueva solicitud de día</div>
-                </div>
-                <Separator />
-                <div>
-                  <div className="flex flex-col md:flex-row items-center justify-center gap-4 p-3">
-                    {/* Tipo de día */}
-                    <div className="flex flex-col items-center gap-2">
-                      <label className="text-sm md:text-base font-bold">Tipo de solicitud</label>
-                      <div className="flex flex-wrap justify-center gap-2">
-                        <Button
-                          type="button"
-                          variant={tipo === 'V' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setTipo('V')}
-                        >
-                          Vacaciones
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={tipo === 'AP' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setTipo('AP')}
-                        >
-                          Asuntos propios
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={tipo === 'H' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setTipo('H')}
-                        >
-                          Día por horas extra
-                        </Button>
-                      </div>
-                      <p className="text-[0.7rem] text-muted-foreground max-w-xs">
-                        {tipo === 'V'
-                          ? 'Se descontará de tus días de vacaciones.'
-                          : tipo === 'AP'
-                            ? 'Se descontará de tus días de asuntos propios.'
-                            : 'Se descontará de los días generados por tus horas extra.'}
-                      </p>
-                    </div>
-
-                    {/* Fecha */}
-                    <div className="flex flex-col items-center gap-2">
-                      <label className="text-xs font-bold text-muted-foreground">Fecha</label>
-                      <Input
-                        type="date"
-                        className="rounded-2xl w-36 shadow-2xl shadow-accent"
-                        value={fecha}
-                        onChange={(e) => setFecha(e.target.value)}
-                      />
-                      <p className="text-[0.7rem] text-muted-foreground">
-                        Puedes seleccionar hoy o cualquier día futuro.
-                      </p>
-                    </div>
-                  </div>
-
-                  {mensajeError && (
-                    <div className="text-xs text-destructive mt-1">{mensajeError}</div>
-                  )}
-                  {mensajeOk && <div className="text-xs text-emerald-600 mt-1">{mensajeOk}</div>}
-
-                  <div className="pt-2 flex justify-end m-2">
-                    <Button type="submit" variant="ghost" disabled={enviando}>
-                      {enviando ? 'Enviando…' : 'Enviar solicitud'}
-                    </Button>
-                  </div>
-                </div>
-              </form>
-
               {/* LISTADO DE ÚLTIMAS SOLICITUDES */}
-              <div className="rounded-sm border bg-card text-card-foreground shadow-sm hover:shadow-md transition shadow-accent">
-                <div className="p-3 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    <div className="text-xs uppercase text-muted-foreground">
-                      Tus solicitudes registradas (Vacaciones / AP / Horas extra)
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 text-[0.7rem] md:text-xs">
-                    <span className="text-muted-foreground hidden sm:inline">Mostrar</span>
-                    {[10, 20, 30].map((n) => (
-                      <Button
-                        key={n}
-                        type="button"
-                        variant={pageSize === n ? 'default' : 'outline'}
-                        className="h-6 px-2"
-                        onClick={() => setPageSize(n as 10 | 20 | 30)}
-                      >
-                        {n}
-                      </Button>
-                    ))}
-                  </div>
+              <div className="rounded-sm border shadow-sm hover:shadow-md transition shadow-accent">
+                <div className="flex items-center justify-center gap-2 h-10">
+                  <Clock className="h-5 w-5" />
+                  <div className="text-xs text-animate font-bold ">REGISTROS DE SOLICITUDES</div>
                 </div>
                 <Separator />
                 <div className="p-3 space-y-2 text-sm">
@@ -489,8 +467,21 @@ function BFSendPageInner() {
                   )}
                 </div>
               </div>
-
-              <div className="flex justify-between pt-1 sm:hidden">
+              <div className="flex items-center gap-1 text-[0.7rem] md:text-xs">
+                <span className="text-animate text-sm font-bold ">Mostrar: </span>
+                {[10, 20, 30].map((n) => (
+                  <Button
+                    key={n}
+                    type="button"
+                    variant={pageSize === n ? 'ghost' : 'ghost'}
+                    className="h-6 px-2 m-1"
+                    onClick={() => setPageSize(n as 10 | 20 | 30)}
+                  >
+                    {n}
+                  </Button>
+                ))}
+              </div>
+              <div className="flex justify-between pt-1">
                 <Button variant="ghost" size="sm" onClick={() => router.push('/bf/list')}>
                   <ArrowLeft className="h-4 w-4 mr-1" />
                   Mis Datos

@@ -150,13 +150,15 @@ function AdminMonthPageInner() {
 
   return (
     <main className="p-4 md:p-6 max-w-4xl mx-auto">
-      <Card className="rounded-2xl shadow-2xl shadow-accent">
-        <CardHeader className="flex flex-row items-center justify-center gap-2">
-          <div>
-            <CardTitle className="text-lg md:text-xl text-green-600 flex items-center gap-2">
-              <CalendarDays className="h-5 w-5" />
+      <Card className="rounded-2xl shadow-accent">
+        <CardHeader className="flex flex-col items-center justify-center gap-2">
+          <div className="flex items-center gap-1">
+            <CalendarDays></CalendarDays>
+            <CardTitle className="text-lg md:text-xl text-animate gap-2">
               Administrador, resumen mensual de :
             </CardTitle>
+          </div>
+          <div>
             {user && (
               <p className="text-xl text-center font-black mt-1">
                 {user.apellidos}, {user.nombre}
@@ -180,11 +182,11 @@ function AdminMonthPageInner() {
               {/* Selector mes/año */}
               <div className="flex items-center justify-center flex-wrap gap-2">
                 <div className="flex items-center gap-2">
-                  <Button type="button" size="sm" onClick={() => cambiarMes(-1)}>
+                  <Button variant="ghost" type="button" size="sm" onClick={() => cambiarMes(-1)}>
                     ‹ Mes anterior
                   </Button>
-                  <div className="text-amber-600 font-black capitalize">{nombreMes}</div>
-                  <Button type="button" size="sm" onClick={() => cambiarMes(1)}>
+                  <div className="text-animate font-black capitalize">{nombreMes}</div>
+                  <Button variant="ghost" type="button" size="sm" onClick={() => cambiarMes(1)}>
                     Mes siguiente ›
                   </Button>
                 </div>
@@ -223,21 +225,20 @@ function AdminMonthPageInner() {
 
                     // colores según código
                     let cellClasses = 'border rounded-md p-2 text-center text-xs bg-card shadow-sm'
-                    let codigoClasses = 'mt-1 font-mono text-[0.75rem]'
+                    let codigoClasses = 'mt-1 font-mono text-xs'
                     if (codigo === 'V') {
                       cellClasses =
-                        'border border-emerald-300 bg-emerald-600 rounded-md p-2 text-center text-xs shadow-sm'
-                      codigoClasses = 'mt-1 font-mono text-[0.75rem] text-emerald-700 font-semibold'
+                        'bg-success text-success-foreground rounded-md p-2 text-center text-xs shadow-sm'
+                      codigoClasses = 'mt-1 font-black text-sm text-success'
                     } else if (codigo === 'AP') {
                       cellClasses =
-                        'border border-sky-300 bg-sky-600 rounded-md p-2 text-center text-xs shadow-sm'
-                      codigoClasses = 'mt-1 font-mono text-[0.75rem] text-sky-700 font-semibold'
+                        'bg-info text-info-foreground rounded-md p-2 text-center text-xs shadow-sm'
+                      codigoClasses = 'mt-1 font-black text-sm text-info'
                     } else if (codigo === 'H') {
                       cellClasses =
-                        'border border-amber-300 bg-amber-600 rounded-md p-2 text-center text-xs shadow-sm'
-                      codigoClasses = 'mt-1 font-mono text-[0.75rem] text-yellow-700 font-semibold'
+                        'bg-warning text-warning-foreground rounded-md p-2 text-center text-xs shadow-sm'
+                      codigoClasses = 'mt-1 font-black text-sm text-warning'
                     }
-
                     return (
                       <div key={fechaStr} className={cellClasses}>
                         <div className="text-sm font-semibold">{day}</div>
@@ -256,10 +257,12 @@ function AdminMonthPageInner() {
             </>
           )}
         </CardContent>
-        <Button className="w-38 m-3" onClick={() => router.push('/admin')}>
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Volver al listado
-        </Button>
+        <div className="flex items-center justify-center">
+          <Button variant="ghost" onClick={() => router.push('/admin')}>
+            <ArrowLeft></ArrowLeft>
+            Volver al listado
+          </Button>
+        </div>
       </Card>
     </main>
   )

@@ -3,12 +3,12 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Card, CardContent, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { useToast } from '@/components/ui/Use-toast'
 import { getSupabaseBrowser } from '@/server/client'
-import { Flame } from 'lucide-react'
+import { PanelBottom } from 'lucide-react'
 
 export default function BFHome() {
   const router = useRouter()
@@ -95,18 +95,16 @@ export default function BFHome() {
   }
 
   return (
-    <div className="flex items-center justify-center mt-3">
-      <div className="max-w-sm">
-        <CardTitle className="text-xl font-bold text-center text-green-600 flex items-center gap-3 ">
-          <Flame color="#F52121" className="bg-amber-400 rounded-full" />
-          Panel del B.F de Extremadura
-        </CardTitle>
-        <Card className="rounded-2xl shadow-2xl shadow-accent">
-          <CardHeader>
-            <CardTitle className="text-lg text-center">
-              Puede cambiar contraseña o continuar :
-            </CardTitle>
-          </CardHeader>
+    <div className="flex items-center justify-center p-10">
+      <div>
+        <div className="flex items-center justify-center">
+          <PanelBottom></PanelBottom>
+          <CardTitle className="text-xl font-black text-animate flex items-center gap-3 p-4">
+            BIENVENIDO B.F. DE EXTREMADURA
+          </CardTitle>
+        </div>
+        <Card className="rounded-2xl shadow-accent">
+          <CardTitle className="text-lg text-center">Cambiar contraseña o continuar :</CardTitle>
           <CardContent className="flex items-center justify-center">
             <form onSubmit={onSubmit}>
               <label className="text-sm font-bold">Nueva contraseña</label>
@@ -130,18 +128,11 @@ export default function BFHome() {
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
-              <div className="flex items-center justify-center gap-2">
-                <Button
-                  type="submit"
-                  className="font-bold border-2 border-lime-50 cursor-pointer transition-colors hover:bg-lime-200 hover:text-lime-900"
-                  disabled={saving}
-                >
+              <div className="flex items-center justify-center gap-3 m-3">
+                <Button variant="ghost" type="submit" disabled={saving}>
                   {saving ? 'Guardando...' : 'Actualizar'}
                 </Button>
-                <Button
-                  className="font-bold border-2 border-lime-50 cursor-pointer transition-colors hover:bg-lime-200 hover:text-lime-900"
-                  onClick={() => router.push('/bf/list')}
-                >
+                <Button variant="ghost" onClick={() => router.push('/bf/list')}>
                   Continuar
                 </Button>
               </div>

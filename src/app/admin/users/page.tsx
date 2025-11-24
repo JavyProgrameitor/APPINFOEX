@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/Select'
+import { UserRoundPlus } from 'lucide-react'
 
 type Rol = 'admin' | 'bf' | 'jr'
 type AsignacionTipo = 'unidad' | 'caseta'
@@ -182,9 +183,10 @@ export default function AdminUsersPage() {
   }
   return (
     <main className="min-h-screen w-full flex items-center justify-center">
-      <Card className="w-full max-w-xl rounded-2xl shadow-2xl shadow-accent">
-        <CardHeader>
-          <CardTitle className="text-center text-green-600">Crear usuario</CardTitle>
+      <Card className="w-full max-w-xl rounded-2xl shadow-accent">
+        <CardHeader className="flex items-center justify-center">
+          <UserRoundPlus />
+          <CardTitle className="text-center text-animate">Agregar usuario en la BBDD</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="max-w-xl mx-auto space-y-4">
@@ -366,13 +368,8 @@ export default function AdminUsersPage() {
                       : 'Debes seleccionar una Caseta.'}
                   </p>
                 )}
-
-                <div className="flex justify-center">
-                  <Button
-                    type="submit"
-                    disabled={loading || !seleccionValida}
-                    className="w-full sm:w-auto"
-                  >
+                <div className="flex items-center justify-center">
+                  <Button variant="ghost" type="submit" disabled={loading || !seleccionValida}>
                     {loading ? 'Creando...' : 'Crear usuario'}
                   </Button>
                 </div>

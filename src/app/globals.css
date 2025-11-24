@@ -51,7 +51,7 @@
 }
 
 /* ===============================
-   INFOEX (Default): Negro + Blanco + Verde
+   INFOEX (Default): Negro + Blanco + Verde (tema oscuro por defecto)
    =============================== */
 :root {
   /* Botones tipo pill por defecto */
@@ -100,12 +100,28 @@
   --sidebar-accent: #0f1826;
   --sidebar-accent-foreground: #f8fafc;
   --sidebar-ring: #4d8c23; /* verde apagado para CTA */
+  --sidebar-border: #17202c;
+
+  /* ==== Tokens extra para estados (V / AP / H) ==== */
+  /* Success (por ejemplo código 'V') */
+  --success: #166534;
+  --success-foreground: #dcfce7;
+
+  /* Info (por ejemplo código 'AP') */
+  --info: #075985;
+  --info-foreground: #e0f2fe;
+
+  /* Warning (por ejemplo código 'H') */
+  --warning: #854d0e;
+  --warning-foreground: #fef3c7;
+
+  --animate: #cab669;
+  --animate-foreground: #e4df3f;
 }
 
 /* ===============================
-   Variante clara opcional (añade .light en <html>)
-   =============================== 
-   */
+   Variante clara (añade .light en <html>)
+   =============================== */
 .light {
   --background: #ffffff;
   --foreground: #0b0f14;
@@ -144,6 +160,19 @@
   --sidebar-accent-foreground: #0b0f14;
   --sidebar-border: #e5e7eb;
   --sidebar-ring: #4d8c23; /* verde apagado para CTA */
+
+  /* Estados en tema claro (un poco más suaves) */
+  --success: #92de93;
+  --success-foreground: #011f0e;
+
+  --info: #0edee9;
+  --info-foreground: #0b1b3e;
+
+  --warning: #facc15;
+  --warning-foreground: #422006;
+
+  --animate: #c4a52b;
+  --animate-foreground: #1a850e;
 }
 
 /* --- Base layer: aplica fondo/texto global y suaviza render --- */
@@ -151,6 +180,7 @@
   * {
     border-color: var(--border);
   }
+
   body {
     background-color: var(--background);
     color: var(--foreground);
@@ -167,6 +197,33 @@
 }
 @utility border-border {
   border-color: var(--border);
+}
+
+/* ==== Utilidades para estados (usadas en el calendario) ==== */
+/* Success (V) */
+@utility bg-success {
+  background-color: var(--success);
+}
+@utility text-success {
+  color: var(--success-foreground);
+}
+
+/* Info (AP) */
+@utility bg-info {
+  background-color: var(--info);
+}
+/* Warning (H) */
+@utility bg-warning {
+  background-color: var(--warning);
+}
+@utility text-warning {
+  color: var(--warning-foreground);
+}
+@utility text-info {
+  color: var(--info-foreground);
+}
+@utility text-animate {
+  color: var(--animate-foreground);
 }
 
 /* Select base style */

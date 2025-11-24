@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/Button'
 import { Menu } from 'lucide-react'
 import Link from 'next/link'
+import { CalendarClock, Users, DoorOpen, Home } from 'lucide-react'
 
 export default function JRLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -24,53 +25,57 @@ export default function JRLayout({ children }: { children: React.ReactNode }) {
             </SheetTrigger>
             <SheetContent side="left" className="p-0">
               <SheetHeader className="px-4 py-3 border-b">
-                <SheetTitle className="flex justify-center font-black">
-                  Panel de Jefes de Servicio
+                <SheetTitle className="flex justify-center text-xl font-black">
+                  JEFES DE SERVICIO
                 </SheetTitle>
               </SheetHeader>
               <nav className="flex flex-col items-center justify-center gap-4 py-8">
                 <SheetClose asChild>
                   <Link
                     href="/jr"
-                    className="w-10/12 text-center rounded-xl px-5 py-3 text-sm font-medium
+                    className="w-10/12 flex items-center justify-center rounded-xl px-5 py-3 text-sm font-medium
                                border-2 border-primary/60 bg-primary/10 hover:bg-primary/20
                                dark:border-primary/40 dark:bg-primary/10 dark:hover:bg-primary/30
-                               transition-all duration-200 shadow-sm hover:shadow-md"
+                               transition-all duration-200 shadow-sm hover:shadow-md gap-2"
                   >
-                    Inicio
+                    <Home></Home>
+                    INICIO
                   </Link>
                 </SheetClose>
                 <SheetClose asChild>
                   <Link
                     href="/jr/add"
-                    className="w-10/12 text-center rounded-xl px-5 py-3 text-sm font-medium
+                    className="w-10/12 flex items-center justify-center rounded-xl px-5 py-3 text-sm font-medium
                                border-2 border-primary/60 bg-primary/10 hover:bg-primary/20
                                dark:border-primary/40 dark:bg-primary/10 dark:hover:bg-primary/30
-                               transition-all duration-200 shadow-sm hover:shadow-md"
+                               transition-all duration-200 shadow-sm hover:shadow-md gap-2"
                   >
-                    Agregar Bomberos
+                    <Users></Users>
+                    AGREGAR BOMBEROS
                   </Link>
                 </SheetClose>
                 <SheetClose asChild>
                   <Link
                     href="/jr/note"
-                    className="w-10/12 text-center rounded-xl px-5 py-3 text-sm font-medium
+                    className="w-10/12 flex items-center justify-center not-only:rounded-xl px-5 py-3 text-sm font-medium
                                border-2 border-primary/60 bg-primary/10 hover:bg-primary/20
                                dark:border-primary/40 dark:bg-primary/10 dark:hover:bg-primary/30
-                               transition-all duration-200 shadow-sm hover:shadow-md"
+                               transition-all duration-200 shadow-sm hover:shadow-md gap-2"
                   >
-                    Anotaciones Diarias
+                    <CalendarClock></CalendarClock>
+                    ANOTACIONES DIARIAS
                   </Link>
                 </SheetClose>
                 <SheetClose asChild>
                   <Link
                     href="/jr/exit"
-                    className="w-10/12 text-center rounded-xl px-5 py-3 text-sm font-medium
+                    className="w-10/12 flex items-center justify-center rounded-xl px-5 py-3 text-sm font-medium
                                border-2 border-primary/60 bg-primary/10 hover:bg-primary/20
                                dark:border-primary/40 dark:bg-primary/10 dark:hover:bg-primary/30
-                               transition-all duration-200 shadow-sm hover:shadow-md"
+                               transition-all duration-200 shadow-sm hover:shadow-md gap-2"
                   >
-                    Salidas Diarias
+                    <DoorOpen></DoorOpen>
+                    SALIDAS DIARIAS
                   </Link>
                 </SheetClose>
               </nav>

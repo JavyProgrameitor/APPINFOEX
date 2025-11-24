@@ -6,8 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { getSupabaseBrowser } from '@/server/client'
-import { RefreshCcw, Search, ChevronLeft, ChevronRight, User } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { RefreshCcw, Search, ArrowRight, Users, MonitorCog } from 'lucide-react'
 
 // Select (shadcn/Radix)
 import {
@@ -207,12 +206,15 @@ export default function AdminHomePage() {
 
   return (
     <main className="p-4 md:p-6 max-w-6xl mx-auto space-y-4 shadow-accent">
-      <h1 className="text-center text-xl md:text-2xl font-bold text-green-600">
-        Bomberos y Jefes de Servicio
-      </h1>
+      <div className="flex items-center justify-center gap-2 p-5">
+        <MonitorCog />
+        <h1 className="text-center text-2xl md:text-2xl font-black text-animate">
+          USUARIOS EN EL SISTEMA
+        </h1>
+      </div>
       <div className="flex flex-wrap items-center justify-center gap-2">
-        <Button size="icon" onClick={refresh} aria-label="Recargar" className="rounded-sm">
-          <RefreshCcw className="h-4 w-4" />
+        <Button variant="destructive" onClick={refresh}>
+          <RefreshCcw />
         </Button>
         {/* Select de Zona */}
         <Select value={zona} onValueChange={setZona}>
@@ -221,7 +223,7 @@ export default function AdminHomePage() {
           </SelectTrigger>
           <SelectContent className="rounded-xs">
             {zonas.map((z) => (
-              <SelectItem key={z} value={z} className="text-center text-green-600">
+              <SelectItem key={z} value={z} className="text-center text-animate">
                 {z}
               </SelectItem>
             ))}
@@ -233,7 +235,7 @@ export default function AdminHomePage() {
           <Button
             type="button"
             variant={scope === 'unidad' ? 'default' : 'ghost'}
-            className={`rounded-sm  border-green-600 ${scope === 'unidad' ? '' : 'bg-transparent'}`}
+            className={`rounded-sm   ${scope === 'unidad' ? '' : 'bg-transparent'}`}
             onClick={() => setScope('unidad')}
           >
             Unidades
@@ -241,7 +243,7 @@ export default function AdminHomePage() {
           <Button
             type="button"
             variant={scope === 'caseta' ? 'default' : 'ghost'}
-            className={`rounded-sm border-green-600 ${scope === 'caseta' ? '' : 'bg-transparent'}`}
+            className={`rounded-sm  ${scope === 'caseta' ? '' : 'bg-transparent'}`}
             onClick={() => setScope('caseta')}
           >
             Casetas
@@ -276,19 +278,18 @@ export default function AdminHomePage() {
         )}
       </div>
 
-      <Card className="rounded-2xl shadow-2xl shadow-accent">
+      <Card className="rounded-2xl shadow-accent">
         <CardHeader className="gap-2">
-          <CardTitle className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:text-xl">
-            <span>
-              <User className="inline mr-2 h-5 w-5" />
+          <CardTitle className="flex flex-col md:flex-row md:items-center md:justify-center gap-3 md:text-xl">
+            <Users></Users>
+            <p className="flex items-center justify-center text-animate">
               {total} Bomberos registrado{total === 1 ? '' : 's'}
-              {normQ ? (
-                <span className="text-muted-foreground">
-                  {' '}
-                  · filtro: <span className="font-black">“{q.trim()}”</span>
-                </span>
-              ) : null}
-            </span>
+            </p>
+            {normQ ? (
+              <span className="text-muted-foreground">
+                · filtro: <span className="font-black">“{q.trim()}”</span>
+              </span>
+            ) : null}
 
             <div className="relative md:max-w-xl text-xs">
               <Search className="absolute top-4 h-4 opacity-60" />
@@ -354,48 +355,40 @@ export default function AdminHomePage() {
           )}
 
           {/* Tamaño de página */}
-          <div className="flex items-center gap-1">
-            <span className="text-xs text-muted-foreground mr-1">Bomberos por página:</span>
-            {PAGE_SIZES.map((sz) => (
-              <Button
-                key={sz}
-                size="sm"
-                variant={pageSize === sz ? 'default' : 'outline'}
-                className="rounded-sm"
-                onClick={() => setPageSize(sz)}
-                aria-pressed={pageSize === sz}
-              >
-                {sz}
-              </Button>
-            ))}
-          </div>
-
-          {/* Paginación */}
-          <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-xs text-muted-foreground mr-1">Bomberos por página:</span>
+              {PAGE_SIZES.map((sz) => (
+                <Button
+                  key={sz}
+                  size="sm"
+                  variant={pageSize === sz ? 'default' : 'outline'}
+                  className="rounded-sm"
+                  onClick={() => setPageSize(sz)}
+                  aria-pressed={pageSize === sz}
+                >
+                  {sz}
+                </Button>
+              ))}
+            </div>
             <div className="text-xs text-muted-foreground">
               Página <span className="font-medium">{page}</span> de{' '}
               <span className="font-medium">{totalPages}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                className={cn('rounded-sm')}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={!canPrev || loading}
-              >
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                Anterior
-              </Button>
-              <Button
-                size="sm"
-                className={cn('rounded-sm')}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={!canNext || loading}
-              >
-                Siguiente
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            </div>
+          </div>
+
+          <div className="flex items-center justify-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))}>
+              Anterior
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            >
+              Siguiente
+              <ArrowRight></ArrowRight>
+            </Button>
           </div>
         </CardContent>
       </Card>

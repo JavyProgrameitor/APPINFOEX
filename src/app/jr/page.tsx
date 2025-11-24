@@ -4,7 +4,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Card, CardContent, CardTitle } from '@/components/ui/Card'
+import { ArrowLeft, ArrowRight, HomeIcon } from 'lucide-react'
 
 const CTX_KEY = 'INFOEX:jr:ctx'
 
@@ -129,10 +130,10 @@ export default function StartJR() {
     <main className="h-120 w-full flex items-center justify-center p-4">
       <div className="mx-auto w-full max-w-3xl">
         <Card className="shadow-accent rounded-xl">
-          <CardHeader className="text-center">
-            <CardTitle className="text-xl text-green-600">DESTINO ASIGNADO</CardTitle>
-          </CardHeader>
-
+          <div className="flex items-center justify-center">
+            <HomeIcon></HomeIcon>
+            <CardTitle className="text-center text-animate">DESTINO ASIGNADO</CardTitle>
+          </div>
           <CardContent className="space-y-6 text-center">
             {error ? (
               <div className="text-red-600 text-base">{error}</div>
@@ -162,8 +163,14 @@ export default function StartJR() {
                 )}
 
                 <div className="flex justify-center gap-3">
-                  <Button onClick={goNext}>Continuar como JR</Button>
-                  <Button onClick={goBF}> Ver mi panel de BF </Button>
+                  <Button variant="ghost" onClick={goBF}>
+                    <ArrowLeft></ArrowLeft>
+                    Ver mi panel de BF
+                  </Button>
+                  <Button variant="ghost" onClick={goNext}>
+                    Continuar como JR
+                    <ArrowRight></ArrowRight>
+                  </Button>
                 </div>
               </>
             ) : null}

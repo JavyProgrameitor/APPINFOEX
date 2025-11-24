@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Separator } from '@/components/ui/Separator'
 import { getSupabaseBrowser } from '@/server/client'
-import { Copy, Flame, IdCard, MapPin, Clock, ArrowLeft, ArrowRight } from 'lucide-react'
+import { Copy, IdCard, MapPin, Clock, ArrowLeft, ArrowRight, FileCheck2Icon } from 'lucide-react'
 
 type Rol = 'bf' | 'jr'
 
@@ -315,15 +315,12 @@ function BFListPageInner() {
 
   return (
     <main className="p-4 md:p-6 max-w-3xl mx-auto">
-      <Card className="rounded-2xl shadow-2xl shadow-accent">
-        <CardHeader className="flex flex-col items-center justify-between gap-2">
-          <CardTitle className="text-lg md:text-xl text-green-600 flex items-center gap-2">
-            <Flame color="#F52121" className="bg-amber-400 rounded-full" />
-            Mi ficha de Bombero Forestal
+      <Card className="rounded-2xl shadow-accent">
+        <CardHeader className="flex items-center justify-center gap-2">
+          <FileCheck2Icon></FileCheck2Icon>
+          <CardTitle className="text-lg md:text-xl text-animate flex items-center gap-2">
+            Mis datos de Bombero Forestal
           </CardTitle>
-          <p className="text-xs text-muted-foreground mt-1">
-            Aquí puedes consultar todos los datos de Bombero Forestal.
-          </p>
         </CardHeader>
 
         <CardContent className="space-y-4 p-4">
@@ -360,7 +357,7 @@ function BFListPageInner() {
                       {user.apellidos}, {user.nombre}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      Rol: <span className="font-medium">Bombero Forestal</span>
+                      <span className="font-medium">Bombero Forestal</span>
                     </div>
                     <div className="text-xs mt-2">
                       DNI:{' '}
@@ -440,7 +437,7 @@ function BFListPageInner() {
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-8 w-8 cursor-pointer"
                       onClick={async () => {
                         await navigator.clipboard.writeText(user.dni!)
                       }}
@@ -645,11 +642,21 @@ function BFListPageInner() {
               </div>
 
               <div className="flex justify-between pt-1 sm:hidden">
-                <Button variant="ghost" size="sm" onClick={() => router.push('/bf')}>
-                  <ArrowLeft className="h-4 w-4 mr-1" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="cursor-pointer"
+                  onClick={() => router.push('/bf')}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-1 " />
                   Inicio
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => router.push('/bf/send')}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="cursor-pointer"
+                  onClick={() => router.push('/bf/send')}
+                >
                   Solicitudes
                   <ArrowRight className="h-4 w-4 mr-1" />
                 </Button>
@@ -657,13 +664,19 @@ function BFListPageInner() {
             </>
           )}
           <div className="flex items-center justify-between">
-            <Button size="sm" className="hidden sm:inline-flex" onClick={() => router.push('/bf')}>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="hidden sm:inline-flex cursor-pointer"
+              onClick={() => router.push('/bf')}
+            >
               <ArrowLeft className="h-4 w-4 mr-1" />
               Inicio
             </Button>
             <Button
               size="sm"
-              className="hidden sm:inline-flex"
+              variant="ghost"
+              className="hidden sm:inline-flex cursor-pointer"
               onClick={() => router.push('/bf/send')}
             >
               Solicitudes

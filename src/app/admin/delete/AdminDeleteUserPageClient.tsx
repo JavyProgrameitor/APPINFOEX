@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Card, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
@@ -298,169 +298,144 @@ export default function AdminDeleteUserPageClient({ initialDni, initialId }: Pro
   }
 
   return (
-    <main className="p-4 md:p-6 max-w-3xl mx-auto space-y-4">
-      <div className="flex items-center gap-2">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="rounded-sm"
-          onClick={() => router.push('/admin')}
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-
-        <h1 className="text-xl md:text-2xl font-bold text-accent flex items-center gap-2">
-          <UserX className="h-5 w-5" />
-          Eliminar usuario
-        </h1>
-      </div>
-
-      <Card className="rounded-2xl shadow-2xl shadow-accent">
-        <CardHeader className="pb-3 flex flex-col gap-1">
-          <CardTitle className="text-base md:text-lg">Buscar usuario a eliminar</CardTitle>
+    <main className="p-5">
+      <CardHeader className="flex items-center justify-center p-5">
+        <UserX></UserX>
+        <CardTitle className="flex items-center text-animate">
+          Eliminar usuario de la BBDD
+        </CardTitle>
+      </CardHeader>
+      <Card className="rounded-2xl shadow-accent">
+        <CardHeader className="flex-col items-center justify-center">
+          <CardTitle className="text-center">Buscar usuario a eliminar</CardTitle>
           <p className="text-xs text-muted-foreground">
             Localiza el usuario por DNI y confirma la eliminación escribiendo su DNI completo.
           </p>
-        </CardHeader>
 
-        <CardContent className="space-y-4">
           <form
             onSubmit={(e) => {
               e.preventDefault()
               void handleSearch()
             }}
-            className="flex flex-col gap-2 md:flex-row md:items-center"
+            className="flex items-center justify-center"
           >
             <Input
               value={dniQuery}
               onChange={(e) => setDniQuery(e.target.value)}
               placeholder="DNI del usuario"
-              className="md:max-w-xs rounded-sm"
             />
 
             <div className="flex gap-2">
-              <Button
-                type="submit"
-                className="rounded-sm"
-                disabled={loadingUser || !dniQuery.trim()}
-              >
+              <Button type="submit" variant="ghost" disabled={loadingUser || !dniQuery.trim()}>
                 {loadingUser && <Loader2 className="h-4 w-4 animate-spin" />}
-                <Search className="h-4 w-4" />
+                <Search></Search>
                 Buscar
               </Button>
 
               {user && (
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="ghost"
                   className="rounded-sm"
                   onClick={() => router.push(`/admin/list?id=${encodeURIComponent(user.id)}`)}
                 >
-                  Ver ficha completa
+                  Ver información
                 </Button>
               )}
             </div>
           </form>
+        </CardHeader>
 
-          {errorMsg && (
-            <Alert variant="destructive" className="rounded-sm">
-              <ShieldAlert className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{errorMsg}</AlertDescription>
-            </Alert>
-          )}
+        {errorMsg && (
+          <Alert variant="destructive" className="rounded-sm">
+            <ShieldAlert className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{errorMsg}</AlertDescription>
+          </Alert>
+        )}
 
-          <Separator />
+        <Separator />
 
-          {!user ? (
-            <p className="text-xs text-muted-foreground">
-              Busca un usuario por su DNI para poder eliminarlo. Esta acción solo está disponible
-              para usuarios con rol <span className="font-semibold">admin</span>.
-            </p>
-          ) : (
-            <div className="space-y-4">
-              <div className="grid gap-3 md:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)]">
-                <div className="rounded-sm border bg-card p-3 text-card-foreground flex flex-col gap-1">
-                  <div className="text-xs uppercase text-muted-foreground">
-                    Usuario seleccionado
-                  </div>
-                  <div className="text-base font-semibold">
-                    {user.apellidos}, {user.nombre}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Rol:{' '}
-                    <span className="font-medium">
-                      {user.rol === 'admin'
-                        ? 'Administrador'
-                        : user.rol === 'bf'
-                          ? 'Bombero Forestal'
-                          : 'Jefe de Retén'}
-                    </span>
-                  </div>
-
-                  {user.dni && (
-                    <div className="text-xs">
-                      DNI: <span className="font-mono font-semibold">{user.dni}</span>
-                    </div>
-                  )}
-
-                  {user.email && (
-                    <div className="text-xs">
-                      Email: <span className="text-primary font-medium">{user.email}</span>
-                    </div>
-                  )}
+        {!user ? (
+          <p className="flex items-center justify-center text-xs text-muted-foreground">
+            Busca un usuario por su DNI para poder eliminarlo. Esta acción solo está disponible
+            usuarios <span className="font-semibold">Administradores</span>.
+          </p>
+        ) : (
+          <div className="flex-col items-center justify-center space-y-4">
+            <div className="text-center grid gap-3">
+              <div className="rounded-sm border bg-card p-3 text-card-foreground flex flex-col gap-1">
+                <div className="text-xs font-bold text-animate">USUARIO PARA ELIMINAR</div>
+                <div className="text-base font-semibold">
+                  {user.apellidos}, {user.nombre}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  <span className="font-medium">
+                    {user.rol === 'admin'
+                      ? 'Administrador'
+                      : user.rol === 'bf'
+                        ? 'Bombero Forestal'
+                        : 'Jefe de Retén'}
+                  </span>
                 </div>
 
-                <div className="rounded-sm border bg-card p-3 text-card-foreground space-y-1">
-                  <div className="text-xs uppercase text-muted-foreground">Adscripción</div>
-
-                  {unidad ? (
-                    <>
-                      <div className="text-xs font-medium">Unidad: {unidad.nombre}</div>
-                      <div className="text-xs text-muted-foreground">Zona: {unidad.zona}</div>
-                    </>
-                  ) : caseta ? (
-                    <>
-                      <div className="text-xs font-medium">Caseta: {caseta.nombre}</div>
-
-                      {municipio && (
-                        <div className="text-xs text-muted-foreground">
-                          Municipio: {municipio.nombre} ({municipio.zona})
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="text-xs text-muted-foreground">Sin adscripción registrada.</div>
-                  )}
-                </div>
+                {user.dni && (
+                  <div className="text-xs">
+                    DNI: <span className="font-mono font-semibold">{user.dni}</span>
+                  </div>
+                )}
               </div>
 
-              <Alert variant="destructive" className="rounded-sm border-destructive/50">
-                <ShieldAlert className="h-4 w-4" />
-                <AlertTitle>Acción irreversible</AlertTitle>
+              <div className="rounded-sm border bg-card p-3 text-card-foreground space-y-1">
+                <div className="text-xs font-bold text-animate">DESTINO</div>
 
-                <AlertDescription>
-                  <p>
+                {unidad ? (
+                  <>
+                    <div className="text-xs font-medium">Unidad: {unidad.nombre}</div>
+                    <div className="text-xs text-muted-foreground">Zona: {unidad.zona}</div>
+                  </>
+                ) : caseta ? (
+                  <>
+                    <div className="text-xs font-medium">Caseta: {caseta.nombre}</div>
+
+                    {municipio && (
+                      <div className="text-xs text-muted-foreground">
+                        Municipio: {municipio.nombre} ({municipio.zona})
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-xs text-muted-foreground">Sin adscripción registrada.</div>
+                )}
+              </div>
+            </div>
+
+            <Alert variant="destructive" className="max-w-xl mx-auto mt-4 flex gap-3 items-start">
+              <ShieldAlert className="mt-1 h-5 w-5" />
+
+              <div>
+                <AlertTitle className="text-xl font-bold">Acción irreversible</AlertTitle>
+
+                <AlertDescription className="mt-2 space-y-3 ">
+                  <p className=" font-bold text-red-400">
                     Esta operación eliminará al usuario del sistema y también su cuenta de acceso.
-                    No podrás deshacerlo.
                   </p>
 
                   {user.rol === 'admin' && (
                     <p className="mt-1 font-semibold">
-                      Atención: no se recomienda eliminar usuarios con rol administrador.
+                      Atención: no se recomienda eliminar usuarios administradores.
                     </p>
                   )}
 
                   <div className="mt-3 space-y-2">
-                    <label className="block text-xs font-medium">
+                    <label className="block text-xs font-bold text-red-400">
                       Para confirmar, escribe el DNI completo del usuario:
                     </label>
 
                     <Input
                       value={confirmDni}
                       onChange={(e) => setConfirmDni(e.target.value)}
-                      className="h-12 rounded-sm font-bold"
+                      className="h-10 rounded-sm font-bold"
                     />
 
                     <div className="flex flex-wrap gap-2 pt-1">
@@ -478,27 +453,24 @@ export default function AdminDeleteUserPageClient({ initialDni, initialId }: Pro
                           </>
                         ) : (
                           <>
-                            <Trash2 className="h-4 w-4" />
-                            Eliminar usuario
+                            <Trash2 />
+                            Eliminar usuarios
                           </>
                         )}
-                      </Button>
-
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="rounded-sm"
-                        onClick={() => setConfirmDni('')}
-                      >
-                        Cancelar
                       </Button>
                     </div>
                   </div>
                 </AlertDescription>
-              </Alert>
-            </div>
-          )}
-        </CardContent>
+              </div>
+            </Alert>
+          </div>
+        )}
+        <div className="flex items-center justify-center">
+          <Button variant="ghost" onClick={() => router.push('/admin')}>
+            <ArrowLeft></ArrowLeft>
+            Volver al listado
+          </Button>
+        </div>
       </Card>
     </main>
   )

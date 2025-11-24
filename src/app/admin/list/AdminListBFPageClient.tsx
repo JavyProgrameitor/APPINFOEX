@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Separator } from '@/components/ui/Separator'
-import { ArrowLeft, ArrowRight, Copy } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Copy, User } from 'lucide-react'
 import { getSupabaseBrowser } from '@/server/client'
 
 interface Unidad {
@@ -265,10 +265,11 @@ export default function AdminListBFPageClient({ userId }: Props) {
 
   return (
     <main className="p-4 md:p-6 max-w-3xl mx-auto">
-      <Card className="rounded-2xl shadow-2xl shadow-accent">
-        <CardHeader>
-          <CardTitle className="text-center text-lg md:text-xl text-green-600">
-            Detalle del Bombero
+      <Card className="rounded-2xl shadow-accent">
+        <CardHeader className="flex items-center justify-center">
+          <User></User>
+          <CardTitle className="text-center text-lg md:text-xl text-animate">
+            Información del Bombero
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 p-4">
@@ -499,12 +500,12 @@ export default function AdminListBFPageClient({ userId }: Props) {
               </div>
 
               <div className="flex items-center justify-between gap-2">
-                <Button onClick={() => router.push('/admin')}>
+                <Button variant="ghost" onClick={() => router.push('/admin')}>
                   <ArrowLeft />
                   Volver al listado
                 </Button>
                 <div className="flex flex-col items-end gap-2">
-                  <Button onClick={() => router.push(`/admin/month?id=${user.id}`)}>
+                  <Button variant="ghost" onClick={() => router.push(`/admin/month?id=${user.id}`)}>
                     Ver resumen mensual
                     <ArrowRight />
                   </Button>
