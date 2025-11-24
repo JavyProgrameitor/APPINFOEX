@@ -115,8 +115,7 @@ export default function NavBar() {
                 alt="INFOEX"
                 width={28}
                 height={28}
-                className="rounded-lg object-cover shrink-0"
-                priority
+                className="h-10 w-auto rounded-lg object-cover shrink-0"
               />
               <span
                 className="truncate font-black leading-tight text-base sm:text-lg md:text-xl"

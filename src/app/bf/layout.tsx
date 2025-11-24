@@ -30,7 +30,7 @@ export default function BFLayout({ children }: { children: React.ReactNode }) {
             <SheetContent side="left" className="cursor-pointer">
               <SheetHeader className="px-4 py-3 border-b">
                 <SheetTitle className="flex justify-center text-xl font-black">
-                  BOMBEROS FORESTALES
+                  BOMBERO FORESTAL
                 </SheetTitle>
               </SheetHeader>
               <nav className="flex flex-col items-center justify-center cursor-pointer gap-4 py-8">
