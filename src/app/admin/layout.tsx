@@ -9,7 +9,7 @@ import {
   SheetClose,
 } from '@/components/ui/Sheet'
 import { Button } from '@/components/ui/Button'
-import { Menu } from 'lucide-react'
+import { Menu, Upload } from 'lucide-react'
 import { Suspense } from 'react'
 
 import { Calendar, FileText, Home, Users, UserX } from 'lucide-react'
@@ -90,6 +90,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   >
                     <UserX></UserX>
                     ELIMINAR BOMBERO
+                  </Link>
+                </SheetClose>
+                <SheetClose asChild>
+                  <Link
+                    href="/admin/addFull"
+                    className="w-10/12 flex items-center justify-center rounded-xl px-5 py-3 text-sm font-medium
+                               border-2 border-primary/60 bg-primary/10 hover:bg-primary/20
+                               dark:border-primary/40 dark:bg-primary/10 dark:hover:bg-primary/30
+                               transition-all duration-200 shadow-sm hover:shadow-md gap-2"
+                  >
+                    <Upload></Upload>
+                    IMPORTAR USUARIOS
                   </Link>
                 </SheetClose>
               </nav>

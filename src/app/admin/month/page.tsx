@@ -219,7 +219,7 @@ function AdminMonthPageInner() {
 
                     // descripción legible para algunos códigos
                     let label = ''
-                    if (codigo === 'V') label = 'Vacaciones'
+                    if (codigo === 'V') label = 'Días Libres'
                     else if (codigo === 'AP') label = 'Asuntos propios'
                     else if (codigo === 'H') label = 'Día por horas extra'
 

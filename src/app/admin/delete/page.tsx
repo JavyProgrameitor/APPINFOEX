@@ -1,5 +1,4 @@
 // app/admin/delete/page.tsx
-// app/admin/delete/page.tsx
 import { Suspense } from 'react'
 import AdminDeleteUserPageClient from './AdminDeleteUserPageClient'
 
