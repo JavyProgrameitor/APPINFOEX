@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { getSupabaseBrowser } from '@/server/client'
-import { RefreshCcw, Search, ArrowRight, Users, MonitorCog } from 'lucide-react'
+import { RefreshCcw, Search, ArrowRight, Users, MonitorCog, ArrowLeft } from 'lucide-react'
 
 // Select (shadcn/Radix)
 import {
@@ -206,14 +206,14 @@ export default function AdminHomePage() {
 
   return (
     <main className="p-4 md:p-6 max-w-6xl mx-auto space-y-4 shadow-accent">
-      <div className="flex items-center justify-center gap-2 p-5">
+      <div className="flex flex-col items-center justify-center gap-2 p-5">
         <MonitorCog />
         <h1 className="text-center text-2xl md:text-2xl font-black text-animate">
           USUARIOS EN EL SISTEMA
         </h1>
       </div>
-      <div className="flex flex-wrap items-center justify-center gap-2">
-        <Button variant="destructive" onClick={refresh}>
+      <div className="flex items-center justify-center cursor-pointer gap-2">
+        <Button variant="default" onClick={refresh}>
           <RefreshCcw />
         </Button>
         {/* Select de Zona */}
@@ -290,14 +290,13 @@ export default function AdminHomePage() {
                 · filtro: <span className="font-black">“{q.trim()}”</span>
               </span>
             ) : null}
-
-            <div className="relative md:max-w-xl text-xs">
-              <Search className="absolute top-4 h-4 opacity-60" />
+            <div className="flex items-center justify-center text-xs">
+              <Search className=" h-6 opacity-60" />
               <Input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Busqueda por DNI, nombre, apellidos o email…"
-                className="pl-8 w-80 rounded-sm"
+                className=" w-80 rounded-sm p-4"
               />
             </div>
           </CardTitle>
@@ -379,6 +378,7 @@ export default function AdminHomePage() {
 
           <div className="flex items-center justify-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))}>
+              <ArrowLeft></ArrowLeft>
               Anterior
             </Button>
             <Button

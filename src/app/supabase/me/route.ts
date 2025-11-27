@@ -1,4 +1,3 @@
-// src/app/api/me/route.ts
 import { NextResponse } from 'next/server'
 import { createClient } from '@/server/server'
 
@@ -13,7 +12,7 @@ export async function GET() {
   if (error || !user) {
     return NextResponse.json(
       { email: null, rol: null, unidad_id: null, caseta_id: null },
-      { status: 401 },
+      { status: 200 },
     )
   }
 

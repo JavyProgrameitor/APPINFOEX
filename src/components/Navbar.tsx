@@ -118,7 +118,7 @@ export default function NavBar() {
                 className="h-10 w-auto rounded-lg object-cover shrink-0"
               />
               <span
-                className="truncate font-black leading-tight text-base sm:text-lg md:text-xl"
+                className="font-black leading-tight text-base sm:text-lg md:text-xl"
                 title="APP CONTROL-DIARIO"
               >
                 APP CONTROL-DIARIO
@@ -131,7 +131,7 @@ export default function NavBar() {
               {isRoleRoute && !loading && email && (
                 <span className="flex text-sm items-center gap-2 px-3 py-1 rounded-xl border-2">
                   <span className="inline-flex items-center gap-1">
-                    <span className="rounded-full w-3 h-3 bg-destructive" />
+                    <span className="rounded-full w-3 h-3 bg-emerald-600" />
                     <span className="font-black">{roleLabel(rol)}</span>
                   </span>
                   <span className="text-green-600">✓</span>

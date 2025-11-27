@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/Select'
 import { UserRoundPlus } from 'lucide-react'
+import { useErrorToast } from '@/lib/useErrorToast'
 
 type Rol = 'admin' | 'bf' | 'jr'
 type AsignacionTipo = 'unidad' | 'caseta'
@@ -45,7 +46,7 @@ export default function AdminUsersPage() {
   const [unidades, setUnidades] = useState<Unidad[]>([])
   const [municipios, setMunicipios] = useState<Municipio[]>([])
   const [casetas, setCasetas] = useState<Caseta[]>([])
-
+  const showAuthError = useErrorToast('form')
   const [loading, setLoading] = useState(false)
   const [alert, setAlert] = useState<{
     type: 'success' | 'error'
@@ -173,10 +174,8 @@ export default function AdminUsersPage() {
       setAsignacionTipo('')
       setUnidadId('')
       setCasetaId('')
-    } catch (err: any) {
-      const message = err?.message ?? String(err)
-      toast({ title: 'Error al crear usuario', description: message })
-      setAlert({ type: 'error', msg: message })
+    } catch (err) {
+      showAuthError(err)
     } finally {
       setLoading(false)
     }

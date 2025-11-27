@@ -58,6 +58,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Rol inválido' }, { status: 400 })
     }
 
+    /*
     // Debe venir al menos un dato de puesto
     if (!puestoNombre && !caseta_id_directa) {
       return NextResponse.json(
@@ -68,7 +69,7 @@ export async function POST(req: Request) {
         { status: 400 },
       )
     }
-
+*/
     // ----------------------------------------------------
     // 2) Resolver puestoNombre → unidad_id o caseta_id
     // ----------------------------------------------------
@@ -128,7 +129,7 @@ export async function POST(req: Request) {
     // 3) Validación final: exactamente una asignación
     // ----------------------------------------------------
     const asignaciones = (unidad_id ? 1 : 0) + (caseta_id ? 1 : 0)
-
+    /*
     if (asignaciones !== 1) {
       return NextResponse.json(
         {
@@ -138,7 +139,7 @@ export async function POST(req: Request) {
         { status: 400 },
       )
     }
-
+*/
     // -------------------------------
     // 4) Crear usuario en auth.users
     // -------------------------------

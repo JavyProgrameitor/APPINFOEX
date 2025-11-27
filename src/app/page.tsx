@@ -8,6 +8,7 @@ import './globals.css'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { useErrorToast } from '@/lib/useErrorToast'
 
 type Rol = 'admin' | 'jr' | 'bf'
 
@@ -32,6 +33,7 @@ export default function AuthPage() {
   const [pass, setPass] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const showAuthError = useErrorToast('auth')
 
   // al montar: si ya hay sesión en el cliente, resolvemos rol y redirigimos
   useEffect(() => {
@@ -97,14 +99,12 @@ export default function AuthPage() {
       if (!ok) {
         await supabase.auth.signOut()
       }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err)
-      setError(msg || 'Error de autenticación.')
+    } catch (err) {
+      showAuthError(err)
     } finally {
       setLoading(false)
     }
   }
-
   return (
     <main className="h-130 grid place-items-center">
       <Card className="flex items-center max-w-sm shadow-accent rounded-xl p-8">
@@ -142,7 +142,8 @@ export default function AuthPage() {
 
             <Button
               type="submit"
-              className="w-full text-sm font-black cursor-pointer  border-lime-50  bg-green-500"
+              variant="ghost"
+              className="w-full text-sm font-black cursor-pointer"
               disabled={loading}
             >
               {loading ? 'Entrando...' : 'Entrar'}
