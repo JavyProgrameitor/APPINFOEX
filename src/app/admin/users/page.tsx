@@ -36,7 +36,7 @@ export default function AdminUsersPage() {
     apellidos: '',
   })
 
-  // NUEVO: flujo por zona -> (unidad|caseta)
+  // flujo por zona -> (unidad|caseta)
   const [zona, setZona] = useState<string>('')
   const [asignacionTipo, setAsignacionTipo] = useState<AsignacionTipo | ''>('')
   const [unidadId, setUnidadId] = useState<string>('')
@@ -95,7 +95,7 @@ export default function AdminUsersPage() {
     [casetas, zona, municipioById],
   )
 
-  // Validación de selección (ahora requiere zona)
+  // Validación de selección (requiere zona)
   const seleccionValida = useMemo(() => {
     if (!zona) return false
     if (asignacionTipo === 'unidad') return !!unidadId
@@ -103,9 +103,8 @@ export default function AdminUsersPage() {
     return false
   }, [zona, asignacionTipo, unidadId, casetaId])
 
-  // Reset dependientes
+  // Reset dependientes al cambiar zona
   useEffect(() => {
-    // Cambiar zona limpia selección de unidad/caseta
     setUnidadId('')
     setCasetaId('')
   }, [zona])
@@ -128,6 +127,17 @@ export default function AdminUsersPage() {
             ? 'Debes seleccionar una Unidad.'
             : 'Debes seleccionar una Caseta.',
         )
+      }
+
+      // REGLAS DE NEGOCIO (doble seguridad)
+      // 1) Los jefes de retén (jr) solo en unidades, nunca en casetas
+      if (form.rol === 'jr' && asignacionTipo === 'caseta') {
+        throw new Error('Los jefes de retén solo pueden asignarse a unidades, no a casetas.')
+      }
+
+      // 2) En casetas solo puede haber Bomberos Forestales
+      if (asignacionTipo === 'caseta' && form.rol !== 'bf') {
+        throw new Error('Solo los Bomberos Forestales pueden asignarse a una caseta.')
       }
 
       const supa = getSupabaseBrowser()
@@ -180,200 +190,230 @@ export default function AdminUsersPage() {
       setLoading(false)
     }
   }
+
   return (
-    <main className="min-h-screen w-full flex items-center justify-center">
-      <Card className="w-full max-w-xl rounded-2xl shadow-accent">
-        <CardHeader className="flex items-center justify-center">
-          <UserRoundPlus />
-          <CardTitle className="text-center text-animate">Agregar usuario en la BBDD</CardTitle>
+    <main className="min-h-screen flex items-center justify-center p-6">
+      <Card className="w-full max-w-2xl rounded-2xl shadow-lg p-8">
+        <CardHeader className="flex items-center justify-center space-y-2">
+          <UserRoundPlus className="w-10 h-10 " />
+          <CardTitle>Agregar usuario a la BBDD</CardTitle>
         </CardHeader>
+
         <CardContent>
-          <div className="max-w-xl mx-auto space-y-4">
+          <div className="space-y-6">
+            {/* ALERTA */}
             {alert && (
               <Alert variant={alert.type === 'error' ? 'destructive' : 'default'}>
                 <AlertTitle>{alert.type === 'error' ? 'Error' : 'Listo'}</AlertTitle>
                 <AlertDescription>{alert.msg}</AlertDescription>
               </Alert>
             )}
-            <div className="flex items-center justify-center">
-              <form onSubmit={onSubmit} className="space-y-4">
-                <div>
-                  <label className="text-sm m-1">Email</label>
-                  <Input
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    required
-                  />
-                </div>
 
-                <div>
-                  <label className="text-sm m-1">Contraseña</label>
-                  <Input
-                    type="password"
-                    value={form.password}
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    required
-                  />
-                  <p className="text-xs mt-1 text-primary">Mínimo 6 caracteres.</p>
-                </div>
+            {/* FORMULARIO */}
+            <form onSubmit={onSubmit} className="space-y-5 max-w-sm mx-auto w-full">
+              {/* Email */}
+              <div className="flex flex-col space-y-1">
+                <label className="text-sm font-medium">Email</label>
+                <Input
+                  className="w-full"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  required
+                />
+              </div>
 
-                {/* Rol */}
-                <div>
+              {/* Password */}
+              <div className="flex flex-col space-y-1">
+                <label className="text-sm font-medium">Contraseña</label>
+                <Input
+                  className="w-full"
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  required
+                />
+                <p className="text-xs mt-1 text-primary">Mínimo 6 caracteres.</p>
+              </div>
+
+              {/* Rol */}
+              <div className="flex flex-col space-y-1">
+                <label className="text-sm font-medium">Rol</label>
+                <Select
+                  value={form.rol}
+                  onValueChange={(v) => {
+                    const rol = v as Rol
+                    setForm({ ...form, rol })
+
+                    // Si pasa a JR y estaba asignado por caseta, forzamos a unidad e informamos
+                    if (rol === 'jr' && asignacionTipo === 'caseta') {
+                      setAsignacionTipo('unidad')
+                      setCasetaId('')
+                      toast({
+                        title: 'Revisar asignación',
+                        description:
+                          'Los jefes de retén solo pueden asignarse a unidades. Se ha cambiado la asignación a unidad.',
+                        variant: 'destructive',
+                      })
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-full rounded-md shadow text-animate">
+                    <SelectValue placeholder="Selecciona un rol" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Administrador</SelectItem>
+                    <SelectItem value="bf">Bombero Forestal</SelectItem>
+                    <SelectItem value="jr">Jefe de Servicio</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* DNI */}
+              <div className="flex flex-col space-y-1">
+                <label className="text-sm font-medium">DNI</label>
+                <Input
+                  className="w-full"
+                  value={form.dni}
+                  onChange={(e) => setForm({ ...form, dni: e.target.value })}
+                />
+              </div>
+
+              {/* Nombre */}
+              <div className="flex flex-col space-y-1">
+                <label className="text-sm font-medium">Nombre</label>
+                <Input
+                  className="w-full"
+                  value={form.nombre}
+                  onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+                />
+              </div>
+
+              {/* Apellidos */}
+              <div className="flex flex-col space-y-1">
+                <label className="text-sm font-medium">Apellidos</label>
+                <Input
+                  className="w-full"
+                  value={form.apellidos}
+                  onChange={(e) => setForm({ ...form, apellidos: e.target.value })}
+                />
+              </div>
+
+              {/* Zona */}
+              <div className="flex flex-col space-y-1">
+                <label className="text-sm font-medium">Zona</label>
+                <Select value={zona} onValueChange={setZona}>
+                  <SelectTrigger className="w-full rounded-md shadow text-animate">
+                    <SelectValue placeholder="Elige una zona" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {zonas.map((z) => (
+                      <SelectItem key={z} value={z}>
+                        {z}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Asignación */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex flex-col space-y-1">
+                  <label className="text-sm font-medium">Asignar por</label>
                   <Select
-                    value={form.rol}
-                    onValueChange={(v) => setForm({ ...form, rol: v as Rol })}
+                    value={asignacionTipo}
+                    onValueChange={(v) => {
+                      const value = v as AsignacionTipo | ''
+
+                      // Si intenta elegir caseta con rol jr, informamos y NO cambiamos
+                      if (value === 'caseta' && form.rol === 'jr') {
+                        toast({
+                          title: 'Asignación no válida',
+                          description:
+                            'Los jefes de retén solo pueden asignarse a unidades, no a casetas.',
+                          variant: 'destructive',
+                        })
+                        return
+                      }
+
+                      setAsignacionTipo(value)
+                      setUnidadId('')
+                      setCasetaId('')
+                    }}
+                    disabled={!zona}
                   >
-                    <SelectTrigger className="w-80 rounded-sm shadow-accent">
-                      <SelectValue placeholder="Selecciona un rol" />
+                    <SelectTrigger className="w-full rounded-md shadow">
+                      <SelectValue placeholder={zona ? 'Seleccionar' : 'Primero elige zona'} />
                     </SelectTrigger>
-                    <SelectContent className="rounded-b-xl">
-                      <SelectItem value="admin" className="text-center">
-                        Administrador
-                      </SelectItem>
-                      <SelectItem value="bf" className="text-center">
-                        Bombero Forestal
-                      </SelectItem>
-                      <SelectItem value="jr" className="text-center">
-                        Jefe de Servicio
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className=" text-sm">DNI</label>
-                  <Input
-                    type="text"
-                    value={form.dni}
-                    onChange={(e) => setForm({ ...form, dni: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm">Nombre</label>
-                  <Input
-                    value={form.nombre}
-                    onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className=" text-sm">Apellidos</label>
-                  <Input
-                    value={form.apellidos}
-                    onChange={(e) => setForm({ ...form, apellidos: e.target.value })}
-                  />
-                </div>
-
-                {/* Zona */}
-                <div>
-                  <Select value={zona} onValueChange={(v) => setZona(v)}>
-                    <SelectTrigger className="w-80 rounded-sm shadow-accent">
-                      <SelectValue placeholder="Elige una zona" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xs max-h-64">
-                      {zonas.map((z) => (
-                        <SelectItem key={z} value={z} className="text-center">
-                          {z}
-                        </SelectItem>
-                      ))}
+                    <SelectContent>
+                      <SelectItem value="unidad">Unidad</SelectItem>
+                      <SelectItem value="caseta">Caseta</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                {/* Asignación por Unidad o Caseta */}
-                <div className="grid md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm mb-1">Asignar por</label>
-                    <Select
-                      value={asignacionTipo}
-                      onValueChange={(v) => {
-                        const value = v as AsignacionTipo | ''
-                        setAsignacionTipo(value)
-                        setUnidadId('')
-                        setCasetaId('')
-                      }}
-                      disabled={!zona}
-                    >
-                      <SelectTrigger className="w-full rounded-sm shadow-accent">
-                        <SelectValue placeholder={zona ? '— Selecciona —' : 'Primero elige zona'} />
+                {asignacionTipo === 'unidad' && (
+                  <div className="flex flex-col space-y-1">
+                    <label className="text-animate font-medium">Unidad</label>
+                    <Select value={unidadId} onValueChange={setUnidadId} disabled={!zona}>
+                      <SelectTrigger className="w-full rounded-md shadow">
+                        <SelectValue placeholder="Selecciona unidad" />
                       </SelectTrigger>
-                      <SelectContent className="rounded-xs">
-                        <SelectItem value="unidad" className="text-center">
-                          Unidad
-                        </SelectItem>
-                        <SelectItem value="caseta" className="text-center">
-                          Caseta
-                        </SelectItem>
+                      <SelectContent>
+                        {unidadesEnZona.map((u) => (
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.nombre}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
-
-                  {asignacionTipo === 'unidad' && (
-                    <div>
-                      <label className="block text-sm mb-1">Unidad</label>
-                      <Select
-                        value={unidadId}
-                        onValueChange={(v) => setUnidadId(v)}
-                        disabled={!zona}
-                      >
-                        <SelectTrigger className="w-full rounded-sm shadow-accent">
-                          <SelectValue
-                            placeholder={zona ? '— Selecciona unidad —' : 'Primero elige zona'}
-                          />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xs max-h-64">
-                          {unidadesEnZona.map((u) => (
-                            <SelectItem key={u.id} value={u.id} className="text-center">
-                              {u.nombre}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-
-                  {asignacionTipo === 'caseta' && (
-                    <div>
-                      <label className="block text-sm mb-1">Caseta</label>
-                      <Select
-                        value={casetaId}
-                        onValueChange={(v) => setCasetaId(v)}
-                        disabled={!zona}
-                      >
-                        <SelectTrigger className="w-full rounded-sm shadow-accent">
-                          <SelectValue
-                            placeholder={zona ? '— Selecciona caseta —' : 'Primero elige zona'}
-                          />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xs max-h-64">
-                          {casetasEnZona.map((c) => (
-                            <SelectItem key={c.id} value={c.id} className="text-center">
-                              {c.nombre}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </div>
-
-                {/* Mensajes de ayuda/validación */}
-                {zona && !asignacionTipo && (
-                  <p className="text-xs text-red-600">Selecciona si asignas por Unidad o Caseta.</p>
                 )}
-                {zona && asignacionTipo && !seleccionValida && (
-                  <p className="text-xs text-red-600">
-                    {asignacionTipo === 'unidad'
-                      ? 'Debes seleccionar una Unidad.'
-                      : 'Debes seleccionar una Caseta.'}
-                  </p>
+
+                {asignacionTipo === 'caseta' && (
+                  <div className="flex flex-col space-y-1">
+                    <label className="text-animate font-medium">Caseta</label>
+                    <Select value={casetaId} onValueChange={setCasetaId} disabled={!zona}>
+                      <SelectTrigger className="w-full rounded-md shadow">
+                        <SelectValue placeholder="Selecciona caseta" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {casetasEnZona.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.nombre}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 )}
-                <div className="flex items-center justify-center">
-                  <Button variant="ghost" type="submit" disabled={loading || !seleccionValida}>
-                    {loading ? 'Creando...' : 'Crear usuario'}
-                  </Button>
-                </div>
-              </form>
-            </div>
+              </div>
+
+              {/* Validación */}
+              {zona && !asignacionTipo && (
+                <p className="text-xs text-red-600">Selecciona si asignas por Unidad o Caseta.</p>
+              )}
+
+              {zona && asignacionTipo && !seleccionValida && (
+                <p className="text-xs text-red-600">
+                  {asignacionTipo === 'unidad'
+                    ? 'Debes seleccionar una Unidad.'
+                    : 'Debes seleccionar una Caseta.'}
+                </p>
+              )}
+
+              {/* Submit */}
+              <div className="flex justify-center pt-2">
+                <Button
+                  variant="ghost"
+                  type="submit"
+                  disabled={loading || !seleccionValida}
+                  className="w-36 md:w-48 py-2 rounded-xl font-medium"
+                >
+                  {loading ? 'Creando...' : 'Crear usuario'}
+                </Button>
+              </div>
+            </form>
           </div>
         </CardContent>
       </Card>

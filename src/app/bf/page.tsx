@@ -3,25 +3,17 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardTitle } from '@/components/ui/Card'
-import { Input } from '@/components/ui/Input'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { useToast } from '@/components/ui/Use-toast'
-import { getSupabaseBrowser } from '@/server/client'
-import { PanelBottom } from 'lucide-react'
+import { ArrowRight, ArrowLeft, HomeIcon } from 'lucide-react'
+
+type Rol = 'admin' | 'bf' | 'jr'
 
 export default function BFHome() {
   const router = useRouter()
-  const { toast } = useToast()
+  const [loading, setLoading] = useState(true)
+  const [rol, setRol] = useState<Rol | null>(null)
 
-  const [loadingPage, setLoadingPage] = useState(true)
-  const [saving, setSaving] = useState(false)
-
-  const [newPass, setNewPass] = useState('')
-  const [newPass2, setNewPass2] = useState('')
-  const [error, setError] = useState<string | null>(null)
-
-  // Comprobar que el usuario está logueado y tiene rol "bf"
   useEffect(() => {
     ;(async () => {
       try {
@@ -33,113 +25,77 @@ export default function BFHome() {
 
         const me = await res.json()
 
-        const allowedRoles = ['bf', 'jr'] as const
+        // Solo permitimos acceder a esta pantalla a BF y JR
+        const allowedRoles: Rol[] = ['bf', 'jr']
         if (!allowedRoles.includes(me.rol)) {
-          // Si no es bombero forestal ni jefe de retén, lo mandamos fuera
           router.replace('/')
           return
         }
+
+        setRol(me.rol as Rol)
       } catch (e) {
         router.replace('/')
         return
       } finally {
-        setLoadingPage(false)
+        setLoading(false)
       }
     })()
   }, [router])
 
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
+  if (loading) return null
 
-    // Validaciones básicas
-    if (newPass.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres.')
-      return
-    }
-    if (newPass !== newPass2) {
-      setError('Las contraseñas no coinciden.')
-      return
-    }
-
-    setSaving(true)
-    try {
-      const supabase = getSupabaseBrowser()
-      const { error } = await supabase.auth.updateUser({ password: newPass })
-
-      if (error) {
-        setError(error.message)
-        return
-      }
-
-      setNewPass('')
-      setNewPass2('')
-
-      toast({
-        title: 'Contraseña actualizada',
-        description: 'A partir de ahora deberás usar la nueva contraseña para iniciar sesión.',
-      })
-    } catch {
-      setError('No se pudo cambiar la contraseña. Inténtalo de nuevo.')
-    } finally {
-      setSaving(false)
-    }
+  const goBFList = () => {
+    router.push('/bf/list')
   }
 
-  if (loadingPage) {
-    return (
-      <div className="p-4">
-        <p>Cargando…</p>
-      </div>
-    )
+  const goJRHome = () => {
+    router.push('/jr')
   }
 
   return (
-    <div className="flex items-center justify-center p-10">
-      <div>
-        <div className="flex items-center justify-center">
-          <PanelBottom></PanelBottom>
-          <CardTitle className="text-xl font-black text-animate flex items-center gap-3 p-4">
-            BIENVENIDO B.F. DE EXTREMADURA
+    <main className="flex items-center justify-center bg-muted/20 p-4">
+      <Card className="w-full max-w-xl rounded-2xl shadow-lg">
+        <CardHeader className="flex flex-col items-center text-center space-y-2">
+          <HomeIcon className="w-10 h-10"></HomeIcon>
+          <CardTitle className="text-xl md:text-2xl tracking-wide">
+            BIENVENIDO BOMBERO FORESTAL DE EXTREMADURA
           </CardTitle>
-        </div>
-        <Card className="rounded-2xl shadow-accent">
-          <CardTitle className="text-lg text-center">Cambiar contraseña o continuar :</CardTitle>
-          <CardContent className="flex items-center justify-center">
-            <form onSubmit={onSubmit}>
-              <label className="text-sm font-bold">Nueva contraseña</label>
-              <div>
-                <Input
-                  type="password"
-                  value={newPass}
-                  placeholder="    ********   "
-                  onChange={(e) => setNewPass(e.target.value)}
-                  required
-                />
-              </div>
-              <label className="text-sm font-bold">Repite la nueva contraseña</label>
-              <div>
-                <Input
-                  type="password"
-                  value={newPass2}
-                  placeholder="    ********   "
-                  onChange={(e) => setNewPass2(e.target.value)}
-                  required
-                />
-              </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
-              <div className="flex items-center justify-center gap-3 m-3">
-                <Button variant="ghost" type="submit" disabled={saving}>
-                  {saving ? 'Guardando...' : 'Actualizar'}
-                </Button>
-                <Button variant="ghost" onClick={() => router.push('/bf/list')}>
-                  Continuar
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+        </CardHeader>
+
+        <CardContent className="space-y-4 text-center text-sm md:text-base">
+          <div className="space-y-2">
+            <p>
+              Has accedido correctamente a la aplicación de INFOEX. Desde el menú lateral puedes:
+            </p>
+
+            <ul className="space-y-1 text-muted-foreground">
+              <li>• Registrar o consultar partes de actuación.</li>
+              <li>• Revisar avisos y comunicaciones.</li>
+              <li>• Acceder a tu perfil y cambiar la contraseña.</li>
+            </ul>
+
+            <p className="text-xs md:text-sm text-muted-foreground mt-3">
+              Si tienes cualquier incidencia con la aplicación, comunícalo a tu Jefe de Retén o al
+              servicio de soporte.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row justify-center gap-3 pt-2">
+            {/* Solo mostramos este botón si el usuario también es JR */}
+            {rol === 'jr' && (
+              <Button variant="ghost" onClick={goJRHome}>
+                <ArrowLeft className="mr-1 h-4 w-4" />
+                Ir al panel de Jefe de Servicio
+              </Button>
+            )}
+            {/* Botón siempre disponible para continuar como BF */}
+            <Button variant="ghost" onClick={goBFList}>
+              Continuar
+              <ArrowRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </main>
   )
 }

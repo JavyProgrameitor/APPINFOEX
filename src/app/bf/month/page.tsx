@@ -235,7 +235,8 @@ function BFMonthPageInner() {
 
                     // colores según código
                     let cellClasses = 'border rounded-md p-2 text-center text-xs bg-card shadow-sm'
-                    let codigoClasses = 'mt-1 font-mono text-xs'
+                    // 🔥 Códigos no tratados (JR, TH, TC, B, etc.) → color amarillo
+                    let codigoClasses = 'mt-1 font-mono text-xs text-animate'
                     if (codigo === 'V') {
                       cellClasses =
                         'bg-success text-success-foreground rounded-md p-2 text-center text-xs shadow-sm'

@@ -153,10 +153,8 @@ function AdminMonthPageInner() {
       <Card className="rounded-2xl shadow-accent">
         <CardHeader className="flex flex-col items-center justify-center gap-2">
           <div className="flex items-center gap-1">
-            <CalendarDays></CalendarDays>
-            <CardTitle className="text-lg md:text-xl text-animate gap-2">
-              Administrador, resumen mensual de :
-            </CardTitle>
+            <CalendarDays className="w-10 h-10"></CalendarDays>
+            <CardTitle>Administrador, resumen mensual de :</CardTitle>
           </div>
           <div>
             {user && (
@@ -225,7 +223,8 @@ function AdminMonthPageInner() {
 
                     // colores según código
                     let cellClasses = 'border rounded-md p-2 text-center text-xs bg-card shadow-sm'
-                    let codigoClasses = 'mt-1 font-mono text-xs'
+                    // 🔥 Códigos no tratados (JR, TH, TC, B, etc.) → color amarillo
+                    let codigoClasses = 'mt-1 font-mono text-xs text-animate'
                     if (codigo === 'V') {
                       cellClasses =
                         'bg-success text-success-foreground rounded-md p-2 text-center text-xs shadow-sm'

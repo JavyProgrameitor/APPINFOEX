@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Separator } from '@/components/ui/Separator'
 import { getSupabaseBrowser } from '@/server/client'
-import { Copy, IdCard, MapPin, Clock, ArrowLeft, ArrowRight, FileCheck2Icon } from 'lucide-react'
+import { IdCard, MapPin, Clock, ArrowLeft, ArrowRight, FileCheck2Icon } from 'lucide-react'
 
 type Rol = 'bf' | 'jr'
 
@@ -425,30 +425,6 @@ function BFListPageInner() {
                   </div>
                 </div>
               </div>
-
-              {/* DNI rápido para copiar en móvil */}
-              <div className="rounded-sm border bg-card text-card-foreground shadow-sm hover:shadow-md transition cursor-pointer shadow-accent">
-                <div className="flex items-center justify-between p-3">
-                  <div>
-                    <div className="text-xs uppercase text-muted-foreground">DNI</div>
-                    <div className="font-mono text-sm">{user.dni || '—'}</div>
-                  </div>
-                  {user.dni && (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8 cursor-pointer"
-                      onClick={async () => {
-                        await navigator.clipboard.writeText(user.dni!)
-                      }}
-                      aria-label="Copiar DNI"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-
               {/* Últimas anotaciones + resumen de horas extra + detalle de horas extra */}
               <div className="rounded-sm border bg-card text-card-foreground shadow-sm hover:shadow-md transition shadow-accent">
                 <div className="p-3 flex items-center justify-between">
@@ -491,34 +467,52 @@ function BFListPageInner() {
                             </span>
                           </div>
 
-                          {/* Derecha: o bien horas extra, o bien Vacaciones / AP */}
+                          {/* Derecha: mostrar siempre el código y, según caso, detalle */}
                           <div className="text-right">
                             {a.horas_extras > 0 ? (
                               <>
-                                <div className="text-[0.7rem] text-muted-foreground">Extras</div>
+                                {/* Código siempre visible */}
+                                {a.codigo && (
+                                  <div className="text-xs font-semibold text-animate">
+                                    {a.codigo}
+                                    <div className="text-xs text-red-500">Trabajo diario</div>
+                                  </div>
+                                )}
+                                <div className="text-xs text-violet-500">
+                                  Horas extras generadas
+                                </div>
                                 <div className="text-xs font-semibold">
                                   {a.horas_extras.toFixed(2)} h
                                 </div>
                               </>
-                            ) : a.codigo === 'V' ? (
-                              <div className="text-xs font-semibold text-emerald-700">
-                                Vacaciones
-                              </div>
-                            ) : a.codigo === 'AP' ? (
-                              <div className="text-xs font-semibold text-sky-700">
-                                Asuntos propios
-                              </div>
-                            ) : a.codigo === 'H' ? (
-                              <div className="text-xs font-semibold text-yellow-700">
-                                Horas Extras
-                              </div>
-                            ) : null}
+                            ) : (
+                              <>
+                                {/* Código siempre visible, para TODOS (JR, TH, TC, V, B, AP, H, etc.) */}
+                                {a.codigo && (
+                                  <div className="text-xs font-semibold text-animate">
+                                    {a.codigo}
+                                  </div>
+                                )}
+
+                                {/* Descripción solo para algunos códigos concretos */}
+                                {a.codigo === 'V' && (
+                                  <div className="text-xs text-animate">Vacaciones</div>
+                                )}
+                                {a.codigo === 'AP' && (
+                                  <div className="text-xs text-blue-500">Asuntos propios</div>
+                                )}
+                                {a.codigo === 'H' && (
+                                  <div className="text-xs text-yellow-500">
+                                    Horas extras solicitadas
+                                  </div>
+                                )}
+                              </>
+                            )}
                           </div>
                         </li>
                       ))}
                     </ul>
                   )}
-
                   {/* Resumen horas extra */}
                   <div className="mt-2 text-xs sm:text-sm space-y-1">
                     <p>

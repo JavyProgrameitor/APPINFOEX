@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Separator } from '@/components/ui/Separator'
 import { ArrowLeft, ArrowRight, Copy, User } from 'lucide-react'
 import { getSupabaseBrowser } from '@/server/client'
+import { useToast } from '@/components/ui/Use-toast'
 
 interface Unidad {
   id: string
@@ -70,6 +71,8 @@ export default function AdminListBFPageClient({ userId }: Props) {
 
   const [anotaciones, setAnotaciones] = useState<Anotacion[] | null>(null)
   const [loadingAnot, setLoadingAnot] = useState(false)
+
+  const { toast } = useToast()
 
   const [horas, setHoras] = useState<ResumenHoras>({
     total_horas: 0,
@@ -267,12 +270,10 @@ export default function AdminListBFPageClient({ userId }: Props) {
     <main className="p-4 md:p-6 max-w-3xl mx-auto">
       <Card className="rounded-2xl shadow-accent">
         <CardHeader className="flex items-center justify-center">
-          <User></User>
-          <CardTitle className="text-center text-lg md:text-xl text-animate">
-            Información del Bombero
-          </CardTitle>
+          <User className="w-10 h-10"></User>
+          <CardTitle>Información del Bombero</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 p-4">
+        <CardContent className="space-y-4 p-2">
           {loadingUser ? (
             <div className="space-y-3">
               <div className="h-6 rounded bg-muted/50 animate-pulse" />
@@ -286,7 +287,7 @@ export default function AdminListBFPageClient({ userId }: Props) {
           ) : (
             <>
               {/* Cabecera usuario */}
-              <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center justify-between gap-2">
                 <div>
                   <div className="text-xl font-semibold">
                     {user.apellidos}, {user.nombre}
@@ -313,15 +314,21 @@ export default function AdminListBFPageClient({ userId }: Props) {
               {/* DNI */}
               <div className="rounded-sm border bg-card text-card-foreground shadow-sm hover:shadow-md transition cursor-pointer shadow-accent h-full">
                 <div className="text-xs m-1">DNI</div>
+
                 <div className="flex items-center gap-2 font-mono m-1">
                   <span className="text-sm">{user.dni || '—'}</span>
+
                   {!!user.dni && (
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-7 w-7"
+                      className="h-7 w-7 cursor-pointer"
                       onClick={async () => {
                         await navigator.clipboard.writeText(user.dni!)
+                        toast({
+                          title: 'DNI copiado',
+                          description: `El DNI ${user.dni} se ha copiado al portapapeles.`,
+                        })
                       }}
                       aria-label="Copiar DNI"
                     >
@@ -376,46 +383,68 @@ export default function AdminListBFPageClient({ userId }: Props) {
                     <div className="text-sm text-muted-foreground">Sin anotaciones recientes.</div>
                   ) : (
                     <ul className="space-y-2">
-                      {anotaciones.map((a) => {
-                        const horasNumber = Number(a.horas_extras || 0)
-                        let rightLabel = ''
-                        if (horasNumber > 0) {
-                          rightLabel = `${horasNumber.toFixed(2)} h extra`
-                        } else if (a.codigo === 'V') {
-                          rightLabel = 'Vacaciones'
-                        } else if (a.codigo === 'AP') {
-                          rightLabel = 'Asuntos propios'
-                        } else if (a.codigo === 'H') {
-                          rightLabel = 'Día por horas extra'
-                        } else if (a.codigo) {
-                          rightLabel = a.codigo
-                        }
+                      {anotaciones.map((a) => (
+                        <li
+                          key={a.id}
+                          className="flex items-center justify-between text-xs rounded-sm border bg-background/60 px-2 py-1"
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              {new Date(a.fecha).toLocaleDateString('es-ES', {
+                                weekday: 'short',
+                                day: '2-digit',
+                                month: '2-digit',
+                              })}
+                            </span>
+                            <span className="text-[0.7rem] text-muted-foreground">
+                              {a.hora_entrada} - {a.hora_salida}
+                            </span>
+                          </div>
 
-                        return (
-                          <li
-                            key={a.id}
-                            className="text-sm flex items-center justify-between rounded-sm border bg-background/60 px-2 py-1"
-                          >
-                            <div>
-                              <div className="font-medium">
-                                {new Date(a.fecha).toLocaleDateString('es-ES', {
-                                  weekday: 'short',
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                })}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                Entrada {a.hora_entrada} · Salida {a.hora_salida}
-                              </div>
-                            </div>
-                            {rightLabel && (
-                              <div className="text-xs text-muted-foreground text-right">
-                                {rightLabel}
-                              </div>
+                          {/* Derecha: mostrar siempre el código y, según caso, detalle */}
+                          <div className="text-right">
+                            {a.horas_extras > 0 ? (
+                              <>
+                                {/* Código siempre visible */}
+                                {a.codigo && (
+                                  <div className="text-xs font-semibold text-animate">
+                                    {a.codigo}
+                                    <div className="text-xs text-red-500">Trabajo diario</div>
+                                  </div>
+                                )}
+                                <div className="text-xs text-violet-500">
+                                  Horas extras generadas
+                                </div>
+                                <div className="text-xs font-semibold">
+                                  {a.horas_extras.toFixed(2)} h
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                {/* Código siempre visible, para TODOS (JR, TH, TC, V, B, AP, H, etc.) */}
+                                {a.codigo && (
+                                  <div className="text-xs font-semibold text-animate">
+                                    {a.codigo}
+                                  </div>
+                                )}
+
+                                {/* Descripción solo para algunos códigos concretos */}
+                                {a.codigo === 'V' && (
+                                  <div className="text-xs text-animate">Vacaciones</div>
+                                )}
+                                {a.codigo === 'AP' && (
+                                  <div className="text-xs text-blue-500">Asuntos propios</div>
+                                )}
+                                {a.codigo === 'H' && (
+                                  <div className="text-xs text-yellow-500">
+                                    Horas extras solicitadas
+                                  </div>
+                                )}
+                              </>
                             )}
-                          </li>
-                        )
-                      })}
+                          </div>
+                        </li>
+                      ))}
                     </ul>
                   )}
 

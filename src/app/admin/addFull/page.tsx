@@ -202,30 +202,29 @@ export default function AdminBulkAddPage() {
 
   return (
     <div className="max-w-3xl mx-auto py-6 px-3 md:px-0">
-      <Card className="w-full max-w-xl rounded-2xl shadow-accent">
+      <Card className=" w-full max-w-xl rounded-2xl shadow-accent p-4">
         <CardHeader className="flex items-center justify-center gap-2">
-          <UserRoundPlus />
-          <CardTitle className="text-center text-animate">
-            Alta masiva de bomberos y jefes de retén
-          </CardTitle>
+          <UserRoundPlus className="w-10 h-10"></UserRoundPlus>
+          <CardTitle>Importación masiva de bomberos </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-secondary font-bold">
             El archivo debe tener una línea por usuario con el siguiente formato:
           </p>
 
-          <pre className="bg-muted text-xs p-3 rounded-md overflow-auto">
+          <pre className="bg-muted text-sm p-3 rounded-md overflow-auto">
             email;nombre;apellidos;dni;rol;unidad o caseta
             {'\n'}
             juan.lopez@example.com;Juan;López;12345678A;bf;Talayuela B
           </pre>
 
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             • Las columnas <strong>nombre</strong>, <strong>apellidos</strong>, <strong>dni</strong>{' '}
             y <strong>rol</strong> son opcionales.
             {'\n'}• Si no indicas rol, se usará <strong>bf</strong> (bombero forestal) por defecto.
             {'\n'}• La sexta columna (<strong>unidad</strong>) es obligatoria y debe coincidir con
-            nombre de la unidad en la base de datos.
+            nombre de la unidad o la caseta en la base de datos.
+            {'\n'}• <strong>No</strong> existen jefes de servicios en casetas.
             {'\n'}• Roles válidos: <code>bf</code> (bombero forestal) y <code>jr</code> (jefe de
             retén).
           </p>
@@ -244,8 +243,9 @@ export default function AdminBulkAddPage() {
               value={defaultPassword}
               onChange={(e) => setDefaultPassword(e.target.value)}
               placeholder="Ej: Infoex2025!"
+              className="text-sm text-muted-foreground"
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Esta contraseña se asignará inicialmente a todos los usuarios creados desde este
               archivo. Después podrán cambiarla.
             </p>
@@ -321,11 +321,12 @@ export default function AdminBulkAddPage() {
             </div>
           )}
 
-          <div className="pt-2">
+          <div className="flex items-center justify-center pt-2">
             <Button
+              variant="ghost"
               onClick={handleImport}
               disabled={!parsedUsers || parsedUsers.length === 0 || isImporting}
-              className="w-full md:w-auto"
+              className="w-36 md:w-48 py-2 rounded-xl font-medium"
             >
               {isImporting ? 'Importando...' : 'Importar usuarios'}
             </Button>

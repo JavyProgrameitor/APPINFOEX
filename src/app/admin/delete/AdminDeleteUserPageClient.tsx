@@ -300,15 +300,13 @@ export default function AdminDeleteUserPageClient({ initialDni, initialId }: Pro
   return (
     <main className="p-5">
       <CardHeader className="flex items-center justify-center p-5">
-        <UserX></UserX>
-        <CardTitle className="flex items-center text-animate">
-          Eliminar usuario de la BBDD
-        </CardTitle>
+        <UserX className="w-10 h-10"></UserX>
+        <CardTitle>Eliminar usuario de la BBDD</CardTitle>
       </CardHeader>
       <Card className="rounded-2xl shadow-accent">
         <CardHeader className="flex-col items-center justify-center">
           <CardTitle className="text-center">Buscar usuario a eliminar</CardTitle>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-center text-muted-foreground">
             Localiza el usuario por DNI y confirma la eliminación escribiendo su DNI completo.
           </p>
 
@@ -454,7 +452,7 @@ export default function AdminDeleteUserPageClient({ initialDni, initialId }: Pro
                         ) : (
                           <>
                             <Trash2 />
-                            Eliminar usuarios
+                            Eliminar usuario
                           </>
                         )}
                       </Button>

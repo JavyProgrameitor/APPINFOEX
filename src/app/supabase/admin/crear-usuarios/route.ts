@@ -11,11 +11,12 @@ type Body = {
   nombre?: string
   apellidos?: string
 
-  // Desde el front mandas el "puesto" en este campo (nombre de unidad o caseta)
-  unidad_nombre?: string
+  // Formulario individual: manda IDs
+  unidad_id?: string | null
+  caseta_id?: string | null
 
-  // Por si en algún momento quieres mandar directamente el id de caseta
-  caseta_id?: string
+  // Importación masiva: manda el nombre del puesto (unidad o caseta)
+  unidad_nombre?: string | null
 }
 
 const supabaseAdmin = createClient(
@@ -23,7 +24,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 )
 
-const clean = (v?: string) => (v && v.trim().length ? v.trim() : null)
+const clean = (v?: string | null) => (v && v.trim().length ? v.trim() : null)
 
 export async function POST(req: Request) {
   try {
@@ -39,9 +40,12 @@ export async function POST(req: Request) {
     const nombre = clean(body.nombre) ?? ''
     const apellidos = clean(body.apellidos) ?? ''
 
-    // "unidad_nombre" es el nombre del puesto (unidad o caseta)
-    const puestoNombre = clean(body.unidad_nombre)
-    const caseta_id_directa = clean(body.caseta_id)
+    // IDs que pueden venir del formulario
+    let unidad_id: string | null = clean(body.unidad_id ?? null)
+    let caseta_id: string | null = clean(body.caseta_id ?? null)
+
+    // Nombre del puesto que puede venir en la importación masiva
+    const puestoNombre = clean(body.unidad_nombre ?? null)
 
     if (!safeEmail || !password || !rol) {
       return NextResponse.json({ error: 'Faltan campos (email, password, rol)' }, { status: 400 })
@@ -58,26 +62,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Rol inválido' }, { status: 400 })
     }
 
-    /*
-    // Debe venir al menos un dato de puesto
-    if (!puestoNombre && !caseta_id_directa) {
-      return NextResponse.json(
-        {
-          error:
-            'Debes indicar el nombre de la unidad o caseta (unidad_nombre) o un caseta_id válido.',
-        },
-        { status: 400 },
-      )
-    }
-*/
     // ----------------------------------------------------
-    // 2) Resolver puestoNombre → unidad_id o caseta_id
+    // 2) Resolver puestoNombre -> unidad_id / caseta_id
+    //    Solo si NO han venido IDs directos
     // ----------------------------------------------------
-    let unidad_id: string | null = null
-    let caseta_id: string | null = caseta_id_directa ?? null
-
-    if (puestoNombre) {
-      // Primero buscamos en unidades
+    if (!unidad_id && !caseta_id && puestoNombre) {
+      // 2.1) Primero buscamos en unidades
       const { data: unidad, error: unidadErr } = await supabaseAdmin
         .from('unidades')
         .select('id')
@@ -96,7 +86,7 @@ export async function POST(req: Request) {
       if (unidad) {
         unidad_id = unidad.id
       } else {
-        // Si no es una unidad, probamos casetas
+        // 2.2) Si no existe como unidad, probamos como caseta
         const { data: caseta, error: casetaErr } = await supabaseAdmin
           .from('casetas')
           .select('id')
@@ -126,20 +116,42 @@ export async function POST(req: Request) {
     }
 
     // ----------------------------------------------------
-    // 3) Validación final: exactamente una asignación
+    // 3) Reglas de negocio (unidad/caseta vs rol)
     // ----------------------------------------------------
-    const asignaciones = (unidad_id ? 1 : 0) + (caseta_id ? 1 : 0)
-    /*
-    if (asignaciones !== 1) {
+
+    // 1) Los jefes de retén solo en unidades, nunca en casetas
+    if (rol === 'jr') {
+      if (!unidad_id) {
+        return NextResponse.json(
+          { error: 'Los jefes de retén deben estar asignados a una unidad.' },
+          { status: 400 },
+        )
+      }
+
+      if (caseta_id) {
+        return NextResponse.json(
+          { error: 'Los jefes de retén no pueden estar asignados a una caseta.' },
+          { status: 400 },
+        )
+      }
+    }
+
+    // 2) En casetas solo puede haber Bomberos Forestales
+    if (caseta_id && rol !== 'bf') {
       return NextResponse.json(
-        {
-          error:
-            'Debes indicar exactamente un puesto válido: nombre de unidad o caseta (unidad_nombre), o un caseta_id, pero no más de uno.',
-        },
+        { error: 'Solo los Bomberos Forestales pueden asignarse a una caseta.' },
         { status: 400 },
       )
     }
-*/
+
+    // 3) Para bf y jr exigimos alguna asignación
+    if ((rol === 'bf' || rol === 'jr') && !unidad_id && !caseta_id) {
+      return NextResponse.json(
+        { error: 'Debes asignar el usuario a una unidad o una caseta.' },
+        { status: 400 },
+      )
+    }
+
     // -------------------------------
     // 4) Crear usuario en auth.users
     // -------------------------------

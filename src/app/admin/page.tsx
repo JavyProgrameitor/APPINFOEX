@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { getSupabaseBrowser } from '@/server/client'
-import { RefreshCcw, Search, ArrowRight, Users, MonitorCog, ArrowLeft } from 'lucide-react'
+import { RefreshCcw, ArrowRight, Users, MonitorCog, ArrowLeft, Search } from 'lucide-react'
 
 // Select (shadcn/Radix)
 import {
@@ -76,6 +76,8 @@ export default function AdminHomePage() {
   const municipioById = useMemo(() => new Map(municipios.map((m) => [m.id, m])), [municipios])
   const casetaById = useMemo(() => new Map(casetas.map((c) => [c.id, c])), [casetas])
 
+  const [reloadKey, setReloadKey] = useState(0)
+
   // zonas disponibles
   const zonas = useMemo(() => {
     const z = new Set<string>()
@@ -97,6 +99,10 @@ export default function AdminHomePage() {
         return mun?.zona === zona
       }),
     [casetas, zona, municipioById],
+  )
+  const sinCasetasEnZona = useMemo(
+    () => !!zona && scope === 'caseta' && casetasEnZona.length === 0,
+    [zona, scope, casetasEnZona],
   )
 
   // normalizar query
@@ -182,14 +188,25 @@ export default function AdminHomePage() {
         setItems((data as UsuarioBF[]) || [])
         setTotal(count || 0)
       } catch (err) {
-        console.error(err)
         setItems([])
         setTotal(0)
       } finally {
         setLoading(false)
       }
     })()
-  }, [page, pageSize, normQ, zona, scope, unidadId, casetaId, unidades, casetas, municipioById])
+  }, [
+    page,
+    pageSize,
+    normQ,
+    zona,
+    scope,
+    unidadId,
+    casetaId,
+    unidades,
+    casetas,
+    municipioById,
+    reloadKey,
+  ])
 
   // reset de página al cambiar filtros/tamaño
   useEffect(() => {
@@ -201,27 +218,27 @@ export default function AdminHomePage() {
   const canNext = page < totalPages
 
   function refresh() {
-    setPage((p) => Math.min(Math.max(1, p), totalPages))
+    // Opcional: puedes resetear a página 1 si quieres
+    setPage(1)
+    // Fuerza una recarga de datos
+    setReloadKey((k) => k + 1)
   }
-
   return (
     <main className="p-4 md:p-6 max-w-6xl mx-auto space-y-4 shadow-accent">
-      <div className="flex flex-col items-center justify-center gap-2 p-5">
-        <MonitorCog />
-        <h1 className="text-center text-2xl md:text-2xl font-black text-animate">
-          USUARIOS EN EL SISTEMA
-        </h1>
-      </div>
-      <div className="flex items-center justify-center cursor-pointer gap-2">
-        <Button variant="default" onClick={refresh}>
+      <CardHeader className="flex items-center justify-center space-y-2">
+        <MonitorCog className="w-10 h-10 " />
+        <CardTitle>Usuarios en el Sistema</CardTitle>
+      </CardHeader>
+      <div className="flex items-center justify-center gap-2">
+        <Button variant="outline" className="cursor-pointer border-3" onClick={refresh}>
           <RefreshCcw />
         </Button>
         {/* Select de Zona */}
         <Select value={zona} onValueChange={setZona}>
-          <SelectTrigger className="min-w-40 rounded-2 border-green-600">
+          <SelectTrigger className="min-w-40 rounded-2 border-3 font-semibold">
             <SelectValue placeholder="Elegir zona" />
           </SelectTrigger>
-          <SelectContent className="rounded-xs">
+          <SelectContent className="rounded-xl">
             {zonas.map((z) => (
               <SelectItem key={z} value={z} className="text-center text-animate">
                 {z}
@@ -231,11 +248,11 @@ export default function AdminHomePage() {
         </Select>
 
         {/* Toggle de ámbito */}
-        <div className="inline-flex rounded-sm overflow-hidden ">
+        <div className="inline-flex rounded-sm">
           <Button
             type="button"
             variant={scope === 'unidad' ? 'default' : 'ghost'}
-            className={`rounded-sm   ${scope === 'unidad' ? '' : 'bg-transparent'}`}
+            className={`rounded-sm   ${scope === 'unidad' ? '' : 'ghost'}`}
             onClick={() => setScope('unidad')}
           >
             Unidades
@@ -243,7 +260,7 @@ export default function AdminHomePage() {
           <Button
             type="button"
             variant={scope === 'caseta' ? 'default' : 'ghost'}
-            className={`rounded-sm  ${scope === 'caseta' ? '' : 'bg-transparent'}`}
+            className={`rounded-sm  ${scope === 'caseta' ? '' : 'ghost'}`}
             onClick={() => setScope('caseta')}
           >
             Casetas
@@ -251,23 +268,31 @@ export default function AdminHomePage() {
         </div>
         {scope === 'unidad' ? (
           <Select value={unidadId} onValueChange={setUnidadId} disabled={!zona}>
-            <SelectTrigger className="min-w-56 rounded-sm">
+            <SelectTrigger className="min-w-56 rounded-xl border-4 font-semibold">
               <SelectValue placeholder={zona ? 'Elegir unidad…' : 'Primero elige zona'} />
             </SelectTrigger>
-            <SelectContent className="rounded-xs max-h-64">
+            <SelectContent className="rounded-xl">
               {unidadesEnZona.map((u) => (
-                <SelectItem key={u.id} value={u.id} className="text-center">
+                <SelectItem key={u.id} value={u.id} className="text-center text-animate">
                   {u.nombre}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         ) : (
-          <Select value={casetaId} onValueChange={setCasetaId} disabled={!zona}>
-            <SelectTrigger className="min-w-56 rounded-sm border-green-600">
-              <SelectValue placeholder={zona ? 'Elegir caseta…' : 'Primero elige zona'} />
+          <Select value={casetaId} onValueChange={setCasetaId} disabled={!zona || sinCasetasEnZona}>
+            <SelectTrigger className="min-w-56 rounded-sm border-4 font-semibold">
+              <SelectValue
+                placeholder={
+                  !zona
+                    ? 'Primero elige zona'
+                    : sinCasetasEnZona
+                      ? 'No hay casetas en esta zona'
+                      : 'Elegir caseta…'
+                }
+              />
             </SelectTrigger>
-            <SelectContent className="rounded-sm max-h-64">
+            <SelectContent className="rounded-sm max-h-64 border-green-600">
               {casetasEnZona.map((c) => (
                 <SelectItem key={c.id} value={c.id} className="text-center">
                   {c.nombre}
@@ -277,6 +302,11 @@ export default function AdminHomePage() {
           </Select>
         )}
       </div>
+      {sinCasetasEnZona && (
+        <p className="text-xs text-red-600 text-center">
+          No hay casetas disponibles en la zona seleccionada.
+        </p>
+      )}
 
       <Card className="rounded-2xl shadow-accent">
         <CardHeader className="gap-2">
@@ -290,13 +320,13 @@ export default function AdminHomePage() {
                 · filtro: <span className="font-black">“{q.trim()}”</span>
               </span>
             ) : null}
-            <div className="flex items-center justify-center text-xs">
-              <Search className=" h-6 opacity-60" />
+            <div className="relative w-80">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" />
               <Input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Busqueda por DNI, nombre, apellidos o email…"
-                className=" w-80 rounded-sm p-4"
+                placeholder="Búsqueda por DNI, nombre, apellidos o email…"
+                className="pl-10 rounded-sm text-animate text-xs w-xs"
               />
             </div>
           </CardTitle>

@@ -7,10 +7,10 @@ import { Calendar, FileText, Home, Upload, Users, UserX } from 'lucide-react'
 
 const links = [
   { href: '/admin', label: 'Listar Bomberos', icon: Home },
-  { href: '/admin/list', label: 'Datos personales', icon: FileText },
-  { href: '/admin/month', label: 'Resumen mensual', icon: Calendar },
-  { href: '/admin/users', label: 'Agregar bombero', icon: Users },
-  { href: '/admin/delete', label: 'Eliminar bombero', icon: UserX },
+  { href: '/admin/list', label: 'Datos Personales', icon: FileText },
+  { href: '/admin/month', label: 'Resumen Mensual', icon: Calendar },
+  { href: '/admin/users', label: 'Agregar Bombero', icon: Users },
+  { href: '/admin/delete', label: 'Eliminar Bombero', icon: UserX },
   { href: '/admin/addFull', label: 'Importar Usuarios', icon: Upload },
 ]
 

@@ -98,7 +98,7 @@ export default function NavBar() {
   const roleLabel = (r: Rol) => {
     if (!r) return ''
     if (r === 'admin') return 'Administrador'
-    if (r === 'jr') return 'Jefe de Retén'
+    if (r === 'jr') return 'Jefe de Servicio'
     return 'Bombero Forestal'
   }
 
@@ -129,22 +129,23 @@ export default function NavBar() {
             {/* Acciones desktop */}
             <div className="hidden md:flex items-center gap-2">
               {isRoleRoute && !loading && email && (
-                <span className="flex text-sm items-center gap-2 px-3 py-1 rounded-xl border-2">
+                <span className="flex text-sm items-center gap-2 px-3 py-1 rounded-xl border-4">
                   <span className="inline-flex items-center gap-1">
-                    <span className="rounded-full w-3 h-3 bg-emerald-600" />
-                    <span className="font-black">{roleLabel(rol)}</span>
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-green-600  cursor-pointer">
+                      <span className="text-sm font-bold">#</span>
+                    </span>
+                    <span className="font-black ">{roleLabel(rol)}</span>
                   </span>
-                  <span className="text-green-600">✓</span>
+                  <span className="text-animate">✓</span>
                   <span className="opacity-80 font-semibold">{email}</span>
                 </span>
               )}
 
               {isRoleRoute && !loading && email && (
-                <Button size="sm" variant="destructive" onClick={onLogout}>
+                <Button variant="destructive" size="sm" onClick={onLogout}>
                   Salir
                 </Button>
               )}
-
               <Button
                 variant="ghost"
                 size="icon"
@@ -182,12 +183,14 @@ export default function NavBar() {
           <div id="mobile-menu" className="md:hidden overflow-hidden border-t py-2 cursor-pointer">
             <div className="flex items-center justify-between gap-2">
               {isRoleRoute && !loading && email && (
-                <span className="text-xs inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-amber/40 bg-white/10 ">
+                <span className="flex text-sm items-center gap-2 px-3 py-1 rounded-xl border-4">
                   <span className="inline-flex items-center gap-1">
-                    <span className="rounded-full w-2 h-2 bg-destructive cursor-pointer" />
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-green-600  cursor-pointer">
+                      <span className="text-sm font-bold">#</span>
+                    </span>
                     <span className="font-semibold">{roleLabel(rol)}</span>
                   </span>
-                  <span className="text-primary/70">✓</span>
+                  <span className="text-animate">✓</span>
                   <span className="opacity-80">{email}</span>
                 </span>
               )}

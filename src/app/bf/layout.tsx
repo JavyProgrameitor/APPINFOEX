@@ -8,7 +8,7 @@ import {
   SheetClose,
 } from '@/components/ui/Sheet'
 import { Button } from '@/components/ui/Button'
-import { Calendar, Database, Send, Menu, HomeIcon } from 'lucide-react'
+import { Calendar, Database, Send, Menu, HomeIcon, KeyRound } from 'lucide-react'
 import Link from 'next/link'
 
 export default function BFLayout({ children }: { children: React.ReactNode }) {
@@ -80,6 +80,18 @@ export default function BFLayout({ children }: { children: React.ReactNode }) {
                   >
                     <Calendar></Calendar>
                     RESUMEN MENSUAL
+                  </Link>
+                </SheetClose>
+                <SheetClose asChild>
+                  <Link
+                    href="/bf/pass"
+                    className="w-10/12 flex items-center justify-center text-center rounded-xl px-5 py-3 text-sm font-medium
+                               border-2 border-primary/60 bg-primary/10 hover:bg-primary/20
+                               dark:border-primary/40 dark:bg-primary/10 dark:hover:bg-primary/30
+                               transition-all duration-200 shadow-sm hover:shadow-md gap-2"
+                  >
+                    <KeyRound></KeyRound>
+                    CAMBIAR CONTRASEÑA
                   </Link>
                 </SheetClose>
               </nav>
