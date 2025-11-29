@@ -31,16 +31,15 @@ function AdminMonthPageInner() {
 
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
-  const [month, setMonth] = useState(now.getMonth() + 1) // 1-12
+  const [month, setMonth] = useState(now.getMonth() + 1)
 
   const [anotacionesMes, setAnotacionesMes] = useState<AnotacionDia[]>([])
   const [loadingMes, setLoadingMes] = useState(false)
 
-  // 1) Cargar usuario por id (igual patrón que admin/list)
   useEffect(() => {
     ;(async () => {
       if (!id) {
-        setError('No se ha proporcionado un id de usuario.')
+        setError('No se ha seleccionado el usuario  en la lista de bombero .')
         return
       }
       if (typeof window === 'undefined') return
@@ -55,13 +54,12 @@ function AdminMonthPageInner() {
           .maybeSingle()
 
         if (error) {
-          console.error(error)
-          setError('No se ha podido cargar el usuario.')
+          setError('No se ha podido cargar el bombero.')
           setUser(null)
           return
         }
         if (!u) {
-          setError('No se ha encontrado el usuario.')
+          setError('No se ha encontrado el bombero.')
           setUser(null)
           return
         }
@@ -74,7 +72,6 @@ function AdminMonthPageInner() {
         }
         setUser(uNorm)
       } catch (e) {
-        console.error(e)
         setError('Ha ocurrido un error al cargar los datos del usuario.')
         setUser(null)
       } finally {
@@ -107,14 +104,12 @@ function AdminMonthPageInner() {
           .order('fecha', { ascending: true })
 
         if (error) {
-          console.error('Error cargando anotaciones del mes:', error.message)
           setAnotacionesMes([])
           return
         }
 
         setAnotacionesMes((data as AnotacionDia[]) || [])
       } catch (e) {
-        console.error(e)
         setAnotacionesMes([])
       } finally {
         setLoadingMes(false)
@@ -174,7 +169,9 @@ function AdminMonthPageInner() {
           ) : error ? (
             <div className="text-sm text-destructive">{error}</div>
           ) : !user ? (
-            <div className="text-sm text-muted-foreground">No se ha encontrado el usuario.</div>
+            <div className="flex items-center justify-center text-sm text-muted-foreground">
+              No se ha encontrado el usuario.
+            </div>
           ) : (
             <>
               {/* Selector mes/año */}
@@ -223,7 +220,6 @@ function AdminMonthPageInner() {
 
                     // colores según código
                     let cellClasses = 'border rounded-md p-2 text-center text-xs bg-card shadow-sm'
-                    // 🔥 Códigos no tratados (JR, TH, TC, B, etc.) → color amarillo
                     let codigoClasses = 'mt-1 font-mono text-xs text-animate'
                     if (codigo === 'V') {
                       cellClasses =

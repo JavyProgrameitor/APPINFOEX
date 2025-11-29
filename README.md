@@ -44,7 +44,7 @@ npm run format
 
 # 2) Prepara archivos
 
-git add -A
+git add -Agi
 
 # 3) Usa el asistente con emojis
 

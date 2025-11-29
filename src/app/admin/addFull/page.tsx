@@ -94,7 +94,6 @@ export default function AdminBulkAddPage() {
         setParsedUsers(users)
         setStatus(`Detectados ${users.length} usuarios en el archivo.`)
       } catch (e: any) {
-        console.error(e)
         setError(e.message || 'Error al procesar el archivo.')
       }
     }
@@ -170,7 +169,6 @@ export default function AdminBulkAddPage() {
             newResults.push({ email: user.email, ok: true })
           }
         } catch (e: any) {
-          console.error(e)
           newResults.push({
             email: user.email,
             ok: false,
@@ -190,7 +188,6 @@ export default function AdminBulkAddPage() {
         setStatus(`Importación completada con incidencias. OK: ${okCount}, errores: ${koCount}.`)
       }
     } catch (e: any) {
-      console.error(e)
       setError(e.message || 'Error inesperado durante la importación.')
     } finally {
       setIsImporting(false)

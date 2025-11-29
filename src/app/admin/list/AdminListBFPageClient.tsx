@@ -189,7 +189,6 @@ export default function AdminListBFPageClient({ userId }: Props) {
 
         setAnotaciones((data as Anotacion[]) || [])
       } catch (e) {
-        console.error(e)
         setAnotaciones([])
       } finally {
         setLoadingAnot(false)
@@ -206,7 +205,6 @@ export default function AdminListBFPageClient({ userId }: Props) {
         const res = await fetch(`/supabase/horas?userId=${user.id}`)
         const data = await res.json()
         if (!res.ok) {
-          console.error('Error horas:', data)
           return
         }
         setHoras({
@@ -231,7 +229,6 @@ export default function AdminListBFPageClient({ userId }: Props) {
         const res = await fetch(`/supabase/dias?userId=${user.id}`)
         const data = await res.json()
         if (!res.ok) {
-          console.error('Error días V/AP:', data)
           return
         }
         setDias({
@@ -281,7 +278,7 @@ export default function AdminListBFPageClient({ userId }: Props) {
               <div className="h-32 rounded bg-muted/50 animate-pulse" />
             </div>
           ) : !user ? (
-            <div className="text-sm text-muted-foreground ">
+            <div className="flex items-center justify-center text-sm text-muted-foreground ">
               No se ha encontrado el usuario. Vuelve al listado y selecciona uno.
             </div>
           ) : (

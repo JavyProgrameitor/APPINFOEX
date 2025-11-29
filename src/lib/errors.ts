@@ -41,7 +41,7 @@ export function getAppErrorMessage(error: unknown, domain: ErrorDomain = 'unknow
     if (raw.includes('Failed to fetch')) {
       return 'No se ha podido conectar con el servidor. Revisa tu conexión a internet.'
     }
-    return 'Se ha producido un error al comunicarse con el servidor.'
+    return 'Debes seleccionar un usuario del listado de bomberos.'
   }
 
   //  Errores de formulario / validación, si quieres tratarlos distinto
