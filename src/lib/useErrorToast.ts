@@ -14,7 +14,5 @@ export function useErrorToast(domain: ErrorDomain = 'unknown') {
       title: 'Ha ocurrido un error',
       description,
     })
-
-    // console.error(error)
   }
 }

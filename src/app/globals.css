@@ -174,7 +174,6 @@
   --animate: #c4a52b;
   --animate-foreground: #1a850e;
 }
-
 /* --- Base layer: aplica fondo/texto global y suaviza render --- */
 @layer base {
   * {
@@ -190,7 +189,6 @@
     -moz-osx-font-smoothing: grayscale;
   }
 }
-
 /* --- Utilidades extra que usamos en componentes --- */
 @utility bg-card {
   background-color: var(--card);
@@ -198,7 +196,6 @@
 @utility border-border {
   border-color: var(--border);
 }
-
 /* ==== Utilidades para estados (usadas en el calendario) ==== */
 /* Success (V) */
 @utility bg-success {

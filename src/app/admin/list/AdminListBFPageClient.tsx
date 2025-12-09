@@ -252,7 +252,7 @@ export default function AdminListBFPageClient({ userId }: Props) {
         ? 'Bombero Forestal'
         : 'Administrador'
 
-  const PROGRESO_UMBRAL = 3.15
+  const PROGRESO_UMBRAL = 3.3
   const progreso = PROGRESO_UMBRAL > 0 ? Math.min(horas.horas_restantes / PROGRESO_UMBRAL, 1) : 0
 
   const progresoVac =
